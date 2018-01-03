@@ -6,12 +6,11 @@
 [depend]: https://img.shields.io/david/restorecommerce/resource-srv.svg?style=flat-square
 [cover]: http://img.shields.io/coveralls/restorecommerce/resource-srv/master.svg?style=flat-square
 
-This microservice provides a generic database access abstraction. Resources are persisted in an ArangoDB database instance and a separate collection is created for each resource name.
-The list of resource names should be specified in `resources` configuration in the [`config.json`](cfg/config.json) file, in order to create them in the database. Such names should have a matching [Protocol Buffers](https://developers.google.com/protocol-buffers/) file in the [protos](https://github.com/restorecommerce/protos) folder where all the fields of resources are defined.
+This microservice exposes CRUD operations through a [gRPC](https://grpc.io/docs/) endpoint for each specified resource. Such resources are persisted in an ArangoDB database instance, each of them binded with its own separate collection.
+The list of resource names should be specified in `resources` configuration in the [`config.json`](cfg/config.json) file, in order to create them in the database. Such names should have a matching [Protocol Buffers](https://developers.google.com/protocol-buffers/) file in the [protos](https://github.com/restorecommerce/protos) folder where all the fields of resources are defined. 
+CRUD operations are performed by using [resource-base-interface](https://github.com/restorecommerce/resource-base-interface/).
 
 ## gRPC Interface
-
-Generic CRUD operations are exposed via gRPC. Such operations are performed implementing [resource-base-interface](https://github.com/restorecommerce/resource-base-interface/).
 
 ### CRUD Operations
 
@@ -23,12 +22,12 @@ Generic CRUD operations are exposed via gRPC. Such operations are performed impl
 | Upsert | [ ]`io.restorecommerce.<resource>.<resourceName>` | [ ]`io.restorecommerce.<resource>.<resourceName>` | List of \<resourceName> to be created or updated |
 | Delete | `io.restorecommerce.resourcebase.DeleteRequest`   | `google.protobuf.Empty` | List of resource IDs to be deleted |
 
-For detailed fields of protubf messages `io.restorecommerce.resourcebase.ReadRequest` and `io.restorecommerce.resourcebase.DeleteRequest` refer [resource_base.proto](https://github.com/restorecommerce/protos/blob/master/io/restorecommerce/resource_base.proto) file.
+For detailed fields of protubf messages `io.restorecommerce.resourcebase.ReadRequest` and `io.restorecommerce.resourcebase.DeleteRequest` refer [resource-base-interface](https://github.com/restorecommerce/resource-base-interface/).
 
 ## Kafka Events
 
 A [Kafka](https://kafka.apache.org/) topic is created for each resource that is specified in the configuration file.
-CRUD operations are then posted as event messages in each call, using [kafka-client](https://github.com/restorecommerce/kafka-client) to respective topics.
+CRUD operations are posted as event messages to the resource's respective topic, using [kafka-client](https://github.com/restorecommerce/kafka-client).
 For more details of the event and topic names please refer [resource-base-interface](https://github.com/restorecommerce/resource-base-interface).
 
 This microservice subscribes to the following Kafka events by topic:
