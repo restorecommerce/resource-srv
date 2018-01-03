@@ -114,7 +114,8 @@ describe('resource-srv testing', () => {
     }];
     const update = await resourceService.update({items: changedOrgList});
     const updatedResult = await resourceService.read({ limit: 4 });
-    console.log('UPDATED RESULT IS :', updatedResult.data.items);
+    updatedResult.data.items[0].name.should.equal('TestOrg3');
+    updatedResult.data.items[1].name.should.equal('TestOrg4');
   });
 
   it('should upsert organization resource', async function registerUser() {
@@ -136,7 +137,10 @@ describe('resource-srv testing', () => {
     }];
     const update = await resourceService.upsert({items: updatedOrgList});
     const updatedResult = await resourceService.read({ limit: 4 });
-    console.log('UPSERTED RESULT IS :', updatedResult.data.items);
+    Object.keys(updatedResult.data.items).length.should.equal(3);
+    updatedResult.data.items[0].name.should.equal('TestOrg5');
+    updatedResult.data.items[1].name.should.equal('TestOrg4');
+    updatedResult.data.items[2].name.should.equal('TestOrg6');
   });
 
   it('should delete organization resource', async function registerUser() {
@@ -147,7 +151,7 @@ describe('resource-srv testing', () => {
         result.data.items[1].id]
     };
     const deletedResult = await resourceService.delete(deleteIDs);
-    const resultAfterDeletion = await resourceService.read({ limit: 2 });
+    const resultAfterDeletion = await resourceService.read({ limit: 4 });
     Object.keys(resultAfterDeletion.data.items).length.should.equal(0);
   });
 });
