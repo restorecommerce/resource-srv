@@ -1,0 +1,41 @@
+{
+  "logger": {
+    "elasticsearch": {
+      "level": "error",
+      "clientOpts": {
+        "host": "elasticsearch:9200"
+      },
+      "source": "resource-srv"
+    }
+  },
+  "kafka": {
+    "connectionString": "zookeeper:2181"
+  },
+  "redis": {
+    "hostname": "redis",
+    "port": 6379
+  },
+  "database": {
+    "arango": {
+      "host": "arangodb"
+    }
+  },
+  "server":{
+    "transports": [
+      {
+        "name": "grpc",
+        "provider": "grpc",
+        "services": {
+          "commandinterface": "io.restorecommerce.commandinterface.Service",
+          "reflection": "grpc.reflection.v1alpha.ServerReflection"
+        },
+        "protos": [
+          "io/restorecommerce/commandinterface.proto",
+          "grpc/reflection/v1alpha/reflection.proto"
+        ],
+        "protoRoot": "protos/",
+        "addr": "resource-srv:50051"
+      }
+    ]
+  }
+}

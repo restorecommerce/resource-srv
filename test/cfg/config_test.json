@@ -1,0 +1,164 @@
+{
+  "logger": {
+    "console": {
+      "handleExceptions": false,
+      "level": "silly",
+      "colorize": true,
+      "prettyPrint": true
+    }
+  },
+  "database": {
+    "arango": {
+      "provider": "arango",
+      "host": "localhost",
+      "port": 8529,
+      "database": "restore-resource-srv",
+      "autoCreate": true
+    }
+  },
+  "redis": {
+    "hostname": "localhost",
+    "port": 6379
+  },
+  "resources": [
+    "organization"
+  ],
+  "resourcesProtoPathPrefix": "io/restorecommerce/",
+  "resourcesServiceNamePrefix": "io.restorecommerce.",
+  "resourcesServiceConfigPrefix": "restore-",
+  "resourcesProtoRoot": "node_modules/@restorecommerce/protos/",
+  "command-interface": {
+    "name": "restore-resource-cis"
+  },
+  "events": {
+    "kafka": {
+      "provider": "kafka",
+      "groupId": "resource-srv",
+      "clientId": "resource-srv",
+      "connectionString": "localhost:2181",
+      "topics": {
+        "command": {
+          "topic": "io.restorecommerce.command",
+          "events": [
+            "restoreCommand",
+            "healthCheckCommand",
+            "resetCommand"
+          ]
+        }
+      }
+    },
+    "enableEvents": "true"
+  },
+  "server": {
+    "services": {
+      "standard-cfg": {
+        "read": {
+          "transport": [
+            "grpc"
+          ]
+        },
+        "create": {
+          "transport": [
+            "grpc"
+          ]
+        },
+        "delete": {
+          "transport": [
+            "grpc"
+          ]
+        },
+        "update": {
+          "transport": [
+            "grpc"
+          ]
+        },
+        "upsert": {
+          "transport": [
+            "grpc"
+          ]
+        }
+      },
+      "restore-resource-cis": {
+        "check": {
+          "transport": [
+            "grpc"
+          ]
+        },
+        "reconfigure": {
+          "transport": [
+            "grpc"
+          ]
+        },
+        "reset": {
+          "transport": [
+            "grpc"
+          ]
+        },
+        "restore": {
+          "transport": [
+            "grpc"
+          ]
+        },
+        "version": {
+          "transport": [
+            "grpc"
+          ]
+        }
+      },
+      "reflection": {
+        "serverReflectionInfo": {
+          "transport": [
+            "grpc"
+          ]
+        }
+      }
+    },
+    "transports": [
+      {
+        "name": "grpc",
+        "provider": "grpc",
+        "services": {
+          "restore-resource-cis": "io.restorecommerce.commandinterface.Service",
+          "reflection": "grpc.reflection.v1alpha.ServerReflection"
+        },
+        "protos": [
+          "io/restorecommerce/commandinterface.proto",
+          "grpc/reflection/v1alpha/reflection.proto"
+        ],
+        "protoRoot": "node_modules/@restorecommerce/protos/",
+        "addr": "localhost:50051"
+      }
+    ]
+  },
+  "fieldGenerators": {},
+  "client": {
+    "resources": [
+      "organization"
+    ],
+    "default-resource-srv": {
+      "transports": {
+        "grpc": {
+          "service": "",
+          "timeout": 3000,
+          "protoRoot": "node_modules/@restorecommerce/protos/"
+        }
+      },
+      "loadbalancer": {
+        "name": "roundRobin"
+      },
+      "publisher": {
+        "name": "static",
+        "instances": [
+          "grpc://localhost:50051"
+        ]
+      },
+      "endpoints": {
+        "read": {},
+        "create": {},
+        "delete": {},
+        "update": {},
+        "upsert": {}
+      }
+    }
+  }
+}

@@ -1,0 +1,153 @@
+import * as srvConfig from '@restorecommerce/service-config';
+import * as grpcClient from '@restorecommerce/grpc-client';
+import { Worker } from './../service';
+import * as Logger from '@restorecommerce/logger';
+import * as should from 'should';
+
+const cfg = srvConfig(process.cwd() + '/test');
+
+/**
+ * Note: To run below tests a running Kafka and ArangoDB instance is required.
+ * Kafka can be disabled if the config 'enableEvents' is set to false.
+ */
+
+const listOfOrganizations = [
+  {
+    name: 'TestOrg1',
+    creator: 'Admin1',
+    address: {
+      postcode: '123',
+      locality: 'testLocality1',
+      street: 'testStreet1',
+      country: 'TestCountry1'
+    }
+  },
+  {
+    name: 'TestOrg2',
+    creator: 'Admin2',
+    address: {
+      postcode: '456',
+      locality: 'testLocality2',
+      street: 'testStreet2',
+      country: 'TestCountry2'
+    }
+  },
+];
+
+// get client connection object
+async function getClientResourceServices() {
+  const clientConfig = cfg.get('client');
+  const resourceNames = cfg.get('client:resources');
+  const resourcePrefix = cfg.get('resourcesProtoPathPrefix');
+  const servicePrefix = cfg.get('resourcesServiceNamePrefix');
+
+  let options: any = { microservice: {} };
+  options.microservice = {
+    service: {},
+    mapClients: new Map()
+  };
+  const logger = new Logger(cfg.get('logger'));
+  logger.silly('microservice clients', resourceNames);
+  for (let resource of resourceNames) {
+    const protos = [`${resourcePrefix}/${resource}.proto`];
+    const serviceName = `${servicePrefix}${resource}.Service`;
+    const defaultConfig = clientConfig['default-resource-srv'];
+    defaultConfig.transports.grpc.protos = protos;
+    defaultConfig.transports.grpc.service = serviceName;
+    try {
+      const client = new grpcClient.Client(defaultConfig, logger);
+      options.microservice.service[serviceName] = await client.connect();
+      options.microservice.mapClients.set(resource, serviceName);
+      logger.verbose('connected to microservice', serviceName);
+    } catch (err) {
+      logger.error('microservice connecting to service',
+        serviceName, err);
+    }
+  }
+  return options;
+}
+
+describe('resource-srv testing', () => {
+  let options;
+  let resourceService;
+  let worker: Worker;
+  // start the server and get the clientService Obj based on resourceName
+  before(async function startServer() {
+    worker = new Worker();
+    await worker.start(cfg);
+    // get the client object
+    // List of serviceMappedValues
+    const serviceMapping = await getClientResourceServices();
+    // get the Organization service
+    let mapValue = serviceMapping.microservice.mapClients.get('organization');
+    resourceService = serviceMapping.microservice.service[mapValue];
+  });
+
+  // stop the server
+  after(async function stopServer() {
+    await worker.stop();
+  });
+
+  // describe('create', () => {
+  it('should create organization resource', async function registerUser() {
+    const result = await resourceService.create({ items: listOfOrganizations });
+    result.data.items[0].name.should.equal('TestOrg1');
+    result.data.items[1].name.should.equal('TestOrg2');
+  });
+
+  it('should read organization resource', async function registerUser() {
+    const result = await resourceService.read({ limit: 4 });
+    should.exist(result.data.items);
+    result.data.items[0].name.should.equal('TestOrg1');
+    result.data.items[1].name.should.equal('TestOrg2');
+  });
+
+  it('should update organization resource', async function registerUser() {
+    const result = await resourceService.read({ limit: 4 });
+    const changedOrgList = [ {
+      id: result.data.items[0].id,
+      name: 'TestOrg3'
+    },
+    {
+      id: result.data.items[1].id,
+      name: 'TestOrg4'
+    }];
+    const update = await resourceService.update({items: changedOrgList});
+    const updatedResult = await resourceService.read({ limit: 4 });
+    console.log('UPDATED RESULT IS :', updatedResult.data.items);
+  });
+
+  it('should upsert organization resource', async function registerUser() {
+    const result = await resourceService.read({ limit: 4 });
+    const updatedOrgList = [ {
+      id: result.data.items[0].id,
+      name: 'TestOrg5'
+    },
+    // New organization created
+    {
+      name: 'TestOrg6',
+      creator: 'Admin6',
+      address: {
+        postcode: '789',
+        locality: 'testLocality6',
+        street: 'testStreet6',
+        country: 'TestCountry6'
+      }
+    }];
+    const update = await resourceService.upsert({items: updatedOrgList});
+    const updatedResult = await resourceService.read({ limit: 4 });
+    console.log('UPSERTED RESULT IS :', updatedResult.data.items);
+  });
+
+  it('should delete organization resource', async function registerUser() {
+    const result = await resourceService.read({ limit: 4 });
+    const deleteIDs = {
+      ids:
+        [result.data.items[0].id,
+        result.data.items[1].id]
+    };
+    const deletedResult = await resourceService.delete(deleteIDs);
+    const resultAfterDeletion = await resourceService.read({ limit: 2 });
+    Object.keys(resultAfterDeletion.data.items).length.should.equal(0);
+  });
+});

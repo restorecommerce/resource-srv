@@ -1,0 +1,57 @@
+{
+  "name": "@restorecommerce/resource-srv",
+  "version": "0.1.0",
+  "description": "Restore Commerce Rsource microservice",
+  "main": "start.js",
+  "author": "Invend GmbH",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/restorecommerce/resource-srv.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "restore",
+    "commerce",
+    "microservice",
+    "resource"
+  ],
+  "dependencies": {
+    "@restorecommerce/chassis-srv": "github:restorecommerce/chassis-srv",
+    "@restorecommerce/cluster-service": "^0.1.0",
+    "@restorecommerce/command-interface": "github:restorecommerce/command-interface.git",
+    "@restorecommerce/kafka-client": "^0.1.0",
+    "@restorecommerce/logger": "^0.1.0",
+    "@restorecommerce/protos": "github:restorecommerce/protos",
+    "@restorecommerce/resource-base-interface": "github:restorecommerce/resource-base-interface.git",
+    "@restorecommerce/service-config": "^0.1.0",
+    "co": "^4.6.0",
+    "redis": "^2.8.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "^2.2.41",
+    "@types/should": "^11.2.0",
+    "@types/redis": "^2.8.1",
+    "@restorecommerce/grpc-client": "github:restorecommerce/grpc-client",
+    "co-mocha": "^1.2.0",
+    "coveralls": "^3.0.0",
+    "istanbul": "^0.4.3",
+    "jshint": "^2.9.2",
+    "mocha": "^4.0.1",
+    "nodemon": "^1.12.1",
+    "should": "^11.2.1"
+  },
+  "scripts": {
+    "start": "node start.js",
+    "dev": "export NODE_ENV=development; nodemon start.js",
+    "pretest": "npm run tsctests",
+    "tsctests": "tsc test/*_test.ts --module commonjs -target ES6",
+    "test": "npm run lint && npm run mocha",
+    "lint": "tslint *.ts",
+    "mocha": "export NODE_ENV=test; mocha -R spec ./test/*.js --exit",
+    "coveralls": "export NODE_ENV=test; istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec ./test/*.js",
+    "postinstall": "tsc -d"
+  },
+  "engines": {
+    "node": ">= 9.2.0"
+  }
+}
