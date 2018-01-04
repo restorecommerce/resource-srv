@@ -88,7 +88,6 @@ describe('resource-srv testing', () => {
     await worker.stop();
   });
 
-  // describe('create', () => {
   it('should create organization resource', async function registerUser() {
     const result = await resourceService.create({ items: listOfOrganizations });
     result.data.items[0].name.should.equal('TestOrg1');
@@ -96,15 +95,25 @@ describe('resource-srv testing', () => {
   });
 
   it('should read organization resource', async function registerUser() {
-    const result = await resourceService.read({ limit: 4 });
+    const result = await resourceService.read({
+      sort: [{
+        field: 'created',
+        order: 1, // ASCENDING
+      }]
+    });
     should.exist(result.data.items);
     result.data.items[0].name.should.equal('TestOrg1');
     result.data.items[1].name.should.equal('TestOrg2');
   });
 
   it('should update organization resource', async function registerUser() {
-    const result = await resourceService.read({ limit: 4 });
-    const changedOrgList = [ {
+    const result = await resourceService.read({
+      sort: [{
+        field: 'created',
+        order: 1, // ASCENDING
+      }]
+    });
+    const changedOrgList = [{
       id: result.data.items[0].id,
       name: 'TestOrg3'
     },
@@ -112,15 +121,25 @@ describe('resource-srv testing', () => {
       id: result.data.items[1].id,
       name: 'TestOrg4'
     }];
-    const update = await resourceService.update({items: changedOrgList});
-    const updatedResult = await resourceService.read({ limit: 4 });
+    const update = await resourceService.update({ items: changedOrgList });
+    const updatedResult = await resourceService.read({
+      sort: [{
+        field: 'created',
+        order: 1, // ASCENDING
+      }]
+    });
     updatedResult.data.items[0].name.should.equal('TestOrg3');
     updatedResult.data.items[1].name.should.equal('TestOrg4');
   });
 
   it('should upsert organization resource', async function registerUser() {
-    const result = await resourceService.read({ limit: 4 });
-    const updatedOrgList = [ {
+    const result = await resourceService.read({
+      sort: [{
+        field: 'created',
+        order: 1, // ASCENDING
+      }]
+    });
+    const updatedOrgList = [{
       id: result.data.items[0].id,
       name: 'TestOrg5'
     },
@@ -135,23 +154,39 @@ describe('resource-srv testing', () => {
         country: 'TestCountry6'
       }
     }];
-    const update = await resourceService.upsert({items: updatedOrgList});
-    const updatedResult = await resourceService.read({ limit: 4 });
+    const update = await resourceService.upsert({ items: updatedOrgList });
+    const updatedResult = await resourceService.read({
+      sort: [{
+        field: 'modified',
+        order: 1, // ASCENDING
+      }]
+    });
     Object.keys(updatedResult.data.items).length.should.equal(3);
-    updatedResult.data.items[0].name.should.equal('TestOrg5');
-    updatedResult.data.items[1].name.should.equal('TestOrg4');
+    updatedResult.data.items[0].name.should.equal('TestOrg4');
+    updatedResult.data.items[1].name.should.equal('TestOrg5');
     updatedResult.data.items[2].name.should.equal('TestOrg6');
   });
 
   it('should delete organization resource', async function registerUser() {
-    const result = await resourceService.read({ limit: 4 });
+    const result = await resourceService.read({
+      sort: [{
+        field: 'created',
+        order: 1, // ASCENDING
+      }]
+    });
     const deleteIDs = {
       ids:
         [result.data.items[0].id,
-        result.data.items[1].id]
+        result.data.items[1].id,
+        result.data.items[2].id]
     };
     const deletedResult = await resourceService.delete(deleteIDs);
-    const resultAfterDeletion = await resourceService.read({ limit: 4 });
+    const resultAfterDeletion = await resourceService.read({
+      sort: [{
+        field: 'created',
+        order: 1, // ASCENDING
+      }]
+    });
     Object.keys(resultAfterDeletion.data.items).length.should.equal(0);
   });
 });
