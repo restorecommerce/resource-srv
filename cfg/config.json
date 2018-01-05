@@ -5,7 +5,10 @@
       "host": "localhost",
       "port": 8529,
       "database": "restore-resource-srv",
-      "autoCreate": true
+      "autoCreate": true,
+      "collections":[
+        "organization"
+      ]
     }
   },
   "redis": {

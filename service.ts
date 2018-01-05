@@ -5,7 +5,6 @@ import * as chassis from '@restorecommerce/chassis-srv';
 import * as kafkaClient from '@restorecommerce/kafka-client';
 import * as Logger from '@restorecommerce/logger';
 import * as _ from 'lodash';
-import * as rcsi from '@restorecommerce/command-interface';
 import * as sconfig from '@restorecommerce/service-config';
 
 // microservice
@@ -46,7 +45,6 @@ export class Worker {
     const root = cfg.get('resourcesProtoRoot');
 
     const eventTypes = ['Created', 'Read', 'Modified', 'Deleted'];
-    // const resourceEventCfg = {};
 
     for (let i = 0; i < resources.length; i++) {
       cfg.set(`server:services:${resourcesServiceConfigPrefix}${resources[i]}-srv`, standardConfig);
@@ -77,6 +75,9 @@ export class Worker {
           protoRoot: root,
           messageObject: `${resourcesServiceNamePrefix}${resources[i]}.${resourceObject}`
         };
+        kafkaCfg.topics[resources[i]] = {
+          topic: `${resourcesProtoPathPrefix}${resources[i]}s.resource`,
+        };
       }
     }
     cfg.set('events:kafka', kafkaCfg);
@@ -98,10 +99,6 @@ export class Worker {
     }
 
     await events.start();
-
-    // load resource services
-    let restoreSetup = {};
-    let validResourceTopicNames = [];
 
     let redisClient: any;
     if (cfg.get('redis')) {
@@ -129,17 +126,18 @@ export class Worker {
         resourceEvents, logger, resourceAPI, isEventsEnabled);
       await co(server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, service));
       // CIS listener
-      const resourcesRestoreSetup = this.makeResourcesRestoreSetup(db, resourceName);
-      const topicName = resourcesServiceNamePrefix + `${resourceName}s.resource`;
-      validResourceTopicNames.push(topicName);
-      restoreSetup[topicName] = {
-        topic: resourceEvents,
-        events: resourcesRestoreSetup,
-      };
+      // const resourcesRestoreSetup = this.makeResourcesRestoreSetup(db, resourceName);
+      // const topicName = resourcesServiceNamePrefix + `${resourceName}s.resource`;
+      // validResourceTopicNames.push(topicName);
+      // restoreSetup[topicName] = {
+      //   topic: resourceEvents,
+      //   events: resourcesRestoreSetup,
+      // };
     }
     // Add CommandInterfaceService
-    const CommandInterfaceService = rcsi.CommandInterface;
-    const cis = new CommandInterfaceService(server, restoreSetup, cfg.get(), logger);
+    const cis = new chassis.CommandInterface(server, cfg.get(), logger, events);
+    // const cis = new CommandInterfaceService(server, restoreSetup, cfg.get(),
+    //   logger, events);
     const cisName = cfg.get('command-interface:name');
     await co(server.bind(cisName, cis));
 
@@ -151,9 +149,12 @@ export class Worker {
       const requestObject = msg;
       const commandTopic = kafkaCfg.topics.command.topic;
       if (eventName === RESTORE_CMD_EVENT) {
-        if (requestObject && requestObject.topics && (_.includes(validResourceTopicNames,
-          requestObject.topics[0].topic))) {
-
+        if (requestObject && requestObject.topics) {
+          for (let topic in requestObject.topics) {
+            if (!topics.include(topic)) {
+              return;
+            }
+          }
           await cis.restore(requestObject);
         }
       }
@@ -203,31 +204,6 @@ export class Worker {
     if (redisClient) {
       this.redisClient = redisClient;
     }
-  }
-
-  makeResourcesRestoreSetup(db: any, collectionName: string): any {
-    let that = this;
-    return {
-      [`${collectionName}Deleted`]: async function restoreDeleted(message: any, context: any,
-        config: any, eventName: string): Promise<any> {
-        await co(db.delete(collectionName, { id: message.id }));
-        return {};
-      },
-      [`${collectionName}Modified`]: async function restoreModified(message: any, context: any,
-        config: any, eventName: string): Promise<any> {
-        const patch = {
-          active: true,
-          activation_code: '',
-        };
-        await co(db.update(collectionName, { id: message.id }, _.omitBy(message, _.isNil)));
-        return {};
-      },
-      [`${collectionName}Created`]: async function restoreCreated(message: any, context: any,
-        config: any, eventName: string): Promise<any> {
-        await co(db.insert(`${collectionName}s`, message));
-        return {};
-      }
-    };
   }
 
   async stop() {

@@ -97,7 +97,7 @@ describe('resource-srv testing', () => {
   it('should read organization resource', async function registerUser() {
     const result = await resourceService.read({
       sort: [{
-        field: 'created',
+        field: 'name',
         order: 1, // ASCENDING
       }]
     });
@@ -109,7 +109,7 @@ describe('resource-srv testing', () => {
   it('should update organization resource', async function registerUser() {
     const result = await resourceService.read({
       sort: [{
-        field: 'created',
+        field: 'name',
         order: 1, // ASCENDING
       }]
     });
@@ -124,7 +124,7 @@ describe('resource-srv testing', () => {
     const update = await resourceService.update({ items: changedOrgList });
     const updatedResult = await resourceService.read({
       sort: [{
-        field: 'created',
+        field: 'name',
         order: 1, // ASCENDING
       }]
     });
@@ -135,7 +135,7 @@ describe('resource-srv testing', () => {
   it('should upsert organization resource', async function registerUser() {
     const result = await resourceService.read({
       sort: [{
-        field: 'created',
+        field: 'name',
         order: 1, // ASCENDING
       }]
     });
@@ -159,7 +159,12 @@ describe('resource-srv testing', () => {
       sort: [{
         field: 'modified',
         order: 1, // ASCENDING
-      }]
+      },
+      {
+        field: 'name',
+        order: 1
+      }
+    ]
     });
     Object.keys(updatedResult.data.items).length.should.equal(3);
     updatedResult.data.items[0].name.should.equal('TestOrg4');
