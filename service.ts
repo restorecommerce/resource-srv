@@ -24,7 +24,6 @@ export class Worker {
   events: kafkaClient.Events;
   logger: any;
   redisClient: any;
-  constructor() { }
   async start(cfg?: any) {
     // Load config
     if (!cfg) {
@@ -76,7 +75,7 @@ export class Worker {
           messageObject: `${resourcesServiceNamePrefix}${resources[i]}.${resourceObject}`
         };
         kafkaCfg.topics[resources[i]] = {
-          topic: `${resourcesProtoPathPrefix}${resources[i]}s.resource`,
+          topic: `${resourcesServiceNamePrefix}${resources[i]}s.resource`,
         };
       }
     }
