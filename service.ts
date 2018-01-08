@@ -141,7 +141,7 @@ export class Worker {
       const commandTopic = kafkaCfg.topics.command.topic;
       if (eventName === RESTORE_CMD_EVENT) {
         if (requestObject && requestObject.topics) {
-          for (let topic in requestObject.topics) {
+          for (let topic of requestObject.topics) {
             if (!_.includes(validResourceTopicNames, topic)) {
               return;
             }
