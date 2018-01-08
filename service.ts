@@ -142,7 +142,7 @@ export class Worker {
       if (eventName === RESTORE_CMD_EVENT) {
         if (requestObject && requestObject.topics) {
           for (let topic of requestObject.topics) {
-            if (!_.includes(validResourceTopicNames, topic)) {
+            if (!_.includes(validResourceTopicNames, topic.topic)) {
               return;
             }
           }
