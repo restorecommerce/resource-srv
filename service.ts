@@ -42,6 +42,7 @@ export class Worker {
     const resourcesServiceNamePrefix = cfg.get('resourcesServiceNamePrefix');
     const resourcesServiceConfigPrefix = cfg.get('resourcesServiceConfigPrefix');
     const root = cfg.get('resourcesProtoRoot');
+    const validResourceTopicNames: string[] = [];
 
     const eventTypes = ['Created', 'Read', 'Modified', 'Deleted'];
 
@@ -77,6 +78,7 @@ export class Worker {
         kafkaCfg.topics[resources[i]] = {
           topic: `${resourcesServiceNamePrefix}${resources[i]}s.resource`,
         };
+        validResourceTopicNames.push(kafkaCfg.topics[resources[i]].topic);
       }
     }
     cfg.set('events:kafka', kafkaCfg);
@@ -120,23 +122,13 @@ export class Worker {
 
       const resourceAPI = new ResourcesAPIBase(db, `${resourceName}s`, resourceFieldGenConfig);
       const resourceEvents = events.topic(resourcesServiceNamePrefix + `${resourceName}s.resource`);
-      // const protobufModule = require(`./protos/io/restorecommerce/${resourceName}_pb.js`);
       const service = new ServiceBase(resourceName,
         resourceEvents, logger, resourceAPI, isEventsEnabled);
       await co(server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, service));
-      // CIS listener
-      // const resourcesRestoreSetup = this.makeResourcesRestoreSetup(db, resourceName);
-      // const topicName = resourcesServiceNamePrefix + `${resourceName}s.resource`;
-      // validResourceTopicNames.push(topicName);
-      // restoreSetup[topicName] = {
-      //   topic: resourceEvents,
-      //   events: resourcesRestoreSetup,
-      // };
     }
+
     // Add CommandInterfaceService
     const cis = new chassis.CommandInterface(server, cfg.get(), logger, events);
-    // const cis = new CommandInterfaceService(server, restoreSetup, cfg.get(),
-    //   logger, events);
     const cisName = cfg.get('command-interface:name');
     await co(server.bind(cisName, cis));
 
@@ -150,7 +142,7 @@ export class Worker {
       if (eventName === RESTORE_CMD_EVENT) {
         if (requestObject && requestObject.topics) {
           for (let topic in requestObject.topics) {
-            if (!topics.include(topic)) {
+            if (!_.includes(validResourceTopicNames, topic)) {
               return;
             }
           }
