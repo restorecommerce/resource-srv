@@ -41,11 +41,13 @@ List of events emitted to Kafka by this microservice for below topics:
   - healthCheckResponse
   - resetResponse
 
-## Shared Interface
+## Chassis Service
 
-This microservice implements a shared [command-interface](https://github.com/restorecommerce/command-interface-srv) which
-provides endpoints for retrieving the system status and resetting/restoring the system in case of failure. These endpoints can be called via gRPC or Kafka events (through the `io.restorecommerce.command` topic).
-For usage details please see [command-interface tests](https://github.com/restorecommerce/command-interface-srv/tree/master/test).
+This service uses chassis-srv, a base module for restorecommerce microservices, in order to provide the following functionalities:
+
+- exposure of all previously mentioned gRPC endpoints
+- implementation of a command-interface which provides endpoints for retrieving the system status and resetting/restoring the system in case of failure. These endpoints can be called via gRPC or Kafka events (through the io.restorecommerce.command topic).
+- database access, which is abstracted by the [resource-base-interface](https://github.com/restorecommerce/resource-base-interface)
 
 ## Redis
 
