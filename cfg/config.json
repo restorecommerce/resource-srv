@@ -74,27 +74,7 @@
         }
       },
       "restore-resource-cis": {
-        "check": {
-          "transport": [
-            "grpc"
-          ]
-        },
-        "reconfigure": {
-          "transport": [
-            "grpc"
-          ]
-        },
-        "reset": {
-          "transport": [
-            "grpc"
-          ]
-        },
-        "restore": {
-          "transport": [
-            "grpc"
-          ]
-        },
-        "version": {
+        "command": {
           "transport": [
             "grpc"
           ]

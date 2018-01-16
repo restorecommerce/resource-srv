@@ -139,32 +139,37 @@ export class Worker {
       context: any, config: any, eventName: string): Promise<any> {
       const requestObject = msg;
       const commandTopic = kafkaCfg.topics.command.topic;
-      if (eventName === RESTORE_CMD_EVENT) {
-        if (requestObject && requestObject.topics) {
-          for (let topic of requestObject.topics) {
-            if (!_.includes(validResourceTopicNames, topic.topic)) {
-              return;
-            }
-          }
-          await cis.restore(requestObject);
-        }
+      try {
+        await cis.command(msg, context);
+      } catch (err) {
+        that.logger.error(err);
       }
-      else if (eventName === HEALTHCHECK_CMD_EVENT) {
-        if (requestObject && (_.includes(_.keys(grpcConfig.services), requestObject.service))) {
-          const serviceStatus = await cis.check(requestObject);
-          const healthCheckTopic = events.topic(commandTopic);
-          await healthCheckTopic.emit(HEALTHCHECK_RES_EVENT,
-            serviceStatus);
-        }
-      }
-      else if (eventName === RESET_START_EVENT) {
-        const resetStatus = await cis.reset(requestObject);
-        if (resetStatus) {
-          const resetTopic = events.topic(commandTopic);
-          await resetTopic.emit(RESET_DONE_EVENT,
-            resetStatus);
-        }
-      }
+      // if (eventName === RESTORE_CMD_EVENT) {
+      //   if (requestObject && requestObject.topics) {
+      //     for (let topic of requestObject.topics) {
+      //       if (!_.includes(validResourceTopicNames, topic.topic)) {
+      //         return;
+      //       }
+      //     }
+      //     await cis.restore(requestObject);
+      //   }
+      // }
+      // else if (eventName === HEALTHCHECK_CMD_EVENT) {
+      //   if (requestObject && (_.includes(_.keys(grpcConfig.services), requestObject.service))) {
+      //     const serviceStatus = await cis.check(requestObject);
+      //     const healthCheckTopic = events.topic(commandTopic);
+      //     await healthCheckTopic.emit(HEALTHCHECK_RES_EVENT,
+      //       serviceStatus);
+      //   }
+      // }
+      // else if (eventName === RESET_START_EVENT) {
+      //   const resetStatus = await cis.reset(requestObject);
+      //   if (resetStatus) {
+      //     const resetTopic = events.topic(commandTopic);
+      //     await resetTopic.emit(RESET_DONE_EVENT,
+      //       resetStatus);
+      //   }
+      // }
     };
 
     const topicTypes = _.keys(kafkaCfg.topics);
