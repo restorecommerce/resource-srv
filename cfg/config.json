@@ -1,4 +1,12 @@
 {
+  "logger": {
+    "console": {
+      "handleExceptions": false,
+      "level": "silly",
+      "colorize": true,
+      "prettyPrint": true
+    }
+  },
   "database": {
     "arango": {
       "provider": "arango",
@@ -6,7 +14,8 @@
       "port": 8529,
       "database": "restore-resource-srv",
       "autoCreate": true,
-      "collections":[
+      "collections": [
+        "command",
         "organization"
       ]
     }
@@ -15,13 +24,18 @@
     "hostname": "localhost",
     "port": 6379
   },
-  "resources": [
-    "organization"
-  ],
-  "resourcesProtoPathPrefix": "io/restorecommerce/",
-  "resourcesServiceNamePrefix": "io.restorecommerce.",
-  "resourcesServiceConfigPrefix": "restore-",
-  "resourcesProtoRoot": "node_modules/@restorecommerce/protos/",
+  "resources": {
+    "restorecommerce": {
+      "resourcesProtoPathPrefix": "io/restorecommerce/",
+      "resourcesServiceNamePrefix": "io.restorecommerce.",
+      "resourcesServiceConfigPrefix": "restore-",
+      "resourcesProtoRoot": "node_modules/@restorecommerce/protos/",
+      "resources": [
+        "command",
+        "organization"
+      ]
+    }
+  },
   "command-interface": {
     "name": "restore-resource-cis"
   },
@@ -31,6 +45,63 @@
       "groupId": "resource-srv",
       "clientId": "resource-srv",
       "connectionString": "localhost:2181",
+      "topicPrefix": "io.restorecommerce.",
+      "restoreCommand": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandRequest"
+      },
+      "healthCheckCommand": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandRequest"
+      },
+      "resetCommand": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandRequest"
+      },
+      "healthCheckResponse": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
+      },
+      "resetResponse": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
+      },
+      "restoreResponse": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
+      },
+      "versionCommand": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
+      },
+      "versionResponse": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
+      },
       "topics": {
         "command": {
           "topic": "io.restorecommerce.command",
@@ -42,7 +113,7 @@
         }
       }
     },
-    "enableEvents": "true"
+    "enableCRUDEvents": "true"
   },
   "server": {
     "services": {

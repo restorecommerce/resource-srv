@@ -1,27 +1,15 @@
-import * as co from 'co';
-import { ResourcesAPIBase, ServiceBase } from '@restorecommerce/resource-base-interface';
-import * as redis from 'redis';
-import * as chassis from '@restorecommerce/chassis-srv';
-import * as kafkaClient from '@restorecommerce/kafka-client';
-import * as Logger from '@restorecommerce/logger';
 import * as _ from 'lodash';
+import * as co from 'co';
+import * as Logger from '@restorecommerce/logger';
+import * as redis from 'redis';
 import * as sconfig from '@restorecommerce/service-config';
-
-// microservice
-const Server = chassis.Server;
-const grpc = chassis.grpc; // for serverReflection
-const config = chassis.config;
-const database = chassis.database;
-
-const RESTORE_CMD_EVENT = 'restoreCommand';
-const HEALTHCHECK_CMD_EVENT = 'healthCheckCommand';
-const HEALTHCHECK_RES_EVENT = 'healthCheckResponse';
-const RESET_START_EVENT = 'resetCommand';
-const RESET_DONE_EVENT = 'resetResponse';
+import { CommandInterface, ICommandInterface, config, database, grpc, Server} from '@restorecommerce/chassis-srv';
+import { Events, Topic } from '@restorecommerce/kafka-client';
+import { ResourcesAPIBase, ServiceBase } from '@restorecommerce/resource-base-interface';
 
 export class Worker {
-  server: chassis.Server;
-  events: kafkaClient.Events;
+  server: Server;
+  events: Events;
   logger: any;
   redisClient: any;
   async start(cfg?: any) {
@@ -38,47 +26,48 @@ export class Worker {
     // Generate a config for each resource
     const kafkaCfg = cfg.get('events:kafka');
     const grpcConfig = cfg.get('server:transports:0');
-    const resourcesProtoPathPrefix = cfg.get('resourcesProtoPathPrefix');
-    const resourcesServiceNamePrefix = cfg.get('resourcesServiceNamePrefix');
-    const resourcesServiceConfigPrefix = cfg.get('resourcesServiceConfigPrefix');
-    const root = cfg.get('resourcesProtoRoot');
+
     const validResourceTopicNames: string[] = [];
 
     const eventTypes = ['Created', 'Read', 'Modified', 'Deleted'];
+    for (let resourceType in resources) {
+      const resourceCfg = resources[resourceType];
+      const resourcesProtoPathPrefix = resourceCfg.resourcesProtoPathPrefix;
+      const resourcesServiceNamePrefix = resourceCfg.resourcesServiceNamePrefix;
+      const resourcesServiceConfigPrefix = resourceCfg.resourcesServiceConfigPrefix;
+      const root = resourceCfg.resourcesProtoRoot;
+      for (let resource of resourceCfg.resources) {
+        cfg.set(`server:services:${resourcesServiceConfigPrefix}${resource}-srv`, standardConfig);
+        const proto = resourcesProtoPathPrefix + `${resource}.proto`;
+        grpcConfig.protos.push(proto);
 
-    for (let i = 0; i < resources.length; i++) {
-      cfg.set(`server:services:${resourcesServiceConfigPrefix}${resources[i]}-srv`, standardConfig);
-      const proto = resourcesProtoPathPrefix + `${resources[i]}.proto`;
-      grpcConfig.protos.push(proto);
-      const serviceName = resourcesServiceNamePrefix + `${resources[i]}.Service`;
-      grpcConfig.services[`${resourcesServiceConfigPrefix}${resources[i]}-srv`] = serviceName;
+        const serviceName = resourcesServiceNamePrefix + `${resource}.Service`;
+        grpcConfig.services[`${resourcesServiceConfigPrefix}${resource}-srv`] = serviceName;
 
-      let resourceObject = resources[i].charAt(0).toUpperCase() + resources[i].substr(1);
-      if (resources[i].indexOf('command') != -1) {
-        resourceObject = resourceObject.replace('command', 'Request');
-      }
+        let resourceObjectName = resource.charAt(0).toUpperCase() + resource.substr(1);
 
-      if (resources[i].indexOf('_') != -1) {
-        const names = resourceObject.split('_');
-        resourceObject = '';
+        if (resource.indexOf('_') !=   -1) {
+          const names = resourceObjectName.split('_');
+          resourceObjectName = '';
 
-        for (let name of names) {
-          resourceObject += name.charAt(0).toUpperCase() + name.substr(1);
+          for (let name of names) {
+            resourceObjectName += name.charAt(0).toUpperCase() + name.substr(1);
+          }
         }
-      }
 
-      for (let event of eventTypes) {
-        kafkaCfg[`${resources[i]}${event}`] = {
-          protos: [
-            proto
-          ],
-          protoRoot: root,
-          messageObject: `${resourcesServiceNamePrefix}${resources[i]}.${resourceObject}`
-        };
-        kafkaCfg.topics[resources[i]] = {
-          topic: `${resourcesServiceNamePrefix}${resources[i]}s.resource`,
-        };
-        validResourceTopicNames.push(kafkaCfg.topics[resources[i]].topic);
+        for (let event of eventTypes) {
+          kafkaCfg[`${resource}${event}`] = {
+            protos: [
+              proto
+            ],
+            protoRoot: root,
+            messageObject: `${resourcesServiceNamePrefix}${resource}.${resourceObjectName}`
+          };
+          kafkaCfg.topics[resource] = {
+            topic: `${resourcesServiceNamePrefix}${resource}s.resource`,
+          };
+          validResourceTopicNames.push(kafkaCfg.topics[resource].topic);
+        }
       }
     }
     cfg.set('events:kafka', kafkaCfg);
@@ -87,17 +76,11 @@ export class Worker {
     const descriptorProto = `google/protobuf/descriptor.proto`;
     grpcConfig.protos.push(descriptorProto);
     cfg.set('server:transports', [grpcConfig]);
+
     const logger = new Logger(cfg.get('logger'));
     const server = new Server(cfg.get('server'), logger);
     const db = await co(database.get(cfg.get('database:arango'), logger));
-    const events = new kafkaClient.Events(cfg.get('events:kafka'), logger);
-    // Enable events firing for resource api using config
-    let isEventsEnabled = cfg.get('events:enableEvents');
-    if (isEventsEnabled === 'true') {
-      isEventsEnabled = true;
-    } else { // Undefined means events not enabled
-      isEventsEnabled = false;
-    }
+    const events = new Events(cfg.get('events:kafka'), logger);
 
     await events.start();
 
@@ -105,77 +88,55 @@ export class Worker {
     if (cfg.get('redis')) {
       redisClient = redis.createClient();
     }
-
     const fieldGeneratorConfig: any = cfg.get('fieldGenerators');
-    for (let i = 0; i < resources.length; i += 1) {
-      const resourceName = resources[i];
 
-      let resourceFieldGenConfig: any;
-      if (resourceName in fieldGeneratorConfig) {
-        resourceFieldGenConfig = {};
-        resourceFieldGenConfig['strategies'] = fieldGeneratorConfig[resourceName];
-        logger.info('Setting up field generators on Redis...');
-        resourceFieldGenConfig['redisClient'] = redisClient;
+    // Enable events firing for resource api using config
+    const isEventsEnabled = (cfg.get('events:enableCRUDEvents') == 'true');
+
+    for (let resourceType in resources) {
+      const resourceCfg = resources[resourceType];
+      const resourcesServiceConfigPrefix = resourceCfg.resourcesServiceConfigPrefix;
+
+      for (let resourceName of resourceCfg.resources) {
+        let resourceFieldGenConfig: any;
+        if (resourceName in fieldGeneratorConfig) {
+          resourceFieldGenConfig = {};
+          resourceFieldGenConfig['strategies'] = fieldGeneratorConfig[resourceName];
+          logger.info('Setting up field generators on Redis...');
+          resourceFieldGenConfig['redisClient'] = redisClient;
+        }
+
+        logger.info(`Setting up ${resourceName} resource service`);
+
+        const resourceAPI = new ResourcesAPIBase(db, `${resourceName}s`, resourceFieldGenConfig);
+        const topicPrefix = cfg.get('events:kafka:topicPrefix');
+        const resourceEvents = events.topic(topicPrefix + `${resourceName}s.resource`);
+        const service = new ServiceBase(resourceName,
+          resourceEvents, logger, resourceAPI, isEventsEnabled);
+        await co(server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, service));
       }
-
-      logger.info(`Setting up ${resourceName} resource service`);
-
-      const resourceAPI = new ResourcesAPIBase(db, `${resourceName}s`, resourceFieldGenConfig);
-      const resourceEvents = events.topic(resourcesServiceNamePrefix + `${resourceName}s.resource`);
-      const service = new ServiceBase(resourceName,
-        resourceEvents, logger, resourceAPI, isEventsEnabled);
-      await co(server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, service));
     }
 
     // Add CommandInterfaceService
-    const cis = new chassis.CommandInterface(server, cfg.get(), logger, events);
+    const cis: ICommandInterface = new CommandInterface(server, cfg.get(), logger, events);
     const cisName = cfg.get('command-interface:name');
     await co(server.bind(cisName, cis));
 
-    const topics = kafkaCfg.topics;
-
-    let that = this;
-    let resourcesServiceEventListener = async function eventListener(msg: any,
+    const that = this;
+    const resourcesServiceEventListener = async function eventListener(msg: any,
       context: any, config: any, eventName: string): Promise<any> {
-      const requestObject = msg;
-      const commandTopic = kafkaCfg.topics.command.topic;
       try {
         await cis.command(msg, context);
       } catch (err) {
         that.logger.error(err);
       }
-      // if (eventName === RESTORE_CMD_EVENT) {
-      //   if (requestObject && requestObject.topics) {
-      //     for (let topic of requestObject.topics) {
-      //       if (!_.includes(validResourceTopicNames, topic.topic)) {
-      //         return;
-      //       }
-      //     }
-      //     await cis.restore(requestObject);
-      //   }
-      // }
-      // else if (eventName === HEALTHCHECK_CMD_EVENT) {
-      //   if (requestObject && (_.includes(_.keys(grpcConfig.services), requestObject.service))) {
-      //     const serviceStatus = await cis.check(requestObject);
-      //     const healthCheckTopic = events.topic(commandTopic);
-      //     await healthCheckTopic.emit(HEALTHCHECK_RES_EVENT,
-      //       serviceStatus);
-      //   }
-      // }
-      // else if (eventName === RESET_START_EVENT) {
-      //   const resetStatus = await cis.reset(requestObject);
-      //   if (resetStatus) {
-      //     const resetTopic = events.topic(commandTopic);
-      //     await resetTopic.emit(RESET_DONE_EVENT,
-      //       resetStatus);
-      //   }
-      // }
     };
 
+    const topics = kafkaCfg.topics;
     const topicTypes = _.keys(kafkaCfg.topics);
     for (let topicType of topicTypes) {
       const topicName = kafkaCfg.topics[topicType].topic;
-      const topic: kafkaClient.Topic = events.topic(topicName);
+      const topic: Topic = events.topic(topicName);
       if (kafkaCfg.topics[topicType].events) {
         const eventNames = kafkaCfg.topics[topicType].events;
         for (let eventName of eventNames) {

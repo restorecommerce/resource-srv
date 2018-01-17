@@ -5,6 +5,7 @@ import * as Logger from '@restorecommerce/logger';
 import * as should from 'should';
 
 const cfg = srvConfig(process.cwd() + '/test');
+const logger = new Logger(cfg.get('logger'));
 
 /**
  * Note: To run below tests a running Kafka and ArangoDB instance is required.
@@ -36,34 +37,40 @@ const listOfOrganizations = [
 
 // get client connection object
 async function getClientResourceServices() {
-  const clientConfig = cfg.get('client');
-  const resourceNames = cfg.get('client:resources');
-  const resourcePrefix = cfg.get('resourcesProtoPathPrefix');
-  const servicePrefix = cfg.get('resourcesServiceNamePrefix');
-
-  let options: any = { microservice: {} };
+  const options: any = { microservice: {} };
   options.microservice = {
     service: {},
     mapClients: new Map()
   };
-  const logger = new Logger(cfg.get('logger'));
-  logger.silly('microservice clients', resourceNames);
-  for (let resource of resourceNames) {
-    const protos = [`${resourcePrefix}/${resource}.proto`];
-    const serviceName = `${servicePrefix}${resource}.Service`;
-    const defaultConfig = clientConfig['default-resource-srv'];
-    defaultConfig.transports.grpc.protos = protos;
-    defaultConfig.transports.grpc.service = serviceName;
-    try {
-      const client = new grpcClient.Client(defaultConfig, logger);
-      options.microservice.service[serviceName] = await client.connect();
-      options.microservice.mapClients.set(resource, serviceName);
-      logger.verbose('connected to microservice', serviceName);
-    } catch (err) {
-      logger.error('microservice connecting to service',
-        serviceName, err);
+  const resources = cfg.get('resources');
+  const clientConfig = cfg.get('client');
+  for (let resource in resources) {
+    const resourceCfg = resources[resource];
+    const resourceNames = resourceCfg.resources;
+    const protosPrefix = resourceCfg.resourcesProtoPathPrefix;
+    const servicePrefix = resourceCfg.resourcesServiceNamePrefix;
+
+    console.log('Resource cfg', protosPrefix);
+    logger.silly('microservice clients', resourceNames);
+
+    for (let resource of resourceNames) {
+      const protos = [`${protosPrefix}/${resource}.proto`];
+      const serviceName = `${servicePrefix}${resource}.Service`;
+      const defaultConfig = clientConfig['default-resource-srv'];
+      defaultConfig.transports.grpc.protos = protos;
+      defaultConfig.transports.grpc.service = serviceName;
+      try {
+        const client = new grpcClient.Client(defaultConfig, logger);
+        options.microservice.service[serviceName] = await client.connect();
+        options.microservice.mapClients.set(resource, serviceName);
+        logger.verbose('connected to microservice', serviceName);
+      } catch (err) {
+        logger.error('microservice connecting to service',
+          serviceName, err);
+      }
     }
   }
+
   return options;
 }
 
