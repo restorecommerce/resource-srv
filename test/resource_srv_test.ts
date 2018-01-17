@@ -50,7 +50,6 @@ async function getClientResourceServices() {
     const protosPrefix = resourceCfg.resourcesProtoPathPrefix;
     const servicePrefix = resourceCfg.resourcesServiceNamePrefix;
 
-    console.log('Resource cfg', protosPrefix);
     logger.silly('microservice clients', resourceNames);
 
     for (let resource of resourceNames) {
