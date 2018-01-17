@@ -1,39 +1,53 @@
-FROM node:9.2.0-wheezy
-
-RUN apt-get update && apt-get install -y libc6-dev
-
+FROM node:9.2.0-wheezy AS base
+## CREATE APP USER ##
+# Create the home directory for the new app user.
+RUN mkdir -p /home/app
+# Create an app user so our application doesn't run as root.
+RUN groupadd -r app &&\
+    useradd -r -g app -d /home/app -s /sbin/nologin -c "Docker image user" app
 # Create app directory
-RUN mkdir -p /usr/share/resource-srv
-RUN mkdir -p /root/.ssh
-WORKDIR /usr/share/resource-srv
-
-# Set config volumes
-VOLUME /usr/share/resource-srv/cfg
-VOLUME /usr/share/resource-srv/protos
-
-# Bundle app source
-COPY . /usr/share/resource-srv
-
+ENV HOME=/home/app
+ENV APP_HOME=/home/app/resource-srv
+## SETTING UP THE APP ##
+RUN mkdir $APP_HOME
+WORKDIR $APP_HOME
+RUN apt-get update && apt-get install -y libc6-dev
 # Install app dependencies
 RUN npm install -g typescript
-
-RUN cd /usr/share/resource-srv
-COPY id_rsa /root/.ssh/
-COPY config /root/.ssh/
-COPY known_hosts /root/.ssh/
-
+# Set config volumes
+VOLUME $APP_HOME/cfg
+VOLUME $APP_HOME/protos
+# Bundle app source
+ADD . $APP_HOME
+# Chown all the files to the app user.
+RUN chown -R app:app $HOME
+RUN cd $APP_HOME
+RUN pwd
+# Change to the app user.
+USER app
 RUN npm install
-RUN npm run postinstall
 
+
+FROM node:alpine
+RUN mkdir -p /home/app
+RUN addgroup -S app &&\
+    adduser -S -g app app
+ENV HOME=/home/app
+ENV APP_HOME=/home/app/resource-srv
+RUN mkdir $APP_HOME
+WORKDIR $APP_HOME
+RUN pwd
+# Copy files from base container by changing the ownership
+COPY --chown=app:app --from=base /home/app/resource-srv/ .
+# Change to the app user.
+USER app
 EXPOSE 50051
-CMD [ "node", "service.js" ]
+CMD [ "npm", "start" ]
 
 # To build the image:
 # docker build -t restorecommerce/resource-srv .
 #
 # To create a container:
-# docker create --name resource-srv -v <absolute_path_to_cfg>/:/usr/share/resource-srv/cfg --net restorecommercedev_default restorecommerce/resource
-#
 # docker create --name resource-srv --net restorecms_default restorecommerce/resource-srv
 #
 # To run the container:
