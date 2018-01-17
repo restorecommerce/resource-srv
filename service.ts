@@ -96,7 +96,7 @@ export class Worker {
     for (let resourceType in resources) {
       const resourceCfg = resources[resourceType];
       const resourcesServiceConfigPrefix = resourceCfg.resourcesServiceConfigPrefix;
-
+      const resourcesServiceNamePrefix = resourceCfg.resourcesServiceNamePrefix;
       for (let resourceName of resourceCfg.resources) {
         let resourceFieldGenConfig: any;
         if (resourceName in fieldGeneratorConfig) {
@@ -109,8 +109,7 @@ export class Worker {
         logger.info(`Setting up ${resourceName} resource service`);
 
         const resourceAPI = new ResourcesAPIBase(db, `${resourceName}s`, resourceFieldGenConfig);
-        const topicPrefix = cfg.get('events:kafka:topicPrefix');
-        const resourceEvents = events.topic(topicPrefix + `${resourceName}s.resource`);
+        const resourceEvents = events.topic(`${resourcesServiceNamePrefix}${resourceName}s.resource`);
         const service = new ServiceBase(resourceName,
           resourceEvents, logger, resourceAPI, isEventsEnabled);
         await co(server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, service));
