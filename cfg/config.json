@@ -92,7 +92,7 @@
           "io/restorecommerce/commandinterface.proto"
         ],
         "protoRoot": "protos/",
-        "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
+        "messageObject": "io.restorecommerce.commandinterface.CommandRequest"
       },
       "versionResponse": {
         "protos": [
@@ -107,7 +107,8 @@
           "events": [
             "restoreCommand",
             "healthCheckCommand",
-            "resetCommand"
+            "resetCommand",
+            "versionCommand"
           ]
         }
       }
