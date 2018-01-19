@@ -86,7 +86,7 @@ export class Worker {
 
     let redisClient: any;
     if (cfg.get('redis')) {
-      redisClient = redis.createClient();
+      redisClient = redis.createClient(cfg.get('redis'));
     }
     const fieldGeneratorConfig: any = cfg.get('fieldGenerators');
 
