@@ -63,10 +63,13 @@ export class Worker {
             protoRoot: root,
             messageObject: `${resourcesServiceNamePrefix}${resource}.${resourceObjectName}`
           };
-          kafkaCfg.topics[resource] = {
-            topic: `${resourcesServiceNamePrefix}${resource}s.resource`,
+
+          const topicName = `${resourcesServiceNamePrefix}${resource}s.resource`;
+          const topicLabel = `${resource}.resource`;
+          kafkaCfg.topics[topicLabel] = {
+            topic: topicName,
           };
-          validResourceTopicNames.push(kafkaCfg.topics[resource].topic);
+          validResourceTopicNames.push(topicName);
         }
       }
     }
