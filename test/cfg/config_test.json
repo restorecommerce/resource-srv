@@ -13,11 +13,15 @@
       "host": "localhost",
       "port": 8529,
       "database": "restore-resource-srv",
-      "autoCreate": true
+      "autoCreate": true,
+      "collections": [
+        "command",
+        "organization"
+      ]
     }
   },
   "redis": {
-    "hostname": "localhost",
+    "host": "localhost",
     "port": 6379
   },
   "command-interface": {
@@ -41,7 +45,73 @@
       "groupId": "resource-srv",
       "clientId": "resource-srv",
       "connectionString": "localhost:2181",
-      "topics": {}
+      "restoreCommand": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandRequest"
+      },
+      "healthCheckCommand": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandRequest"
+      },
+      "resetCommand": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandRequest"
+      },
+      "healthCheckResponse": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
+      },
+      "resetResponse": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
+      },
+      "restoreResponse": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
+      },
+      "versionCommand": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandRequest"
+      },
+      "versionResponse": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
+      },
+      "topics": {
+        "command": {
+          "topic": "io.restorecommerce.command",
+          "events": [
+            "restoreCommand",
+            "healthCheckCommand",
+            "resetCommand",
+            "versionCommand"
+          ]
+        }
+      }
     },
     "enableCRUDEvents": "true"
   },
