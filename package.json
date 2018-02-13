@@ -44,7 +44,7 @@
     "test": "npm run lint && npm run mocha",
     "lint": "tslint *.ts",
     "mocha": "export NODE_ENV=test; mocha -R spec ./test/*.js --exit",
-    "coveralls": "export NODE_ENV=test; istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec ./test/*.js",
+    "coveralls": "export NODE_ENV=test; istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec ./test/*.js --exit",
     "postinstall": "tsc -d"
   },
   "engines": {
