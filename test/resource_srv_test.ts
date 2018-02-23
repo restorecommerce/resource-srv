@@ -8,7 +8,7 @@ const cfg = srvConfig(process.cwd() + '/test');
 const logger = new Logger(cfg.get('logger'));
 
 /**
- * Note: To run below tests a running Kafka and ArangoDB instance is required.
+ * Note: To run below tests a running Kafka, Redis and ArangoDB instance is required.
  * Kafka can be disabled if the config 'enableEvents' is set to false.
  */
 
