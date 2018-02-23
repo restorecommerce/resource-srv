@@ -3,7 +3,10 @@ import * as co from 'co';
 import * as Logger from '@restorecommerce/logger';
 import * as redis from 'redis';
 import * as sconfig from '@restorecommerce/service-config';
-import { CommandInterface, ICommandInterface, config, database, grpc, Server} from '@restorecommerce/chassis-srv';
+import {
+  CommandInterface, ICommandInterface, config, database,
+  grpc, Server, OffsetStore
+} from '@restorecommerce/chassis-srv';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import { ResourcesAPIBase, ServiceBase } from '@restorecommerce/resource-base-interface';
 
@@ -12,6 +15,7 @@ export class Worker {
   events: Events;
   logger: any;
   redisClient: any;
+  offsetStore: OffsetStore;
   async start(cfg?: any) {
     // Load config
     if (!cfg) {
@@ -46,7 +50,7 @@ export class Worker {
 
         let resourceObjectName = resource.charAt(0).toUpperCase() + resource.substr(1);
 
-        if (resource.indexOf('_') !=   -1) {
+        if (resource.indexOf('_') != -1) {
           const names = resourceObjectName.split('_');
           resourceObjectName = '';
 
@@ -86,10 +90,12 @@ export class Worker {
     const events = new Events(cfg.get('events:kafka'), logger);
 
     await events.start();
-
+    this.offsetStore = new OffsetStore(events, cfg, logger);
     let redisClient: any;
     if (cfg.get('redis')) {
-      redisClient = redis.createClient(cfg.get('redis'));
+      const redisConfig = cfg.get('redis');
+      redisConfig.db = cfg.get('redis:db-indexes:db-resourcesCounter');
+      redisClient = redis.createClient(redisConfig);
     }
     const fieldGeneratorConfig: any = cfg.get('fieldGenerators');
 
@@ -139,10 +145,12 @@ export class Worker {
     for (let topicType of topicTypes) {
       const topicName = kafkaCfg.topics[topicType].topic;
       const topic: Topic = events.topic(topicName);
+      const offSetValue = await this.offsetStore.getOffset(topicName);
+      logger.info('subscribing to topic with offset value', topicName, offSetValue);
       if (kafkaCfg.topics[topicType].events) {
         const eventNames = kafkaCfg.topics[topicType].events;
         for (let eventName of eventNames) {
-          await topic.on(eventName, resourcesServiceEventListener);
+          await topic.on(eventName, resourcesServiceEventListener, offSetValue);
         }
       }
     }
@@ -169,7 +177,7 @@ export class Worker {
     this.logger.info('Shutting down');
     await co(this.server.end());
     await this.events.stop();
-
+    await this.offsetStore.stop();
     if (this.redisClient) {
       await this.redisClient.quit();
     }

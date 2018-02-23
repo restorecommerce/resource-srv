@@ -18,7 +18,7 @@
   "dependencies": {
     "@restorecommerce/chassis-srv": "github:restorecommerce/chassis-srv",
     "@restorecommerce/cluster-service": "^0.1.0",
-    "@restorecommerce/kafka-client": "^0.1.0",
+    "@restorecommerce/kafka-client": "github:restorecommerce/kafka-client",
     "@restorecommerce/protos": "github:restorecommerce/protos",
     "@restorecommerce/resource-base-interface": "github:restorecommerce/resource-base-interface.git",
     "@restorecommerce/service-config": "^0.1.0",

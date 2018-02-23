@@ -12,8 +12,7 @@
     "connectionString": "zookeeper:2181"
   },
   "redis": {
-    "host": "redis",
-    "port": 6379
+    "host": "redis"
   },
   "database": {
     "arango": {
@@ -33,7 +32,7 @@
           "io/restorecommerce/commandinterface.proto",
           "grpc/reflection/v1alpha/reflection.proto"
         ],
-        "protoRoot": "protos/",
+        "protoRoot": "node_modules/@restorecommerce/protos/",
         "addr": "resource-srv:50051"
       }
     ]
