@@ -50,6 +50,7 @@
       "groupId": "resource-srv",
       "clientId": "resource-srv",
       "connectionString": "localhost:2181",
+      "latestOffset": false,
       "restoreCommand": {
         "protos": [
           "io/restorecommerce/commandinterface.proto"
