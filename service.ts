@@ -121,14 +121,14 @@ export class Worker {
         const resourceEvents = events.topic(`${resourcesServiceNamePrefix}${resourceName}s.resource`);
         const service = new ServiceBase(resourceName,
           resourceEvents, logger, resourceAPI, isEventsEnabled);
-        await co(server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, service));
+        await server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, service);
       }
     }
 
     // Add CommandInterfaceService
     const cis: ICommandInterface = new CommandInterface(server, cfg.get(), logger, events);
     const cisName = cfg.get('command-interface:name');
-    await co(server.bind(cisName, cis));
+    await server.bind(cisName, cis);
 
     const that = this;
     const resourcesServiceEventListener = async function eventListener(msg: any,
@@ -159,10 +159,10 @@ export class Worker {
     const transportName = cfg.get('server:services:reflection:serverReflectionInfo:transport:0');
     const transport = server.transport[transportName];
     const reflectionService = new grpc.ServerReflection(transport.$builder, server.config);
-    await co(server.bind('reflection', reflectionService));
+    await server.bind('reflection', reflectionService);
 
     // Start server
-    await co(server.start());
+    await server.start();
     logger.info('Server Started Correctly');
     this.events = events;
     this.server = server;
