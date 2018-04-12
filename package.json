@@ -20,20 +20,20 @@
     "@restorecommerce/cluster-service": "^0.1.0",
     "@restorecommerce/kafka-client": "github:restorecommerce/kafka-client",
     "@restorecommerce/protos": "github:restorecommerce/protos",
-    "@restorecommerce/resource-base-interface": "github:restorecommerce/resource-base-interface.git",
+    "@restorecommerce/resource-base-interface": "github:restorecommerce/resource-base-interface",
     "@restorecommerce/service-config": "^0.1.0",
     "co": "^4.6.0",
     "redis": "^2.8.0"
   },
   "devDependencies": {
-    "@types/mocha": "^2.2.41",
-    "@types/should": "^11.2.0",
-    "@types/redis": "^2.8.1",
     "@restorecommerce/grpc-client": "github:restorecommerce/grpc-client",
+    "@types/mocha": "^2.2.41",
+    "@types/redis": "^2.8.6",
+    "@types/should": "^11.2.0",
     "coveralls": "^3.0.0",
     "istanbul": "^0.4.3",
     "mocha": "^4.0.1",
-    "nodemon": "^1.12.1",
+    "nodemon": "^1.17.3",
     "should": "^11.2.1"
   },
   "scripts": {
