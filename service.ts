@@ -97,7 +97,8 @@ export class Worker {
       redisConfig.db = cfg.get('redis:db-indexes:db-resourcesCounter');
       redisClient = redis.createClient(redisConfig);
     }
-    const fieldGeneratorConfig: any = cfg.get('fieldGenerators');
+    const fieldGeneratorConfig: any = cfg.get('fieldHandlers:fieldGenerators');
+    const bufferHandlerConfig: any = cfg.get('fieldHandlers:bufferFields');
 
     // Enable events firing for resource api using config
     const isEventsEnabled = (cfg.get('events:enableCRUDEvents') == 'true');
@@ -107,17 +108,22 @@ export class Worker {
       const resourcesServiceConfigPrefix = resourceCfg.resourcesServiceConfigPrefix;
       const resourcesServiceNamePrefix = resourceCfg.resourcesServiceNamePrefix;
       for (let resourceName of resourceCfg.resources) {
-        let resourceFieldGenConfig: any;
-        if (resourceName in fieldGeneratorConfig) {
-          resourceFieldGenConfig = {};
-          resourceFieldGenConfig['strategies'] = fieldGeneratorConfig[resourceName];
+        let resourceFieldConfig: any;
+        if (fieldGeneratorConfig && (resourceName in fieldGeneratorConfig)) {
+          resourceFieldConfig = {};
+          resourceFieldConfig['strategies'] = fieldGeneratorConfig[resourceName];
           logger.info('Setting up field generators on Redis...');
-          resourceFieldGenConfig['redisClient'] = redisClient;
+          resourceFieldConfig['redisClient'] = redisClient;
         }
-
+        if (bufferHandlerConfig && (resourceName in bufferHandlerConfig)) {
+          if (!resourceFieldConfig) {
+            resourceFieldConfig = {};
+          }
+          resourceFieldConfig['bufferField'] = bufferHandlerConfig[resourceName];
+        }
         logger.info(`Setting up ${resourceName} resource service`);
 
-        const resourceAPI = new ResourcesAPIBase(db, `${resourceName}s`, resourceFieldGenConfig);
+        const resourceAPI = new ResourcesAPIBase(db, `${resourceName}s`, resourceFieldConfig);
         const resourceEvents = events.topic(`${resourcesServiceNamePrefix}${resourceName}s.resource`);
         const service = new ServiceBase(resourceName,
           resourceEvents, logger, resourceAPI, isEventsEnabled);
