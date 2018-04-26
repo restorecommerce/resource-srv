@@ -184,6 +184,7 @@
   },
   "fieldHandlers": {
     "fieldGenerators": {},
-    "bufferFields": {}
+    "bufferFields": {},
+    "requiredFields": {}
   }
 }
