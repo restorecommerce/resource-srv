@@ -7,7 +7,7 @@
 [cover]: http://img.shields.io/coveralls/restorecommerce/resource-srv/master.svg?style=flat-square
 
 This microservice exposes CRUD operations through a [gRPC](https://grpc.io/docs/) endpoint for each specified resource. Such resources are persisted in an ArangoDB database instance, each of them binded with its own separate collection.
-The list of resource names should be specified in `resources` configuration in the [`config.json`](cfg/config.json) file, in order to create them in the database. Such names should have a matching [Protocol Buffers](https://developers.google.com/protocol-buffers/) file in the [protos](https://github.com/restorecommerce/protos) folder where all the fields of resources are defined. 
+The list of resource names should be specified in `resources` configuration in the [`config.json`](cfg/config.json) file, in order to create them in the database. Such names should have a matching [Protocol Buffers](https://developers.google.com/protocol-buffers/) file in the [protos](https://github.com/restorecommerce/protos) folder where all the fields of resources are defined.
 CRUD operations are performed by using [resource-base-interface](https://github.com/restorecommerce/resource-base-interface/).
 
 ## gRPC Interface
@@ -52,12 +52,6 @@ This service uses [chassis-srv](http://github.com/restorecommerce/chassis-srv), 
 - implementation of a [command-interface](https://github.com/restorecommerce/chassis-srv/blob/master/command-interface.md) which provides endpoints for retrieving the system status and resetting/restoring the system in case of failure. These endpoints can be called via gRPC or Kafka events (through the io.restorecommerce.command topic).
 - database access, which is abstracted by the [resource-base-interface](https://github.com/restorecommerce/resource-base-interface)
 - stores the offset values for Kafka topics at regular intervals to [Redis](https://redis.io/).
-
-## Redis
-
-[Redis](https://redis.io/) can optionally be integrated with this microservice to automatically generate specific fields in each resource.
-Such autogeneration feature currently includes timestamps and sequential counters. The latter one is particularly useful for fields like customer or item numbers, which can have a type of sequential logic and can be read and written efficiently with Redis.
-These operations can be enabled by simply specifying the fields and their "strategies" in the configuration files.
 
 ## Usage
 
