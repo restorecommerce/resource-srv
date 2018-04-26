@@ -99,6 +99,7 @@ export class Worker {
     }
     const fieldGeneratorConfig: any = cfg.get('fieldHandlers:fieldGenerators');
     const bufferHandlerConfig: any = cfg.get('fieldHandlers:bufferFields');
+    const requiredFieldsConfig: any = cfg.get('fieldHandlers:requiredFields');
 
     // Enable events firing for resource api using config
     const isEventsEnabled = (cfg.get('events:enableCRUDEvents') == 'true');
@@ -120,6 +121,12 @@ export class Worker {
             resourceFieldConfig = {};
           }
           resourceFieldConfig['bufferField'] = bufferHandlerConfig[resourceName];
+        }
+        if (requiredFieldsConfig && (resourceName in requiredFieldsConfig)) {
+          if (!resourceFieldConfig) {
+            resourceFieldConfig = {};
+          }
+          resourceFieldConfig['requiredFields'] = requiredFieldsConfig;
         }
         logger.info(`Setting up ${resourceName} resource service`);
 
