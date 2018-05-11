@@ -94,13 +94,13 @@ describe('resource-srv testing', () => {
     await worker.stop();
   });
 
-  it('should create organization resource', async function registerUser() {
+  it('should create organization resource', async function createOrganization() {
     const result = await resourceService.create({ items: listOfOrganizations });
     result.data.items[0].name.should.equal('TestOrg1');
     result.data.items[1].name.should.equal('TestOrg2');
   });
 
-  it('should read organization resource', async function registerUser() {
+  it('should read organization resource', async function readOrganization() {
     const result = await resourceService.read({
       sort: [{
         field: 'name',
@@ -112,7 +112,7 @@ describe('resource-srv testing', () => {
     result.data.items[1].name.should.equal('TestOrg2');
   });
 
-  it('should update organization resource', async function registerUser() {
+  it('should update organization resource', async function updateOrganization() {
     const result = await resourceService.read({
       sort: [{
         field: 'name',
@@ -138,7 +138,7 @@ describe('resource-srv testing', () => {
     updatedResult.data.items[1].name.should.equal('TestOrg4');
   });
 
-  it('should upsert organization resource', async function registerUser() {
+  it('should upsert organization resource', async function upsertOrganization() {
     const result = await resourceService.read({
       sort: [{
         field: 'name',
@@ -178,7 +178,7 @@ describe('resource-srv testing', () => {
     updatedResult.data.items[2].name.should.equal('TestOrg6');
   });
 
-  it('should delete organization resource', async function registerUser() {
+  it('should delete organization resource', async function deleteOrganization() {
     const result = await resourceService.read({
       sort: [{
         field: 'created',
