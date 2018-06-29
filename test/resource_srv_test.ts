@@ -11,27 +11,33 @@ const logger = new Logger(cfg.get('logger'));
  * Note: To run below tests a running Kafka, Redis and ArangoDB instance is required.
  * Kafka can be disabled if the config 'enableEvents' is set to false.
  */
-
+const meta = {
+  modified_by: 'AdminID',
+  owner: [{
+    owner_entity: 'urn:restorecommerce:acs:model:User',
+    owner_id: 'AdminID'
+  }]
+};
 const listOfOrganizations = [
   {
     name: 'TestOrg1',
-    creator: 'Admin1',
     address: {
       postcode: '123',
       locality: 'testLocality1',
       street: 'testStreet1',
       country: 'TestCountry1'
-    }
+    },
+    meta
   },
   {
     name: 'TestOrg2',
-    creator: 'Admin2',
     address: {
       postcode: '456',
       locality: 'testLocality2',
       street: 'testStreet2',
       country: 'TestCountry2'
-    }
+    },
+    meta
   },
 ];
 
@@ -77,6 +83,12 @@ describe('resource-srv testing', () => {
   let options;
   let resourceService;
   let worker: Worker;
+  let baseValidation = function(result: any) {
+    should.exist(result);
+    should.not.exist(result.error);
+    should.exist(result.data);
+    should.exist(result.data.items);
+  };
   // start the server and get the clientService Obj based on resourceName
   before(async function startServer() {
     worker = new Worker();
@@ -96,6 +108,8 @@ describe('resource-srv testing', () => {
 
   it('should create organization resource', async function createOrganization() {
     const result = await resourceService.create({ items: listOfOrganizations });
+    baseValidation(result);
+    result.data.items.should.be.length(2);
     result.data.items[0].name.should.equal('TestOrg1');
     result.data.items[1].name.should.equal('TestOrg2');
   });
@@ -107,7 +121,8 @@ describe('resource-srv testing', () => {
         order: 1, // ASCENDING
       }]
     });
-    should.exist(result.data.items);
+    baseValidation(result);
+    result.data.items.should.be.length(2);
     result.data.items[0].name.should.equal('TestOrg1');
     result.data.items[1].name.should.equal('TestOrg2');
   });
@@ -119,21 +134,29 @@ describe('resource-srv testing', () => {
         order: 1, // ASCENDING
       }]
     });
+    baseValidation(result);
+    result.data.items.should.be.length(2);
     const changedOrgList = [{
       id: result.data.items[0].id,
-      name: 'TestOrg3'
+      name: 'TestOrg3',
+      meta
     },
     {
       id: result.data.items[1].id,
-      name: 'TestOrg4'
+      name: 'TestOrg4',
+      meta
     }];
     const update = await resourceService.update({ items: changedOrgList });
+    baseValidation(update);
+    result.data.items.should.be.length(2);
     const updatedResult = await resourceService.read({
       sort: [{
         field: 'name',
         order: 1, // ASCENDING
       }]
     });
+    baseValidation(updatedResult);
+    result.data.items.should.be.length(2);
     updatedResult.data.items[0].name.should.equal('TestOrg3');
     updatedResult.data.items[1].name.should.equal('TestOrg4');
   });
@@ -145,22 +168,27 @@ describe('resource-srv testing', () => {
         order: 1, // ASCENDING
       }]
     });
+    baseValidation(result);
+    result.data.items.should.be.length(2);
     const updatedOrgList = [{
       id: result.data.items[0].id,
-      name: 'TestOrg5'
+      name: 'TestOrg5',
+      meta
     },
     // New organization created
     {
       name: 'TestOrg6',
-      creator: 'Admin6',
       address: {
         postcode: '789',
         locality: 'testLocality6',
         street: 'testStreet6',
         country: 'TestCountry6'
-      }
+      },
+      meta
     }];
     const update = await resourceService.upsert({ items: updatedOrgList });
+    baseValidation(update);
+    update.data.items.should.be.length(2);
     const updatedResult = await resourceService.read({
       sort: [{
         field: 'modified',
@@ -172,7 +200,8 @@ describe('resource-srv testing', () => {
       }
     ]
     });
-    Object.keys(updatedResult.data.items).length.should.equal(3);
+    baseValidation(updatedResult);
+    updatedResult.data.items.should.be.length(3);
     updatedResult.data.items[0].name.should.equal('TestOrg4');
     updatedResult.data.items[1].name.should.equal('TestOrg5');
     updatedResult.data.items[2].name.should.equal('TestOrg6');
@@ -185,6 +214,7 @@ describe('resource-srv testing', () => {
         order: 1, // ASCENDING
       }]
     });
+    baseValidation(result);
     const deleteIDs = {
       ids:
         [result.data.items[0].id,
@@ -192,12 +222,16 @@ describe('resource-srv testing', () => {
         result.data.items[2].id]
     };
     const deletedResult = await resourceService.delete(deleteIDs);
+    should.exist(deletedResult);
+    should.not.exist(deletedResult.error);
+
     const resultAfterDeletion = await resourceService.read({
       sort: [{
         field: 'created',
         order: 1, // ASCENDING
       }]
     });
-    Object.keys(resultAfterDeletion.data.items).length.should.equal(0);
+    baseValidation(resultAfterDeletion);
+    resultAfterDeletion.data.items.should.be.length(0);
   });
 });
