@@ -229,13 +229,12 @@ class ResourceCommandInterface extends CommandInterface {
     const collectionName = `${resource}s`;
     return {
       [`${resource}Created`]: async function restoreCreated(message: any,
-        context: any, config: any, eventName: string, done: any): Promise<any> {
+        context: any, config: any, eventName: string): Promise<any> {
         that.decodeBufferField(message, resource);
         try {
           if (that.edgeCfg[collectionName]) {
             const result = await db.findByID(collectionName, message.id);
             if (result.length > 0) {
-              done();
               return {};
             }
             await db.createVertex(collectionName, message);
@@ -267,17 +266,12 @@ class ResourceCommandInterface extends CommandInterface {
             await db.insert(collectionName, message);
           }
         } catch (err) {
-          if (done) {
-            done();
-          }
-        }
-        if (done) {
-          done();
+          that.logger.error(`Exception caught restoring ${resource}Created message`, message);
         }
         return {};
       },
       [`${resource}Modified`]: async function restoreModified(message: any,
-        context: any, config: any, eventName: string, done: any): Promise<any> {
+        context: any, config: any, eventName: string): Promise<any> {
         that.decodeBufferField(message, resource);
         // Based on graphcfg update necessary edges
         try {
@@ -323,17 +317,12 @@ class ResourceCommandInterface extends CommandInterface {
           }
           await db.update(collectionName, { id: message.id }, _.omitBy(message, _.isNil));
         } catch (err) {
-          if (done) {
-            done();
-          }
-        }
-        if (done) {
-          done();
+          that.logger.error(`Exception caught restoring ${resource}Modified message`, message);
         }
         return {};
       },
       [`${resource}Deleted`]: async function restoreDeleted(message: any,
-        context: any, config: any, eventName: string, done: any): Promise<any> {
+        context: any, config: any, eventName: string): Promise<any> {
         try {
           if (that.edgeCfg[collectionName]) {
             // Modify the Ids to include documentHandle
@@ -342,12 +331,7 @@ class ResourceCommandInterface extends CommandInterface {
             await db.delete(collectionName, { id: message.id });
           }
         } catch (err) {
-          if (done) {
-            done();
-          }
-        }
-        if (done) {
-          done();
+          that.logger.error(`Exception caught restoring ${resource}Deleted message`, message);
         }
         return {};
       }
