@@ -16,7 +16,9 @@ export class Worker {
   logger: any;
   redisClient: any;
   offsetStore: OffsetStore;
-  async start(cfg?: any) {
+  cis: ICommandInterface;
+  service: ServiceBase[];
+  async start(cfg?: any, resourcesServiceEventListener?: Function) {
     // Load config
     if (!cfg) {
       cfg = sconfig(process.cwd());
@@ -110,6 +112,7 @@ export class Worker {
       const resourceCfg = resources[resourceType];
       const resourcesServiceConfigPrefix = resourceCfg.resourcesServiceConfigPrefix;
       const resourcesServiceNamePrefix = resourceCfg.resourcesServiceNamePrefix;
+      this.service = [];
       for (let resourceName of resourceCfg.resources) {
         let resourceFieldConfig: any;
         if (fieldGeneratorConfig && (resourceName in fieldGeneratorConfig)) {
@@ -144,9 +147,9 @@ export class Worker {
         const resourceAPI = new ResourcesAPIBase(db, `${resourceName}s`,
           resourceFieldConfig, edgeCfg, graphName);
         const resourceEvents = events.topic(`${resourcesServiceNamePrefix}${resourceName}s.resource`);
-        const service = new ServiceBase(resourceName,
+        this.service[resourceName] = new ServiceBase(resourceName,
           resourceEvents, logger, resourceAPI, isEventsEnabled);
-        await server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, service);
+        await server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, this.service[resourceName]);
       }
     }
 
@@ -156,14 +159,16 @@ export class Worker {
     await server.bind(cisName, cis);
 
     const that = this;
-    const resourcesServiceEventListener = async function eventListener(msg: any,
-      context: any, config: any, eventName: string): Promise<any> {
-      try {
-        await cis.command(msg, context);
-      } catch (err) {
-        that.logger.error('Error while executing command', err);
-      }
-    };
+    if (!resourcesServiceEventListener) {
+      resourcesServiceEventListener = async function eventListener(msg: any,
+        context: any, config: any, eventName: string): Promise<any> {
+        try {
+          await cis.command(msg, context);
+        } catch (err) {
+          that.logger.error('Error while executing command', err);
+        }
+      };
+    }
 
     const topics = kafkaCfg.topics;
     const topicTypes = _.keys(kafkaCfg.topics);
@@ -196,6 +201,7 @@ export class Worker {
     this.events = events;
     this.server = server;
     this.logger = logger;
+    this.cis = cis;
 
     if (redisClient) {
       this.redisClient = redisClient;
@@ -340,4 +346,3 @@ if (require.main === module) {
     });
   });
 }
-
