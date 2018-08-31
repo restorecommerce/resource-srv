@@ -7,6 +7,7 @@
 [cover]: http://img.shields.io/coveralls/restorecommerce/resource-srv/master.svg?style=flat-square
 
 This microservice exposes CRUD operations through a [gRPC](https://grpc.io/docs/) endpoint for each specified resource. Such resources are persisted in an ArangoDB database instance, each of them binded with its own separate collection.
+Its also exposes a graph traversal operation (further documented in [resource-base-interface](https://github.com/restorecommerce/resource-base-interface/)).
 The list of resource names should be specified in `resources` configuration in the [`config.json`](cfg/config.json) file, in order to create them in the database. Such names should have a matching [Protocol Buffers](https://developers.google.com/protocol-buffers/) file in the [protos](https://github.com/restorecommerce/protos) folder where all the fields of resources are defined.
 CRUD operations are performed by using [resource-base-interface](https://github.com/restorecommerce/resource-base-interface/).
 
@@ -22,7 +23,15 @@ CRUD operations are performed by using [resource-base-interface](https://github.
 | Upsert | [ ]`io.restorecommerce.<resource>.<resourceName>` | [ ]`io.restorecommerce.<resource>.<resourceName>` | List of \<resourceName> to be created or updated |
 | Delete | `io.restorecommerce.resourcebase.DeleteRequest`   | `google.protobuf.Empty` | List of resource IDs to be deleted |
 
-For detailed fields of protubf messages `io.restorecommerce.resourcebase.ReadRequest` and `io.restorecommerce.resourcebase.DeleteRequest` refer [resource-base-interface](https://github.com/restorecommerce/resource-base-interface/).
+For detailed fields of protobuf messages `io.restorecommerce.resourcebase.ReadRequest` and `io.restorecommerce.resourcebase.DeleteRequest` refer [resource-base-interface](https://github.com/restorecommerce/resource-base-interface/).
+
+### Graph Operations
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| Traversal | `io.restorecommerce.graph.TraversalRequest` | `io.restorecommerce.graph.TraversalResponse` | List of vertices and edges data traversed through the graph |
+
+For detailed fields of protobuf messages `io.restorecommerce.graph.TraversalRequest` and `io.restorecommerce.graph.TraversalResponse` refer [resource-base-interface](https://github.com/restorecommerce/resource-base-interface/).
 
 ## Kafka Events
 

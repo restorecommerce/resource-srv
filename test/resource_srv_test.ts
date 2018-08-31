@@ -14,8 +14,12 @@ const logger = new Logger(cfg.get('logger'));
 const meta = {
   modified_by: 'AdminID',
   owner: [{
-    owner_entity: 'urn:restorecommerce:acs:model:User',
-    owner_id: 'AdminID'
+    "id": "urn:restorecommerce:acs:names:ownerIndicatoryEntity",
+    "value": "urn:restorecommerce:acs:model:user.User"
+  },
+  {
+    "id": "urn:restorecommerce:acs:names:ownerInstance",
+    "value": "Admin"
   }]
 };
 const listOfOrganizations = [
