@@ -5,7 +5,7 @@ import * as redis from 'redis';
 import * as sconfig from '@restorecommerce/service-config';
 import {
   CommandInterface, ICommandInterface, config, database,
-  grpc, Server, OffsetStore
+  grpc, Server, OffsetStore, DatabaseProvider, GraphDatabaseProvider
 } from '@restorecommerce/chassis-srv';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import { ResourcesAPIBase, ServiceBase, GraphResourcesServiceBase } from '@restorecommerce/resource-base-interface';
@@ -87,7 +87,7 @@ export class Worker {
     const logger = new Logger(cfg.get('logger'));
     const server = new Server(cfg.get('server'), logger);
     const db = await database.get(cfg.get('database:arango'),
-      logger, cfg.get('graph:graphName'));
+      logger, cfg.get('graph:graphName')) as GraphDatabaseProvider;
     const events = new Events(cfg.get('events:kafka'), logger);
 
     await events.start();
@@ -224,7 +224,7 @@ class ResourceCommandInterface extends CommandInterface {
     }
   }
 
-  makeResourcesRestoreSetup(db: any, resource: string): any {
+  makeResourcesRestoreSetup(db: GraphDatabaseProvider, resource: string): any {
     const that = this;
     const collectionName = `${resource}s`;
     return {
