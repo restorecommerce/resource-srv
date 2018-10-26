@@ -16,11 +16,123 @@
       "autoCreate": true,
       "collections": [
         "command",
-        "organization"
+        "address",
+        "contact_point_type",
+        "country",
+        "contact_point",
+        "locale",
+        "location",
+        "organization",
+        "tax",
+        "tax_type",
+        "timezone"
       ]
     }
   },
-  "graph": {},
+  "graph": {
+    "graphName": "resource-srv-graph",
+    "vertices": {
+      "organizations": [
+        {
+          "edgeName": "org_has_parent_org",
+          "from": "id",
+          "to": "parent_id",
+          "direction": "outbound",
+          "toVerticeName": "organizations"
+        },
+        {
+          "edgeName": "org_has_contact_points",
+          "from": "id",
+          "to": "contact_point_ids",
+          "direction": "outbound",
+          "toVerticeName": "contact_points"
+        }
+      ],
+      "locations": [
+        {
+          "edgeName": "loc_is_associated_with_org",
+          "from": "id",
+          "to": "organization_id",
+          "direction": "outbound",
+          "toVerticeName": "organizations"
+        },
+        {
+          "edgeName": "loc_has_parent_loc",
+          "from": "id",
+          "to": "parent_id",
+          "direction": "outbound",
+          "toVerticeName": "locations"
+        },
+        {
+          "edgeName": "loc_has_address",
+          "from": "id",
+          "to": "address_id",
+          "direction": "outbound",
+          "toVerticeName": "addresss"
+        }
+      ],
+      "contact_points": [
+        {
+          "edgeName": "cp_has_address",
+          "from": "id",
+          "to": "physical_address_id",
+          "direction": "outbound",
+          "toVerticeName": "addresss"
+        },
+        {
+          "edgeName": "cp_has_cpt",
+          "from": "id",
+          "to": "contact_point_type_id",
+          "direction": "outbound",
+          "toVerticeName": "contact_point_types"
+        },
+        {
+          "edgeName": "cp_has_locale",
+          "from": "id",
+          "to": "locale_id",
+          "direction": "outbound",
+          "toVerticeName": "locales"
+        }
+      ],
+      "locales": [
+        {}
+      ],
+      "addresss": [
+        {
+          "edgeName": "address_belongs_to_country",
+          "from": "id",
+          "to": "country_id",
+          "direction": "outbound",
+          "toVerticeName": "countrys"
+        }
+      ],
+      "countrys": [
+        {}
+      ],
+      "tax_types": [
+        {}
+      ],
+      "contact_point_types": [
+        {}
+      ],
+      "taxs": [
+        {
+          "edgeName": "tax_taxtype",
+          "from": "id",
+          "to": "type_id",
+          "direction": "outbound",
+          "toVerticeName": "tax_types"
+        },
+        {
+          "edgeName": "tax_associated_to_country",
+          "from": "id",
+          "to": "country_id",
+          "direction": "outbound",
+          "toVerticeName": "countrys"
+        }
+      ]
+    }
+  },
   "redis": {
     "host": "localhost",
     "port": 6379,
@@ -38,7 +150,16 @@
       "resourcesProtoRoot": "node_modules/@restorecommerce/protos/",
       "resources": [
         "command",
-        "organization"
+        "address",
+        "contact_point_type",
+        "country",
+        "contact_point",
+        "locale",
+        "location",
+        "organization",
+        "tax",
+        "tax_type",
+        "timezone"
       ]
     }
   },
@@ -193,8 +314,45 @@
     ]
   },
   "fieldHandlers": {
-    "fieldGenerators": {},
-    "bufferFields": {},
-    "requiredFields": {}
+    "bufferFields": {
+      "organization": "data",
+      "location": "data"
+    },
+    "requiredFields": {
+      "organization": [
+        "name"
+      ],
+      "contact_point_type": [
+        "type"
+      ],
+      "address": [
+        "postcode",
+        "country_id",
+        "locality",
+        "street",
+        "region"
+      ],
+      "country": [
+        "name",
+        "country_code"
+      ],
+      "contact_point": [
+        "physical_address_id",
+        "contact_point_type_id",
+        "email",
+        "phone_number"
+      ],
+      "location": [
+        "name"
+      ],
+      "tax": [
+        "country_id",
+        "rate"
+      ],
+      "tax_type": [
+        "type",
+        "description"
+      ]
+    }
   }
 }

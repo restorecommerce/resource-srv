@@ -25,22 +25,12 @@ const meta = {
 const listOfOrganizations = [
   {
     name: 'TestOrg1',
-    address: {
-      postcode: '123',
-      locality: 'testLocality1',
-      street: 'testStreet1',
-      country: 'TestCountry1'
-    },
+    address_id: '123',
     meta
   },
   {
     name: 'TestOrg2',
-    address: {
-      postcode: '456',
-      locality: 'testLocality2',
-      street: 'testStreet2',
-      country: 'TestCountry2'
-    },
+    address_id: '456',
     meta
   },
 ];
@@ -182,12 +172,7 @@ describe('resource-srv testing', () => {
     // New organization created
     {
       name: 'TestOrg6',
-      address: {
-        postcode: '789',
-        locality: 'testLocality6',
-        street: 'testStreet6',
-        country: 'TestCountry6'
-      },
+      address_id: '789',
       meta
     }];
     const update = await resourceService.upsert({ items: updatedOrgList });
