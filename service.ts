@@ -108,11 +108,12 @@ export class Worker {
     const isEventsEnabled = (cfg.get('events:enableCRUDEvents') == 'true');
     const graphCfg = cfg.get('graph');
 
+    this.service = [];
     for (let resourceType in resources) {
       const resourceCfg = resources[resourceType];
       const resourcesServiceConfigPrefix = resourceCfg.resourcesServiceConfigPrefix;
       const resourcesServiceNamePrefix = resourceCfg.resourcesServiceNamePrefix;
-      this.service = [];
+      
       for (let resourceName of resourceCfg.resources) {
         let resourceFieldConfig: any;
         if (fieldGeneratorConfig && (resourceName in fieldGeneratorConfig)) {
