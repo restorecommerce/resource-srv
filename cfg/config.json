@@ -309,7 +309,7 @@
           "io/restorecommerce/graph.proto"
         ],
         "protoRoot": "node_modules/@restorecommerce/protos/",
-        "addr": "localhost:50051"
+        "addr": "localhost:50053"
       }
     ]
   },
