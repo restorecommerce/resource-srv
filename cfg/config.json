@@ -26,6 +26,13 @@
         "tax",
         "tax_type",
         "timezone"
+      ],
+      "customQueries": [
+        {
+          "path": "filter_ownership.aql",
+          "name": "filterByOwnership",
+          "type": "filter"
+        }
       ]
     }
   },
