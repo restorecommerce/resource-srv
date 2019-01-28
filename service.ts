@@ -113,7 +113,7 @@ export class Worker {
       const resourceCfg = resources[resourceType];
       const resourcesServiceConfigPrefix = resourceCfg.resourcesServiceConfigPrefix;
       const resourcesServiceNamePrefix = resourceCfg.resourcesServiceNamePrefix;
-      
+
       for (let resourceName of resourceCfg.resources) {
         let resourceFieldConfig: any;
         if (fieldGeneratorConfig && (resourceName in fieldGeneratorConfig)) {
