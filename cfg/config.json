@@ -20,6 +20,7 @@
         "contact_point_type",
         "country",
         "contact_point",
+        "credential",
         "locale",
         "location",
         "organization",
@@ -122,6 +123,9 @@
       "contact_point_types": [
         {}
       ],
+      "credentials": [
+        {}
+      ],
       "taxs": [
         {
           "edgeName": "tax_taxtype",
@@ -161,6 +165,7 @@
         "contact_point_type",
         "country",
         "contact_point",
+        "credential",
         "locale",
         "location",
         "organization",
@@ -323,7 +328,8 @@
   "fieldHandlers": {
     "bufferFields": {
       "organization": "data",
-      "location": "data"
+      "location": "data",
+      "credential": "credentials"
     },
     "requiredFields": {
       "organization": [
@@ -331,6 +337,9 @@
       ],
       "contact_point_type": [
         "type"
+      ],
+      "credential": [
+        "name"
       ],
       "address": [
         "postcode",
