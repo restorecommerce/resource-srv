@@ -1,5 +1,6 @@
 import * as srvConfig from '@restorecommerce/service-config';
 import * as grpcClient from '@restorecommerce/grpc-client';
+import { Events, Topic } from '@restorecommerce/kafka-client';
 import { Worker } from './../service';
 import * as Logger from '@restorecommerce/logger';
 import * as should from 'should';
@@ -22,18 +23,42 @@ const meta = {
     "value": "Admin"
   }]
 };
+
+const listOfContactPoints = [
+  {
+    id: 'contact_point_1',
+    website: 'http://TestOrg1.de',
+    meta
+  },
+  {
+    id: 'contact_point_2',
+    website: 'http://TestOrg2.de',
+    meta
+  },
+];
+
 const listOfOrganizations = [
   {
     name: 'TestOrg1',
     address_id: '123',
+    contact_point_ids: ['contact_point_1', 'contact_point_2'],
     meta
   },
   {
     name: 'TestOrg2',
     address_id: '456',
+    contact_point_ids: ['contact_point_1', 'contact_point_2'],
     meta
   },
 ];
+
+function encodeMsg(data: any): any {
+  const encoded = Buffer.from(JSON.stringify(data));
+  return {
+    type_url: 'payload',
+    value: encoded
+  };
+}
 
 // get client connection object
 async function getClientResourceServices() {
@@ -53,6 +78,14 @@ async function getClientResourceServices() {
     logger.silly('microservice clients', resourceNames);
 
     for (let resource of resourceNames) {
+      if (resource === 'command') {
+        // if resource is command create a commandInterface client
+        const serviceName = 'io.restorecommerce.commandinterface.Service';
+        const client = new grpcClient.Client(cfg.get('client:commandinterface'), logger);
+        options.microservice.service[serviceName] = await client.connect();
+        options.microservice.mapClients.set(resource, serviceName);
+        continue;
+      }
       const protos = [`${protosPrefix}/${resource}.proto`];
       const serviceName = `${servicePrefix}${resource}.Service`;
       const defaultConfig = clientConfig['default-resource-srv'];
@@ -75,14 +108,21 @@ async function getClientResourceServices() {
 
 describe('resource-srv testing', () => {
   let options;
-  let resourceService;
+  let organizationService;
+  let contactPointsService;
+  let commandService;
   let worker: Worker;
-  let baseValidation = function(result: any) {
+  let events: Events;
+  let commandTopic: Topic;
+  let organizationTopic: Topic;
+  let validate;
+  let baseValidation = function (result: any) {
     should.exist(result);
     should.not.exist(result.error);
     should.exist(result.data);
     should.exist(result.data.items);
   };
+
   // start the server and get the clientService Obj based on resourceName
   before(async function startServer() {
     worker = new Worker();
@@ -91,8 +131,21 @@ describe('resource-srv testing', () => {
     // List of serviceMappedValues
     const serviceMapping = await getClientResourceServices();
     // get the Organization service
-    let mapValue = serviceMapping.microservice.mapClients.get('organization');
-    resourceService = serviceMapping.microservice.service[mapValue];
+    let orgMapValue = serviceMapping.microservice.mapClients.get('organization');
+    organizationService = serviceMapping.microservice.service[orgMapValue];
+    // get contact_point service
+    let contacPointMapValue = serviceMapping.microservice.mapClients.get('contact_point');
+    contactPointsService = serviceMapping.microservice.service[contacPointMapValue];
+
+    // create events for restoring
+    events = new Events(cfg.get('events:kafka'), logger);
+    await events.start();
+    organizationTopic = events.topic(cfg.get('events:kafka:topics:organizations:topic'));
+    commandTopic = events.topic(cfg.get('events:kafka:topics:command:topic'));
+
+    // create command service
+    let commandMapValue = serviceMapping.microservice.mapClients.get('command');
+    commandService = serviceMapping.microservice.service[commandMapValue];
   });
 
   // stop the server
@@ -100,8 +153,16 @@ describe('resource-srv testing', () => {
     await worker.stop();
   });
 
-  it('should create organization resource', async function createOrganization() {
-    const result = await resourceService.create({ items: listOfOrganizations });
+  it('should create contact_point resource', async function createContactPoints() {
+    const result = await contactPointsService.create({ items: listOfContactPoints });
+    baseValidation(result);
+    result.data.items.should.be.length(2);
+    result.data.items[0].website.should.equal('http://TestOrg1.de');
+    result.data.items[1].website.should.equal('http://TestOrg2.de');
+  });
+
+  it('should create organization resource', async function createOrganizations() {
+    const result = await organizationService.create({ items: listOfOrganizations });
     baseValidation(result);
     result.data.items.should.be.length(2);
     result.data.items[0].name.should.equal('TestOrg1');
@@ -109,7 +170,7 @@ describe('resource-srv testing', () => {
   });
 
   it('should read organization resource', async function readOrganization() {
-    const result = await resourceService.read({
+    const result = await organizationService.read({
       sort: [{
         field: 'name',
         order: 1, // ASCENDING
@@ -122,7 +183,7 @@ describe('resource-srv testing', () => {
   });
 
   it('should update organization resource', async function updateOrganization() {
-    const result = await resourceService.read({
+    const result = await organizationService.read({
       sort: [{
         field: 'name',
         order: 1, // ASCENDING
@@ -140,10 +201,10 @@ describe('resource-srv testing', () => {
       name: 'TestOrg4',
       meta
     }];
-    const update = await resourceService.update({ items: changedOrgList });
+    const update = await organizationService.update({ items: changedOrgList });
     baseValidation(update);
     result.data.items.should.be.length(2);
-    const updatedResult = await resourceService.read({
+    const updatedResult = await organizationService.read({
       sort: [{
         field: 'name',
         order: 1, // ASCENDING
@@ -156,7 +217,7 @@ describe('resource-srv testing', () => {
   });
 
   it('should upsert organization resource', async function upsertOrganization() {
-    const result = await resourceService.read({
+    const result = await organizationService.read({
       sort: [{
         field: 'name',
         order: 1, // ASCENDING
@@ -175,10 +236,10 @@ describe('resource-srv testing', () => {
       address_id: '789',
       meta
     }];
-    const update = await resourceService.upsert({ items: updatedOrgList });
+    const update = await organizationService.upsert({ items: updatedOrgList });
     baseValidation(update);
     update.data.items.should.be.length(2);
-    const updatedResult = await resourceService.read({
+    const updatedResult = await organizationService.read({
       sort: [{
         field: 'modified',
         order: 1, // ASCENDING
@@ -187,7 +248,7 @@ describe('resource-srv testing', () => {
         field: 'name',
         order: 1
       }
-    ]
+      ]
     });
     baseValidation(updatedResult);
     updatedResult.data.items.should.be.length(3);
@@ -196,8 +257,9 @@ describe('resource-srv testing', () => {
     updatedResult.data.items[2].name.should.equal('TestOrg6');
   });
 
+  // edge from org to cp resource is also delted when org is deleted
   it('should delete organization resource', async function deleteOrganization() {
-    const result = await resourceService.read({
+    const result = await organizationService.read({
       sort: [{
         field: 'created',
         order: 1, // ASCENDING
@@ -210,11 +272,77 @@ describe('resource-srv testing', () => {
         result.data.items[1].id,
         result.data.items[2].id]
     };
-    const deletedResult = await resourceService.delete(deleteIDs);
+    const deletedResult = await organizationService.delete(deleteIDs);
     should.exist(deletedResult);
     should.not.exist(deletedResult.error);
 
-    const resultAfterDeletion = await resourceService.read({
+    const resultAfterDeletion = await organizationService.read({
+      sort: [{
+        field: 'created',
+        order: 1, // ASCENDING
+      }]
+    });
+    baseValidation(resultAfterDeletion);
+    resultAfterDeletion.data.items.should.be.length(0);
+  });
+  // test case to re-read the data from that offset and test insert, update
+  // and delete for organization
+  it('should re read messages for contact point resource', async function reReeadContactPointMsgs() {
+    this.timeout(5000);
+
+    const dummyListener = async function (msg: any,
+      context: any, config: any, eventName: string): Promise<any> {
+        // validate messages here
+        // console.log('Msg and event name is..', msg, eventName);
+    };
+
+    // subscribe to command topic events
+    // this is needed to update offset (in kafka-client for $wait) 
+    // for commandTopic (since we listen for restoreResponse event)
+    for (let eventName of cfg.get('events:kafka:topics:command:events')) {
+      await commandTopic.on(eventName, dummyListener);
+    }
+
+    const commnadTopicOffset = await commandTopic.$offset(-1);
+    const currentOrgOffset = await organizationTopic.$offset(-1);
+    // Total 9 messages are emitted for organizations
+    // organizationCreated -2, organizationModified - 2, organziationDeleted - 3
+    const cmdPayload = encodeMsg({
+      data: [
+        {
+          entity: 'organization',
+          base_offset: currentOrgOffset - 9,
+          ignore_offset: []
+        }
+      ]
+    });
+    const resp = await commandService.command({
+      name: 'restore',
+      payload: cmdPayload
+    });
+    should.not.exist(resp.error);
+    await commandTopic.$wait(commnadTopicOffset);
+  });
+
+  // delete contact_point resource
+  it('should delete contact point resource', async function deleteContactPoint() {
+    const result = await contactPointsService.read({
+      sort: [{
+        field: 'created',
+        order: 1, // ASCENDING
+      }]
+    });
+    baseValidation(result);
+    const deleteIDs = {
+      ids:
+        [result.data.items[0].id,
+        result.data.items[1].id]
+    };
+    const deletedResult = await contactPointsService.delete(deleteIDs);
+    should.exist(deletedResult);
+    should.not.exist(deletedResult.error);
+
+    const resultAfterDeletion = await contactPointsService.read({
       sort: [{
         field: 'created',
         order: 1, // ASCENDING

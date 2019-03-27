@@ -2,7 +2,7 @@
   "logger": {
     "console": {
       "handleExceptions": false,
-      "level": "error",
+      "level": "trace",
       "colorize": true,
       "prettyPrint": true
     }
@@ -12,11 +12,12 @@
       "provider": "arango",
       "host": "localhost",
       "port": 8529,
-      "database": "restore-resource-srv",
+      "database": "restore-resource-srv-test",
       "autoCreate": true,
       "collections": [
         "command",
-        "organization"
+        "organization",
+        "contact_point"
       ]
     }
   },
@@ -40,7 +41,22 @@
       "resourcesProtoRoot": "node_modules/@restorecommerce/protos/",
       "resources": [
         "command",
-        "organization"
+        "organization",
+        "contact_point"
+      ]
+    }
+  },
+  "graph": {
+    "graphName": "resource-srv-graph",
+    "vertices": {
+      "organizations": [
+        {
+          "edgeName": "org_has_contact_points",
+          "from": "id",
+          "to": "contact_point_ids",
+          "direction": "outbound",
+          "toVerticeName": "contact_points"
+        }
       ]
     }
   },
@@ -50,7 +66,7 @@
       "groupId": "resource-srv",
       "clientId": "resource-srv",
       "kafkaHost": "localhost:9092",
-      "latestOffset": true,
+      "latestOffset": false,
       "restoreCommand": {
         "protos": [
           "io/restorecommerce/commandinterface.proto"
@@ -114,7 +130,20 @@
             "restoreCommand",
             "healthCheckCommand",
             "resetCommand",
-            "versionCommand"
+            "versionCommand",
+            "restoreResponse"
+          ]
+        },
+        "contact_points": {
+          "topic": "io.restorecommerce.contact_points.resource",
+          "events": []
+        },
+        "organizations": {
+          "topic": "io.restorecommerce.organizations.resource",
+          "events": [
+            "organizationCreated",
+            "organizationModified",
+            "organizationDeleted"
           ]
         }
       }
@@ -223,6 +252,30 @@
         "delete": {},
         "update": {},
         "upsert": {}
+      }
+    },
+    "commandinterface": {
+      "transports": {
+        "grpc": {
+          "service": "io.restorecommerce.commandinterface.Service",
+          "protos": [
+            "io/restorecommerce/commandinterface.proto"
+          ],
+          "protoRoot": "node_modules/@restorecommerce/protos/",
+          "timeout": 3000
+        }
+      },
+      "loadbalancer": {
+        "name": "roundRobin"
+      },
+      "publisher": {
+        "name": "static",
+        "instances": [
+          "grpc://localhost:50052"
+        ]
+      },
+      "endpoints": {
+        "command": {}
       }
     }
   }
