@@ -290,18 +290,14 @@ describe('resource-srv testing', () => {
   it('should re read messages for contact point resource', async function reReeadContactPointMsgs() {
     this.timeout(5000);
 
-    const dummyListener = async function (msg: any,
+    const restoreListener = async function (msg: any,
       context: any, config: any, eventName: string): Promise<any> {
-        // validate messages here
-        // console.log('Msg and event name is..', msg, eventName);
     };
 
     // subscribe to command topic events
     // this is needed to update offset (in kafka-client for $wait) 
     // for commandTopic (since we listen for restoreResponse event)
-    for (let eventName of cfg.get('events:kafka:topics:command:events')) {
-      await commandTopic.on(eventName, dummyListener);
-    }
+    await commandTopic.on('restoreResponse', restoreListener);
 
     const commnadTopicOffset = await commandTopic.$offset(-1);
     const currentOrgOffset = await organizationTopic.$offset(-1);
