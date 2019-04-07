@@ -26,7 +26,8 @@
         "organization",
         "tax",
         "tax_type",
-        "timezone"
+        "timezone",
+        "customer"
       ],
       "customQueries": [
         {
@@ -166,6 +167,7 @@
         "country",
         "contact_point",
         "credential",
+        "customer",
         "locale",
         "location",
         "organization",
