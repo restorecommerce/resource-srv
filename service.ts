@@ -1,11 +1,10 @@
 import * as _ from 'lodash';
 import * as co from 'co';
-import * as Logger from '@restorecommerce/logger';
 import * as redis from 'redis';
 import * as sconfig from '@restorecommerce/service-config';
 import {
-  CommandInterface, ICommandInterface, config, database,
-  grpc, Server, OffsetStore, DatabaseProvider, GraphDatabaseProvider
+  CommandInterface, ICommandInterface, database,
+  grpc, Server, OffsetStore, GraphDatabaseProvider, Logger
 } from '@restorecommerce/chassis-srv';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import { ResourcesAPIBase, ServiceBase, GraphResourcesServiceBase } from '@restorecommerce/resource-base-interface';
@@ -13,7 +12,7 @@ import { ResourcesAPIBase, ServiceBase, GraphResourcesServiceBase } from '@resto
 export class Worker {
   server: Server;
   events: Events;
-  logger: any;
+  logger: Logger;
   redisClient: any;
   offsetStore: OffsetStore;
   cis: ICommandInterface;

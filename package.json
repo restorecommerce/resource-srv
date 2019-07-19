@@ -45,7 +45,7 @@
     "start": "node start.js",
     "dev": "cross-env NODE_ENV=development nodemon --watch './*ts' --exec 'ts-node' start.ts",
     "pretest": "npm run tsctests",
-    "tsctests": "tsc test/resource_srv_test.ts --module commonjs -target ES6",
+    "tsctests": "tsc -d -p tsconfig.test.json",
     "test": "npm run lint && npm run mocha",
     "lint": "tslint *.ts",
     "mocha": "cross-env NODE_ENV=test mocha -R spec ./test/*.js --exit",
