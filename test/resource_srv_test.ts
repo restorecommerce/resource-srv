@@ -284,10 +284,15 @@ describe('resource-srv testing', () => {
     });
     baseValidation(resultAfterDeletion);
     resultAfterDeletion.data.items.should.be.length(0);
+
+    const orgDeletionResult = await organizationService.delete({ collection: true });
+    should.exist(orgDeletionResult);
+    should.not.exist(orgDeletionResult.error);
   });
+
   // test case to re-read the data from that offset and test insert, update
   // and delete for organization
-  it('should re read messages for contact point resource', async function reReeadContactPointMsgs() {
+  it('should re read messages for organization resource', async function reReeadContactPointMsgs() {
     this.timeout(5000);
 
     const restoreListener = async function (msg: any,
@@ -295,7 +300,7 @@ describe('resource-srv testing', () => {
     };
 
     // subscribe to command topic events
-    // this is needed to update offset (in kafka-client for $wait) 
+    // this is needed to update offset (in kafka-client for $wait)
     // for commandTopic (since we listen for restoreResponse event)
     await commandTopic.on('restoreResponse', restoreListener);
 
@@ -322,19 +327,7 @@ describe('resource-srv testing', () => {
 
   // delete contact_point resource
   it('should delete contact point resource', async function deleteContactPoint() {
-    const result = await contactPointsService.read({
-      sort: [{
-        field: 'created',
-        order: 1, // ASCENDING
-      }]
-    });
-    baseValidation(result);
-    const deleteIDs = {
-      ids:
-        [result.data.items[0].id,
-        result.data.items[1].id]
-    };
-    const deletedResult = await contactPointsService.delete(deleteIDs);
+    const deletedResult = await contactPointsService.delete({collection: true});
     should.exist(deletedResult);
     should.not.exist(deletedResult.error);
 
