@@ -3,3 +3,8 @@ node_modules/
 *.js
 ./test/*.js
 coverage/
+*.log
+.project
+.settings
+.directory
+.nyc_output
