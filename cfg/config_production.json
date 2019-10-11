@@ -38,5 +38,8 @@
         "addr": "resource-srv:50051"
       }
     ]
+  },
+  "serviceNames": {
+    "cis": "commandinterface"
   }
 }

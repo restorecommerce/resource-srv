@@ -372,5 +372,8 @@
         "description"
       ]
     }
+  },
+  "serviceNames": {
+    "cis": "restore-resource-cis"
   }
 }
