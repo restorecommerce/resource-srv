@@ -40,6 +40,6 @@
     ]
   },
   "serviceNames": {
-    "cis": "commandinterface"
+    "cis": "restore-resource-cis"
   }
 }
