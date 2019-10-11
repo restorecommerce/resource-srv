@@ -54,7 +54,8 @@
     "build:tsc": "tsc -d",
     "build:clean": "rimraf service.js start.js healthcheck.js",
     "build": "npm-run-all lint build:clean build:tsc",
-    "healthcheck": "node healthcheck.js"
+    "healthcheck": "node healthcheck.js",
+    "postinstall": "npm run build:tsc"
   },
   "engines": {
     "node": ">= 9.2.0"
