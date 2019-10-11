@@ -3,7 +3,7 @@
     "elasticsearch": {
       "level": "error",
       "clientOpts": {
-        "host": "elasticsearch:9200"
+        "node": "http://elasticsearch:9200"
       },
       "source": "resource-srv"
     }
@@ -25,7 +25,7 @@
         "name": "grpc",
         "provider": "grpc",
         "services": {
-          "commandinterface": "io.restorecommerce.commandinterface.Service",
+          "restore-resource-cis": "io.restorecommerce.commandinterface.Service",
           "reflection": "grpc.reflection.v1alpha.ServerReflection",
           "graph": "io.restorecommerce.graph.Service"
         },
