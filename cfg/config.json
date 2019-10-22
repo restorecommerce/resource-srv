@@ -1,12 +1,4 @@
 {
-  "logger": {
-    "console": {
-      "handleExceptions": false,
-      "level": "silly",
-      "colorize": true,
-      "prettyPrint": true
-    }
-  },
   "database": {
     "arango": {
       "provider": "arango",
@@ -185,7 +177,7 @@
       "provider": "kafka",
       "groupId": "resource-srv",
       "clientId": "resource-srv",
-      "kafkaHost": "localhost:9092",
+      "kafkaHost": "kafka:9092",
       "latestOffset": false,
       "restoreCommand": {
         "protos": [
