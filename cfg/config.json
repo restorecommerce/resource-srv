@@ -350,7 +350,7 @@
         "physical_address_id",
         "contact_point_type_id",
         "email",
-        "phone_number"
+        "telephone"
       ],
       "location": [
         "name"
