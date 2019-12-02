@@ -1,9 +1,9 @@
+import * as should from 'should';
 import * as srvConfig from '@restorecommerce/service-config';
 import * as grpcClient from '@restorecommerce/grpc-client';
 import { Events, Topic } from '@restorecommerce/kafka-client';
-import { Worker } from './../service';
 import { Logger } from '@restorecommerce/logger';
-import * as should from 'should';
+import { Worker } from '../lib/service';
 
 const cfg = srvConfig(process.cwd() + '/test');
 const logger = new Logger(cfg.get('logger'));
