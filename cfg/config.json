@@ -177,7 +177,7 @@
       "provider": "kafka",
       "groupId": "resource-srv",
       "clientId": "resource-srv",
-      "kafkaHost": "kafka:9092",
+      "kafkaHost": "localhost:9092",
       "latestOffset": false,
       "restoreCommand": {
         "protos": [
