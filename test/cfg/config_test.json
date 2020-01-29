@@ -65,7 +65,7 @@
       "provider": "kafka",
       "groupId": "resource-srv",
       "clientId": "resource-srv",
-      "kafkaHost": "localhost:9092",
+      "kafkaHost": "localhost:29092",
       "latestOffset": true,
       "restoreCommand": {
         "protos": [
@@ -206,7 +206,7 @@
           "io/restorecommerce/graph.proto"
         ],
         "protoRoot": "node_modules/@restorecommerce/protos/",
-        "addr": "localhost:50052"
+        "addr": "localhost:50053"
       }
     ]
   },
@@ -233,7 +233,7 @@
       "publisher": {
         "name": "static",
         "instances": [
-          "grpc://localhost:50052"
+          "grpc://localhost:50053"
         ]
       },
       "endpoints": {
@@ -261,7 +261,7 @@
       "publisher": {
         "name": "static",
         "instances": [
-          "grpc://localhost:50052"
+          "grpc://localhost:50053"
         ]
       },
       "endpoints": {

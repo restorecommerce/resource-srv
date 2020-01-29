@@ -35,7 +35,7 @@
           "io/restorecommerce/graph.proto"
         ],
         "protoRoot": "node_modules/@restorecommerce/protos/",
-        "addr": "resource-srv:50051"
+        "addr": "resource-srv:50053"
       }
     ]
   },

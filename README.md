@@ -1,7 +1,6 @@
 # resource-srv
-<img src="http://img.shields.io/npm/v/%40restorecommerce%2Fresource%2Dsrv.svg?style=flat-square" alt="">[![Build Status][build]](https://travis-ci.org/restorecommerce/resource-srv?branch=master)[![Dependencies][depend]](https://david-dm.org/restorecommerce/resource-srv)[![Coverage Status][cover]](https://coveralls.io/github/restorecommerce/resource-srv?branch=master)
+[![Build Status][build]](https://travis-ci.org/restorecommerce/resource-srv?branch=master)[![Dependencies][depend]](https://david-dm.org/restorecommerce/resource-srv)[![Coverage Status][cover]](https://coveralls.io/github/restorecommerce/resource-srv?branch=master)
 
-[version]: http://img.shields.io/npm/v/resource-srv.svg?style=flat-square
 [build]: http://img.shields.io/travis/restorecommerce/resource-srv/master.svg?style=flat-square
 [depend]: https://img.shields.io/david/restorecommerce/resource-srv.svg?style=flat-square
 [cover]: http://img.shields.io/coveralls/restorecommerce/resource-srv/master.svg?style=flat-square
@@ -66,38 +65,48 @@ This service uses [chassis-srv](http://github.com/restorecommerce/chassis-srv), 
 
 ### Tests
 
-See [tests](/test/).
+See [tests](test/). To execute the tests a set of _backing services_ are needed.
+Refer to [System](https://github.com/restorecommerce/system) repository to start the backing-services before running the tests.
 
-## Usage
+- To run tests
 
-### Development
+```sh
+npm run test
+```
 
-- Install dependencies
+## Running as Docker Container
+
+This service depends on a set of _backing services_ that can be started using a
+dedicated [docker compose definition](https://github.com/restorecommerce/system).
+
+```sh
+docker run \
+ --name restorecommerce_resource_srv \
+ --hostname resource-srv \
+ --network=system_test \
+ -e NODE_ENV=production \
+ -p 50053:50053 \
+ restorecommerce/resource-srv
+```
+
+## Running Locally
+
+Install dependencies
 
 ```sh
 npm install
 ```
 
-- Build application
+Build service
 
 ```sh
 # compile the code
 npm run build
 ```
 
-- Run application and restart it on changes in the code
+Start service
 
 ```sh
-# Start resource-srv in dev mode
-npm run dev
-```
-
-### Production
-
-```sh
-# compile the code
-npm run build
-
-# run compiled server
+# run compiled service
 npm start
 ```
