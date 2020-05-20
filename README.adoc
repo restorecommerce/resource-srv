@@ -1,0 +1,90 @@
+= Resource Service
+
+https://travis-ci.org/restorecommerce/resource-srv?branch=master[image:http://img.shields.io/travis/restorecommerce/resource-srv/master.svg?style=flat-square[Build Status]]
+https://david-dm.org/restorecommerce/resource-srv[image:https://img.shields.io/david/restorecommerce/resource-srv.svg?style=flat-square[Dependencies]]
+https://coveralls.io/github/restorecommerce/resource-srv?branch=master[image:http://img.shields.io/coveralls/restorecommerce/resource-srv/master.svg?style=flat-square[Coverage Status]]
+
+A microservice for resource management.
+
+[#features]
+== Features
+
+* Persists resources in a database instance, each of them bound with its own separate collection.
+* Exposes a graph traversal operation (further documented in https://github.com/restorecommerce/resource-base-interface/[resource-base-interface]).
+
+[#configuration]
+== Configuration
+
+The list of resource names should be specified in the `resources` configuration in the
+link:cfg/config.json[config.json] file, in order to create them in the database.
+Such names should have a matching https://developers.google.com/protocol-buffers/[Protocol Buffers] file in the
+https://github.com/restorecommerce/protos[protos] folder where all the fields of resources are defined.
+
+[#API]
+== API
+
+This microservice exposes the following gRPC endpoints:
+
+[#api_resource_crud]
+=== CRUD Operations
+
+The microservice exposes the below CRUD operations for creating or modifying resources.
+
+[width="100%",cols="20%,16%,20%,44%",options="header",]
+|======================================================================================================================================
+| Method Name | Request Type | Response Type | Description
+| Create | [ ]`io.restorecommerce.<resource>.<resourceName>` | [ ]`io.restorecommerce.<resource>.<resourceName>` | List of \<resourceName> to be created
+| Read | `io.restorecommerce.resourcebase.ReadRequest` | [ ]`io.restorecommerce.<resource>.<resourceName>` | List of \<resourceName>
+| Update | [ ]`io.restorecommerce.<resource>.<resourceName>` | [ ]`io.restorecommerce.<resource>.<resourceName>` | List of \<resourceName> to be updated
+| Upsert | [ ]`io.restorecommerce.<resource>.<resourceName>` | [ ]`io.restorecommerce.<resource>.<resourceName>` | List of \<resourceName> to be created or updated
+| Delete | `io.restorecommerce.resourcebase.DeleteRequest`   | `google.protobuf.Empty` | List of resource IDs to be deleted
+|======================================================================================================================================
+
+For detailed fields of protobuf messages `io.restorecommerce.resourcebase.ReadRequest` and
+`io.restorecommerce.resourcebase.DeleteRequest` refer
+https://github.com/restorecommerce/resource-base-interface/[resource-base-interface].
+
+
+[#api_resource_graph]
+=== Graph Operations
+
+[width="100%",cols="20%,16%,20%,44%",options="header",]
+|======================================================================================================================================
+| Method Name | Request Type | Response Type | Description
+| Traversal | `io.restorecommerce.graph.TraversalRequest` | `io.restorecommerce.graph.TraversalResponse` | List of vertices and edges data traversed through the graph
+|======================================================================================================================================
+
+For detailed fields of protobuf messages `io.restorecommerce.graph.TraversalRequest` and
+`io.restorecommerce.graph.TraversalResponse` refer
+https://github.com/restorecommerce/resource-base-interface/[resource-base-interface].
+
+[#events]
+== Events
+
+[#emitted-events]
+=== Emitted
+
+List of events emitted by this microservice for below topics:
+
+[width="100%",cols="31%,33%,36%",options="header",]
+|==========================================================================================================================================
+| Topic Name | Event Name | Description
+| `io.restorecommerce.command` | `restoreResponse` | system restore response
+|                              | `resetResponse` | system reset response
+|                              | `healthCheckResponse` | system health check response
+|                              | `versionResponse` | system version response
+|==========================================================================================================================================
+
+[#subscribed-events]
+=== Subscribed
+
+This microservice subscribes to the following events by topic:
+
+[width="100%",cols="31%,33%,36%",options="header",]
+|==========================================================================================================================================
+| Topic Name | Event Name | Description
+| `io.restorecommerce.command` | `restoreCommand` | for triggering for system restore
+|                              | `resetCommand` | for triggering system reset
+|                              | `healthCheckCommand` | to get system health check
+|                              | `versionCommand` | to get system version
+|==========================================================================================================================================
