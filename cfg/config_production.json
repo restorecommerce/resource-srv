@@ -16,7 +16,7 @@
   },
   "events": {
     "kafka": {
-      "kafkaHost": "kafka:29092"
+      "kafkaHost": "kafka:9092"
     }
   },
   "database": {
