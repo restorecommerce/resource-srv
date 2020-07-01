@@ -1,0 +1,5 @@
+name: resource-srv
+title: Resource Service
+version: master
+nav:
+  - modules/ROOT/nav.adoc
