@@ -1,1 +1,18 @@
-* xref:index.adoc[resource-srv]
+// INDEX
+* xref:index.adoc[Resource Service]
+
+// FEATURES
+* xref:index.adoc#features[Features]
+
+// CONFIGURATION
+* xref:index.adoc#configuration[Configuration]
+
+// API
+* xref:index.adoc#API[API]
+** xref:index.adoc#api_resource_crud[CRUD Operations]
+** xref:index.adoc#api_resource_graph[Graph Operations]
+
+// EVENTS
+* xref:index.adoc#events[Events]
+** xref:index.adoc#emitted-events[Emitted]
+** xref:index.adoc#subscribed-events[Subscribed]

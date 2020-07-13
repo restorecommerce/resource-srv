@@ -16,7 +16,7 @@ A microservice for resource management.
 == Configuration
 
 The list of resource names should be specified in the `resources` configuration in the
-link:cfg/config.json[config.json] file, in order to create them in the database.
+link:../../../../cfg/config.json[config.json] file, in order to create them in the database.
 Such names should have a matching https://developers.google.com/protocol-buffers/[Protocol Buffers] file in the
 https://github.com/restorecommerce/protos[protos] folder where all the fields of resources are defined.
 
