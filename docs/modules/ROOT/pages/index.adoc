@@ -10,15 +10,15 @@ A microservice for resource management.
 == Features
 
 * Persists resources in a database instance, each of them bound with its own separate collection.
-* Exposes a graph traversal operation (further documented in https://github.com/restorecommerce/resource-base-interface/[resource-base-interface]).
+* Exposes a graph traversal operation (further documented in link:https://github.com/restorecommerce/resource-base-interface/[resource-base-interface]).
 
 [#configuration]
 == Configuration
 
 The list of resource names should be specified in the `resources` configuration in the
-link:../../../../cfg/config.json[config.json] file, in order to create them in the database.
-Such names should have a matching https://developers.google.com/protocol-buffers/[Protocol Buffers] file in the
-https://github.com/restorecommerce/protos[protos] folder where all the fields of resources are defined.
+link:https://github.com/restorecommerce/resource-srv/blob/master/cfg/config.json#L149[config.json] file, in order to create them in the database.
+Such names should have a matching link:https://developers.google.com/protocol-buffers/[Protocol Buffers] file in the
+link:https://github.com/restorecommerce/protos[protos] folder where all the fields of resources are defined.
 
 [#API]
 == API
@@ -42,7 +42,7 @@ The microservice exposes the below CRUD operations for creating or modifying res
 
 For detailed fields of protobuf messages `io.restorecommerce.resourcebase.ReadRequest` and
 `io.restorecommerce.resourcebase.DeleteRequest` refer
-https://github.com/restorecommerce/resource-base-interface/[resource-base-interface].
+link:https://github.com/restorecommerce/resource-base-interface/[resource-base-interface].
 
 
 [#api_resource_graph]
@@ -56,7 +56,7 @@ https://github.com/restorecommerce/resource-base-interface/[resource-base-interf
 
 For detailed fields of protobuf messages `io.restorecommerce.graph.TraversalRequest` and
 `io.restorecommerce.graph.TraversalResponse` refer
-https://github.com/restorecommerce/resource-base-interface/[resource-base-interface].
+link:https://github.com/restorecommerce/resource-base-interface/[resource-base-interface].
 
 [#events]
 == Events
