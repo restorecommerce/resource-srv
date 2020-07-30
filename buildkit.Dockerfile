@@ -7,6 +7,8 @@ RUN apk add --no-cache python build-base
 
 RUN --mount=type=cache,uid=1000,gid=1000,target=/home/node/.npm npm install -g typescript@3.4.1
 
+RUN apk add --no-cache git
+
 USER node
 ARG APP_HOME=/home/node/srv
 WORKDIR $APP_HOME

@@ -12,8 +12,8 @@ import { ResourcesAPIBase, ServiceBase, GraphResourcesServiceBase } from '@resto
 class ResourceCommandInterface extends CommandInterface {
   edgeCfg: any;
   // graphName: any;
-  constructor(server: Server, cfg: any, logger: any, events: Events) {
-    super(server, cfg, logger, events);
+  constructor(server: Server, cfg: any, logger: any, events: Events, redisClient: redis.RedisClient) {
+    super(server, cfg, logger, events, redisClient);
     if (cfg.graph && cfg.graph.vertices) {
       this.edgeCfg = cfg.graph.vertices;
       // this.graphName = cfg.graph.graphName;
@@ -267,8 +267,13 @@ export class Worker {
       }
     }
 
+    // init Redis Client for subject index
+    const redisConfig = cfg.get('redis');
+    redisConfig.db = cfg.get('redis:db-indexes:db-subject');
+    const redisClientSubject = redis.createClient(redisConfig);
+
     // Add CommandInterfaceService
-    const cis: ICommandInterface = new ResourceCommandInterface(server, cfg.get(), logger, events);
+    const cis: ICommandInterface = new ResourceCommandInterface(server, cfg, logger, events, redisClientSubject);
     const cisName = cfg.get('command-interface:name');
     await server.bind(cisName, cis);
 
