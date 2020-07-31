@@ -24,7 +24,7 @@
       "host": "arangodb"
     }
   },
-  "server":{
+  "server": {
     "transports": [
       {
         "name": "grpc",
@@ -46,5 +46,10 @@
   },
   "serviceNames": {
     "cis": "restore-resource-cis"
+  },
+  "authorization": {
+    "cache": {
+      "host": "localhost"
+    }
   }
 }
