@@ -18,6 +18,13 @@
         "command",
         "organization",
         "contact_point"
+      ],
+      "customQueries": [
+        {
+          "path": "filter_ownership.aql",
+          "name": "filterByOwnership",
+          "type": "filter"
+        }
       ]
     }
   },
@@ -143,8 +150,8 @@
   },
   "authorization": {
     "service": "acs-srv",
-    "enabled": false,
-    "enforce": false,
+    "enabled": true,
+    "enforce": true,
     "urns": {
       "entity": "urn:restorecommerce:acs:names:model:entity",
       "user": "urn:restorecommerce:acs:model:user.User",

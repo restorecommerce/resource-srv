@@ -4,6 +4,7 @@ import * as grpcClient from '@restorecommerce/grpc-client';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import { Logger } from '@restorecommerce/logger';
 import { Worker } from '../lib/worker';
+import { updateConfig } from '@restorecommerce/acs-client';
 
 const cfg = srvConfig(process.cwd() + '/test');
 const logger = new Logger(cfg.get('logger'));
@@ -125,6 +126,12 @@ describe('resource-srv testing', () => {
 
   // start the server and get the clientService Obj based on resourceName
   before(async function startServer() {
+    // check acs enabled from env-var and update config
+    const disableACS = process.env.DISABLE_ACS;
+    if (disableACS && disableACS === 'false') {
+      cfg.set('authorization:enabled', false);
+      await updateConfig(cfg);
+    }
     worker = new Worker();
     await worker.start(cfg);
     // get the client object
@@ -327,7 +334,7 @@ describe('resource-srv testing', () => {
 
   // delete contact_point resource
   it('should delete contact point resource', async function deleteContactPoint() {
-    const deletedResult = await contactPointsService.delete({collection: true});
+    const deletedResult = await contactPointsService.delete({ collection: true });
     should.exist(deletedResult);
     should.not.exist(deletedResult.error);
 
