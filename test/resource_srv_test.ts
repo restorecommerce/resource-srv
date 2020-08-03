@@ -3,7 +3,7 @@ import * as srvConfig from '@restorecommerce/service-config';
 import * as grpcClient from '@restorecommerce/grpc-client';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import { Logger } from '@restorecommerce/logger';
-import { Worker } from '../lib/service';
+import { Worker } from '../lib/worker';
 
 const cfg = srvConfig(process.cwd() + '/test');
 const logger = new Logger(cfg.get('logger'));

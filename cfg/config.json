@@ -30,6 +30,14 @@
       ]
     }
   },
+  "logger": {
+    "console": {
+      "handleExceptions": false,
+      "level": "silly",
+      "colorize": true,
+      "prettyPrint": true
+    }
+  },
   "graph": {
     "graphName": "resource-srv-graph",
     "vertices": {
