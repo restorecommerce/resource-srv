@@ -11,11 +11,12 @@ export class ResourceService extends ServiceBase {
   redisClient: redis.RedisClient;
   cfg: any;
   resourceName: string;
-  constructor(resourceName, resourceEvents, cfg, logger, resourceAPI, isEventsEnabled, authZ) {
+  constructor(resourceName, resourceEvents, cfg, logger, resourceAPI, isEventsEnabled, authZ, redisClientSubject) {
     super(resourceName, resourceEvents, logger, resourceAPI, isEventsEnabled);
     this.authZ = authZ;
     this.cfg = cfg;
     this.resourceName = resourceName;
+    this.redisClient = redisClientSubject;
   }
 
   async create(call, ctx) {

@@ -156,7 +156,7 @@ export class Worker {
           resourceFieldConfig, edgeCfg, graphName);
         const resourceEvents = events.topic(`${resourcesServiceNamePrefix}${resourceName}s.resource`);
         this.service[resourceName] = new ResourceService(resourceName,
-          resourceEvents, cfg, logger, resourceAPI, isEventsEnabled, authZ);
+          resourceEvents, cfg, logger, resourceAPI, isEventsEnabled, authZ, redisClientSubject);
         await server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, this.service[resourceName]);
       }
     }
