@@ -4,18 +4,20 @@ import * as redis from 'redis';
 import * as sconfig from '@restorecommerce/service-config';
 import {
   CommandInterface, ICommandInterface, database,
-  grpc, Server, OffsetStore, GraphDatabaseProvider, Logger
+  grpc, Server, OffsetStore, GraphDatabaseProvider, Logger,
+  Health
 } from '@restorecommerce/chassis-srv';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import { ResourcesAPIBase, ServiceBase, GraphResourcesServiceBase } from '@restorecommerce/resource-base-interface';
+import { ArangoGraph } from '@restorecommerce/chassis-srv/lib/database/provider/arango/graph';
 
 class ResourceCommandInterface extends CommandInterface {
   edgeCfg: any;
   // graphName: any;
-  constructor(server: Server, cfg: any, logger: any, events: Events) {
-    super(server, cfg, logger, events);
-    if (cfg.graph && cfg.graph.vertices) {
-      this.edgeCfg = cfg.graph.vertices;
+  constructor(server: Server, cfg: any, logger: any, events: Events, redisClient: redis.RedisClient) {
+    super(server, cfg, logger, events, redisClient);
+    if (cfg.get('graph') && cfg.get('graph:vertices')) {
+      this.edgeCfg = cfg.get('graph:vertices');
       // this.graphName = cfg.graph.graphName;
     }
   }
@@ -127,7 +129,7 @@ export class Worker {
   server: Server;
   events: Events;
   logger: Logger;
-  redisClient: any;
+  redisClient: redis.RedisClient;
   offsetStore: OffsetStore;
   cis: ICommandInterface;
   service: ServiceBase[];
@@ -268,7 +270,7 @@ export class Worker {
     }
 
     // Add CommandInterfaceService
-    const cis: ICommandInterface = new ResourceCommandInterface(server, cfg.get(), logger, events);
+    const cis = new ResourceCommandInterface(server, cfg, logger, events, redisClient);
     const cisName = cfg.get('command-interface:name');
     await server.bind(cisName, cis);
 
@@ -308,6 +310,22 @@ export class Worker {
     // graph Service
     const graphAPIService = new GraphResourcesServiceBase(db, cfg.get('fieldHandlers:bufferFields'));
     await server.bind('graph', graphAPIService);
+
+    await server.bind('grpc-health-v1', new Health(cis, async () => {
+      if (!this.redisClient.ping()) {
+        return false;
+      }
+
+      try {
+        if (!(await ((db as ArangoGraph).db).version())) {
+          return false;
+        }
+      } catch (e) {
+        return false;
+      }
+
+      return true;
+    }));
 
     // Start server
     await server.start();
