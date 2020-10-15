@@ -311,20 +311,8 @@ export class Worker {
     const graphAPIService = new GraphResourcesServiceBase(db, cfg.get('fieldHandlers:bufferFields'));
     await server.bind('graph', graphAPIService);
 
-    await server.bind('grpc-health-v1', new Health(cis, async () => {
-      if (!this.redisClient.ping()) {
-        return false;
-      }
-
-      try {
-        if (!(await ((db as ArangoGraph).db).version())) {
-          return false;
-        }
-      } catch (e) {
-        return false;
-      }
-
-      return true;
+    await server.bind('grpc-health-v1', new Health(cis, {
+      readiness: async () => !!await ((db as ArangoGraph).db).version()
     }));
 
     // Start server
