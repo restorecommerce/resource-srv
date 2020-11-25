@@ -2,7 +2,7 @@
 
 ### Base
 FROM node:12.16.1-alpine as base
-
+ENV NO_UPDATE_NOTIFIER=true
 RUN apk add --no-cache python build-base
 
 RUN --mount=type=cache,uid=1000,gid=1000,target=/home/node/.npm npm install -g typescript@3.4.1
@@ -41,5 +41,12 @@ COPY cfg $APP_HOME/cfg
 COPY --from=build $APP_HOME/lib $APP_HOME/lib
 
 EXPOSE 50051
+
+USER root
+RUN GRPC_HEALTH_PROBE_VERSION=v0.3.3 && \
+    wget -qO/bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 && \
+    chmod +x /bin/grpc_health_probe
+USER node
+
 HEALTHCHECK CMD npm run healthcheck
 CMD [ "npm", "start" ]

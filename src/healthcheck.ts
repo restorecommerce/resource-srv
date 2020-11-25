@@ -1,9 +1,10 @@
-import * as sconfig from '@restorecommerce/service-config';
-import {Logger} from '@restorecommerce/logger';
 import {grpcClient} from '@restorecommerce/grpc-client';
+import {createLogger} from '@restorecommerce/logger';
+import {createServiceConfig} from '@restorecommerce/service-config';
 
-const cfg = sconfig(process.cwd());
-const logger = new Logger(cfg.get('logger'));
+
+const cfg = createServiceConfig(process.cwd());
+const logger = createLogger(cfg.get('logger'));
 
 const grpcConfig = cfg.get('server:transports')[0];
 
@@ -37,7 +38,7 @@ Object.keys(grpcConfig['services']).forEach((service) => {
             reject();
           } else {
             logger.silly(service + ' is serving');
-            resolve();
+            resolve(realValue.status);
           }
         } else {
           logger.error('Unexpected health_check response:', realValue);

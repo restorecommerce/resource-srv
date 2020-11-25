@@ -4,9 +4,11 @@ https://travis-ci.org/restorecommerce/resource-srv?branch=master[image:http://im
 https://david-dm.org/restorecommerce/resource-srv[image:https://img.shields.io/david/restorecommerce/resource-srv.svg?style=flat-square[Dependencies]]
 https://coveralls.io/github/restorecommerce/resource-srv?branch=master[image:http://img.shields.io/coveralls/restorecommerce/resource-srv/master.svg?style=flat-square[Coverage Status]]
 
-A microservice for resource management part of the link:https://github.com/restorecommerce[Restorecommerce].
+A microservice for resource management.
 
 Please consult the documentation for using it:
 
 - *link:https://docs.restorecommerce.io/resource-srv/index.html[Usage]*
 - *link:https://docs.restorecommerce.io/architecture/index.html[General Architecture]*
+
+Part of link:https://github.com/restorecommerce[Restorecommerce].
