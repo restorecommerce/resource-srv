@@ -1,15 +1,21 @@
-import { Events, Topic } from '@restorecommerce/kafka-client';
-import { ResourcesAPIBase, ServiceBase, GraphResourcesServiceBase } from '@restorecommerce/resource-base-interface';
-import { ACSAuthZ, initAuthZ, initializeCache } from '@restorecommerce/acs-client';
-import { ResourceCommandInterface } from './commandInterface';
+import {Events, Topic} from '@restorecommerce/kafka-client';
+import {GraphResourcesServiceBase, ResourcesAPIBase, ServiceBase} from '@restorecommerce/resource-base-interface';
+import {ACSAuthZ, initAuthZ, initializeCache} from '@restorecommerce/acs-client';
+import {ResourceCommandInterface} from './commandInterface';
 import * as _ from 'lodash';
 import * as redis from 'redis';
-import * as sconfig from '@restorecommerce/service-config';
 import {
-  ICommandInterface, database,
-  grpc, Server, OffsetStore, GraphDatabaseProvider, Logger
+  database,
+  GraphDatabaseProvider,
+  grpc,
+  ICommandInterface,
+  OffsetStore,
+  Server
 } from '@restorecommerce/chassis-srv';
-import { ResourceService } from './service';
+import {ResourceService} from './service';
+import {Logger} from 'winston';
+import {createLogger} from '@restorecommerce/logger';
+import {createServiceConfig} from '@restorecommerce/service-config';
 
 export class Worker {
   server: Server;
@@ -19,10 +25,11 @@ export class Worker {
   offsetStore: OffsetStore;
   cis: ICommandInterface;
   service: ServiceBase[];
+
   async start(cfg?: any, resourcesServiceEventListener?: Function) {
     // Load config
     if (!cfg) {
-      cfg = sconfig(process.cwd());
+      cfg = createServiceConfig(process.cwd());
     }
     const standardConfig = cfg.get('server:services:standard-cfg');
     const resources = cfg.get('resources');
@@ -87,7 +94,7 @@ export class Worker {
     grpcConfig.protos.push(descriptorProto);
     cfg.set('server:transports', [grpcConfig]);
 
-    const logger = new Logger(cfg.get('logger'));
+    const logger = createLogger(cfg.get('logger'));
     const server = new Server(cfg.get('server'), logger);
     const db = await database.get(cfg.get('database:arango'),
       logger, cfg.get('graph:graphName')) as GraphDatabaseProvider;
@@ -191,7 +198,7 @@ export class Worker {
       if (kafkaCfg.topics[topicType].events) {
         const eventNames = kafkaCfg.topics[topicType].events;
         for (let eventName of eventNames) {
-          await topic.on(eventName, resourcesServiceEventListener, { startingOffset: offSetValue });
+          await topic.on(eventName, resourcesServiceEventListener, {startingOffset: offSetValue});
         }
       }
     }
