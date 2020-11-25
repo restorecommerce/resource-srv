@@ -1,13 +1,13 @@
 import * as should from 'should';
-import * as srvConfig from '@restorecommerce/service-config';
 import * as grpcClient from '@restorecommerce/grpc-client';
 import { Events, Topic } from '@restorecommerce/kafka-client';
-import { Logger } from '@restorecommerce/logger';
 import { Worker } from '../lib/worker';
 import { updateConfig } from '@restorecommerce/acs-client';
+import { createLogger } from '@restorecommerce/logger';
+import { createServiceConfig } from '@restorecommerce/service-config';
 
-const cfg = srvConfig(process.cwd() + '/test');
-const logger = new Logger(cfg.get('logger'));
+const cfg = createServiceConfig(process.cwd() + '/test');
+const logger = createLogger(cfg.get('logger'));
 
 /**
  * Note: To run below tests a running Kafka, Redis and ArangoDB instance is required.

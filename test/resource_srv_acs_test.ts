@@ -1,14 +1,13 @@
 import * as should from 'should';
-import * as srvConfig from '@restorecommerce/service-config';
 import * as grpcClient from '@restorecommerce/grpc-client';
-import { Events, Topic } from '@restorecommerce/kafka-client';
-import { Logger } from '@restorecommerce/logger';
-import { Worker } from '../lib/worker';
-import { updateConfig } from '@restorecommerce/acs-client';
-import { createMockServer } from 'grpc-mock';
+import {Events, Topic} from '@restorecommerce/kafka-client';
+import {Worker} from '../lib/worker';
+import {createMockServer} from 'grpc-mock';
+import {createLogger} from '@restorecommerce/logger';
+import {createServiceConfig} from '@restorecommerce/service-config';
 
-const cfg = srvConfig(process.cwd() + '/test');
-const logger = new Logger(cfg.get('logger'));
+const cfg = createServiceConfig(process.cwd() + '/test');
+const logger = createLogger(cfg.get('logger'));
 
 /**
  * Note: To run below tests a running Kafka, Redis and ArangoDB instance is required.
@@ -20,10 +19,10 @@ const meta = {
     "id": "urn:restorecommerce:acs:names:ownerIndicatoryEntity",
     "value": "urn:restorecommerce:acs:model:organization.Organization"
   },
-  {
-    "id": "urn:restorecommerce:acs:names:ownerInstance",
-    "value": "orgC"
-  }]
+    {
+      "id": "urn:restorecommerce:acs:names:ownerInstance",
+      "value": "orgC"
+    }]
 };
 
 const listOfContactPoints = [
@@ -43,7 +42,7 @@ const permitAllEntitiesRule = {
   id: 'permit_rule_id',
   target: {
     action: [],
-    resources: [{ id: 'urn:restorecommerce:acs:names:model:entity', value: 'urn:restorecommerce:acs:model:*.*' }],
+    resources: [{id: 'urn:restorecommerce:acs:names:model:entity', value: 'urn:restorecommerce:acs:model:*.*'}],
     subject: [
       {
         id: 'urn:restorecommerce:acs:names:role',
@@ -92,10 +91,10 @@ let subject = {
         id: 'urn:restorecommerce:acs:names:roleScopingEntity',
         value: 'urn:restorecommerce:acs:model:organization.Organization'
       },
-      {
-        id: 'urn:restorecommerce:acs:names:roleScopingInstance',
-        value: 'mainOrg'
-      }]
+        {
+          id: 'urn:restorecommerce:acs:names:roleScopingInstance',
+          value: 'mainOrg'
+        }]
     }
   ],
   hierarchical_scopes: [
@@ -153,7 +152,7 @@ function encodeMsg(data: any): any {
 
 // get client connection object
 async function getClientResourceServices() {
-  const options: any = { microservice: {} };
+  const options: any = {microservice: {}};
   options.microservice = {
     service: {},
     mapClients: new Map()
@@ -247,9 +246,9 @@ describe('resource-srv testing with ACS enabled', () => {
   it('should create contact_point resource', async function createContactPoints() {
     // start mock acs-srv - needed for read operation since acs-client makes a req to acs-srv
     // to get applicable policies although acs-lookup is disabled
-    startGrpcMockServer([{ method: 'WhatIsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: policySetRQ },
-    { method: 'IsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: { decision: 'PERMIT' } }]);
-    const result = await contactPointsService.create({ items: listOfContactPoints, subject });
+    startGrpcMockServer([{method: 'WhatIsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: policySetRQ},
+      {method: 'IsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: {decision: 'PERMIT'}}]);
+    const result = await contactPointsService.create({items: listOfContactPoints, subject});
     baseValidation(result);
     result.data.items.should.be.length(2);
     result.data.items[0].website.should.equal('http://TestOrg1.de');
@@ -258,24 +257,24 @@ describe('resource-srv testing with ACS enabled', () => {
   it('should throw an error when creating contact_point resource with invalid subject scope', async function createContactPoints() {
     subject.scope = 'orgD';
     stopGrpcMockServer();
-    startGrpcMockServer([{ method: 'WhatIsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: policySetRQ },
-    { method: 'IsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: { decision: 'DENY' } }]);
-    const result = await contactPointsService.create({ items: listOfContactPoints, subject });
+    startGrpcMockServer([{method: 'WhatIsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: policySetRQ},
+      {method: 'IsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: {decision: 'DENY'}}]);
+    const result = await contactPointsService.create({items: listOfContactPoints, subject});
     should.exist(result.error);
     result.error.details.should.equal('7 PERMISSION_DENIED: Access not allowed for request with subject:admin_user_id, resource:contact_point, action:CREATE, target_scope:orgD; the response was DENY');
   });
   it('should throw error updating contact point resource with invalid subject scope', async function deleteContactPoint() {
-    const updateResult = await contactPointsService.update({ items: listOfContactPoints, subject });
+    const updateResult = await contactPointsService.update({items: listOfContactPoints, subject});
     should.exist(updateResult.error);
     updateResult.error.details.should.equal('7 PERMISSION_DENIED: Access not allowed for request with subject:admin_user_id, resource:contact_point, action:MODIFY, target_scope:orgD; the response was DENY');
   });
   it('should throw error upserting contact point resource with invalid subject scope', async function deleteContactPoint() {
-    const updateResult = await contactPointsService.upsert({ items: listOfContactPoints, subject });
+    const updateResult = await contactPointsService.upsert({items: listOfContactPoints, subject});
     should.exist(updateResult.error);
     updateResult.error.details.should.equal('7 PERMISSION_DENIED: Access not allowed for request with subject:admin_user_id, resource:contact_point, action:MODIFY, target_scope:orgD; the response was DENY');
   });
   it('should throw error deleting contact point resource with invalid subject scope', async function deleteContactPoint() {
-    const deletedResult = await contactPointsService.delete({ ids: ['contact_point_1', 'contact_point_2'], subject });
+    const deletedResult = await contactPointsService.delete({ids: ['contact_point_1', 'contact_point_2'], subject});
     should.exist(deletedResult);
     should.exist(deletedResult.error);
     deletedResult.error.details.should.equal('7 PERMISSION_DENIED: Access not allowed for request with subject:admin_user_id, resource:contact_point, action:DELETE, target_scope:orgD; the response was DENY');
@@ -283,11 +282,11 @@ describe('resource-srv testing with ACS enabled', () => {
   it('should update contact point resource with valid subject scope', async function deleteContactPoint() {
     subject.scope = 'orgC';
     stopGrpcMockServer();
-    startGrpcMockServer([{ method: 'WhatIsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: policySetRQ },
-    { method: 'IsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: { decision: 'PERMIT' } }]);
+    startGrpcMockServer([{method: 'WhatIsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: policySetRQ},
+      {method: 'IsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: {decision: 'PERMIT'}}]);
     listOfContactPoints[0].website = 'http://newtest1.de';
     listOfContactPoints[1].website = 'http://newtest2.de';
-    const updateResult = await contactPointsService.update({ items: listOfContactPoints, subject });
+    const updateResult = await contactPointsService.update({items: listOfContactPoints, subject});
     baseValidation(updateResult);
     updateResult.data.items[0].website.should.equal('http://newtest1.de');
     updateResult.data.items[1].website.should.equal('http://newtest2.de');
@@ -298,7 +297,7 @@ describe('resource-srv testing with ACS enabled', () => {
       website: 'http://TestOrg3.de',
       meta
     };
-    const updateResult = await contactPointsService.update({ items: contactPoint, subject });
+    const updateResult = await contactPointsService.update({items: contactPoint, subject});
     should.exist(updateResult.error);
     updateResult.error.message.should.equal('not found');
   });
@@ -308,16 +307,16 @@ describe('resource-srv testing with ACS enabled', () => {
       website: 'http://TestOrg3.de',
       meta
     };
-    const upsertResult = await contactPointsService.upsert({ items: contactPoint, subject });
+    const upsertResult = await contactPointsService.upsert({items: contactPoint, subject});
     baseValidation(upsertResult);
     upsertResult.data.items[0].website.should.equal(contactPoint.website);
   });
   it('should delete contact point resource', async function deleteContactPoint() {
     subject.scope = 'orgC';
     stopGrpcMockServer();
-    startGrpcMockServer([{ method: 'WhatIsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: policySetRQ },
-    { method: 'IsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: { decision: 'PERMIT' } }]);
-    const deletedResult = await contactPointsService.delete({ collection: true, subject });
+    startGrpcMockServer([{method: 'WhatIsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: policySetRQ},
+      {method: 'IsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: {decision: 'PERMIT'}}]);
+    const deletedResult = await contactPointsService.delete({collection: true, subject});
     should.exist(deletedResult);
     should.not.exist(deletedResult.error);
 
