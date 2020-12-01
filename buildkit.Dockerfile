@@ -5,7 +5,7 @@ FROM node:12.16.1-alpine as base
 ENV NO_UPDATE_NOTIFIER=true
 RUN apk add --no-cache python build-base
 
-RUN --mount=type=cache,uid=1000,gid=1000,target=/home/node/.npm npm install -g typescript@3.4.1
+RUN npm install -g typescript@3.4.1
 
 RUN apk add --no-cache git
 
@@ -23,7 +23,7 @@ COPY src/ $APP_HOME/src
 ### Build
 FROM base as build
 
-RUN --mount=type=cache,uid=1000,gid=1000,target=/home/node/.npm npm ci
+RUN npm ci
 
 COPY --chown=node:node . .
 
@@ -33,7 +33,7 @@ RUN npm run build
 ### Deployment
 FROM base as deployment
 
-RUN --mount=type=cache,uid=1000,gid=1000,target=/home/node/.npm npm ci # Currently broken: --only=production
+RUN npm ci # Currently broken: --only=production
 
 COPY filter_ownership.aql $APP_HOME/filter_ownership.aql
 COPY setupTopics.js $APP_HOME/setupTopics.js
