@@ -1,3 +1,7 @@
+### 0.0.6 (December 1st, 2020)
+
+- fix production redis auth cache address
+
 ### 0.0.5 (December 1st, 2020)
 
 - fix startup script

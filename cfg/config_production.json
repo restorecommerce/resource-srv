@@ -51,7 +51,7 @@
   },
   "authorization": {
     "cache": {
-      "host": "localhost"
+      "host": "redis"
     }
   }
 }
