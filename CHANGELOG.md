@@ -1,3 +1,7 @@
+### 0.0.5 (December 1st, 2020)
+
+- fix startup script
+
 ### 0.0.4 (December 1st, 2020)
 
 - update to NodeJS 12.18
