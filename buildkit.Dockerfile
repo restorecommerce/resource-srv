@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:experimental
 
 ### Base
-FROM node:12.16.1-alpine as base
+FROM node:12.18.1-alpine as base
 ENV NO_UPDATE_NOTIFIER=true
 RUN apk add --no-cache python build-base
 
