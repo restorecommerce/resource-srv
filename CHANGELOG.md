@@ -1,3 +1,7 @@
+### 0.0.4 (December 1st, 2020)
+
+- update to NodeJS 12.18
+
 ### 0.0.3 (October 15th, 2020)
 
 - updated chassis-srv
