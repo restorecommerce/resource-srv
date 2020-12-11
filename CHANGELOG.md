@@ -1,3 +1,7 @@
+## 0.0.8 (December 11th, 2020)
+
+- fix acs server address in production config
+
 ## 0.0.7 (December 2nd, 2020)
 
 - fix docker image permissions

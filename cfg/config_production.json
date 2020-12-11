@@ -53,5 +53,14 @@
     "cache": {
       "host": "redis"
     }
+  },
+  "client": {
+    "acs-srv": {
+      "publisher": {
+        "instances": [
+          "grpc://access:50051"
+        ]
+      }
+    }
   }
 }
