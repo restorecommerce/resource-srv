@@ -1,6 +1,6 @@
 {
   "name": "@restorecommerce/resource-srv",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Restore Commerce Rsource microservice",
   "main": "lib/start.js",
   "author": "Invend GmbH",

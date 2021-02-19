@@ -1,3 +1,7 @@
+## 0.0.9 (February 19th, 2020)
+
+- update acs server address in production config
+
 ## 0.0.8 (December 11th, 2020)
 
 - fix acs server address in production config
