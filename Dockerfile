@@ -1,4 +1,4 @@
-FROM node:12.18.3-stretch
+FROM node:14.15.5-stretch
 ENV HOME=/home/node
 ENV APP_HOME=/home/node/resource-srv
 ENV NO_UPDATE_NOTIFIER=true
@@ -13,6 +13,7 @@ RUN chown -R node:node $HOME
 RUN pwd
 # switch to the node user.
 USER node
+RUN npm install -g npm
 RUN npm install
 RUN npm run build
 EXPOSE 50051
