@@ -1,8 +1,12 @@
-## 0.0.9 (February 19th, 2020)
+## 0.0.10 (March 11th, 2021)
+
+- update chassis, protos, node typings
+
+## 0.0.9 (February 19th, 2021)
 
 - update acs server address in production config
 
-## 0.0.8 (December 11th, 2020)
+## 0.0.8 (December 11th, 2021)
 
 - fix acs server address in production config
 
