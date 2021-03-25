@@ -1,3 +1,7 @@
+## 0.0.11 (March 25th, 2021)
+
+- update resource-base-interface
+
 ## 0.0.10 (March 11th, 2021)
 
 - update chassis, protos, node typings
