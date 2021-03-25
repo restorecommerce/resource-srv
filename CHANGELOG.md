@@ -1,3 +1,7 @@
+## 0.0.12 (March 25th, 2021)
+
+- switch to official grpc healthcheck proto
+
 ## 0.0.11 (March 25th, 2021)
 
 - update resource-base-interface

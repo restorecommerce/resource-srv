@@ -10,7 +10,8 @@ import {
   grpc,
   ICommandInterface,
   OffsetStore,
-  Server
+  Server,
+  Health
 } from '@restorecommerce/chassis-srv';
 import {ResourceService} from './service';
 import {Logger} from 'winston';
@@ -172,7 +173,7 @@ export class Worker {
     initializeCache();
 
     // Add CommandInterfaceService
-    const cis: ICommandInterface = new ResourceCommandInterface(server, cfg, logger, events, redisClientSubject);
+    const cis: ResourceCommandInterface = new ResourceCommandInterface(server, cfg, logger, events, redisClientSubject);
     const cisName = cfg.get('command-interface:name');
     await server.bind(cisName, cis);
 
@@ -212,6 +213,11 @@ export class Worker {
     // graph Service
     const graphAPIService = new GraphResourcesServiceBase(db, cfg.get('fieldHandlers:bufferFields'));
     await server.bind('graph', graphAPIService);
+
+    await server.bind('grpc-health-v1', new Health(cis, {
+      logger,
+      cfg,
+    }));
 
     // Start server
     await server.start();
