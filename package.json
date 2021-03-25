@@ -22,7 +22,7 @@
     "@restorecommerce/grpc-client": "^0.0.9",
     "@restorecommerce/kafka-client": "^0.1.13",
     "@restorecommerce/protos": "^0.0.22",
-    "@restorecommerce/resource-base-interface": "^0.0.7",
+    "@restorecommerce/resource-base-interface": "^0.0.9",
     "@restorecommerce/service-config": "^0.4.1",
     "lodash": "^4.17.21",
     "redis": "^3.0.2"
@@ -47,7 +47,7 @@
     "rimraf": "^3.0.2",
     "should": "^13.2.3",
     "ts-node": "^9.1.1",
-    "typescript": "4.1.5"
+    "typescript": "^4.2.3"
   },
   "scripts": {
     "start": "npm run createtopics && node lib/start.js",
