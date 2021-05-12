@@ -183,7 +183,7 @@ export class Worker {
         try {
           await cis.command(msg, context);
         } catch (err) {
-          that.logger.error('Error while executing command', err);
+          logger.error('Error while executing command', err);
         }
       };
     }
