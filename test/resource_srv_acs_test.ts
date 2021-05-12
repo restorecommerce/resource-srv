@@ -230,8 +230,8 @@ describe('resource-srv testing with ACS enabled', () => {
     // create events for restoring
     events = new Events(cfg.get('events:kafka'), logger);
     await events.start();
-    organizationTopic = events.topic(cfg.get('events:kafka:topics:organizations:topic'));
-    commandTopic = events.topic(cfg.get('events:kafka:topics:command:topic'));
+    organizationTopic = await events.topic(cfg.get('events:kafka:topics:organizations:topic'));
+    commandTopic = await events.topic(cfg.get('events:kafka:topics:command:topic'));
 
     // create command service
     let commandMapValue = serviceMapping.microservice.mapClients.get('command');
@@ -298,8 +298,10 @@ describe('resource-srv testing with ACS enabled', () => {
       meta
     };
     const updateResult = await contactPointsService.update({items: contactPoint, subject});
-    should.exist(updateResult.error);
-    updateResult.error.message.should.equal('not found');
+    should.exist(updateResult.data.status);
+    updateResult.data.status[0].id.should.equal('contact_point_3');
+    updateResult.data.status[0].code.should.equal(404);
+    updateResult.data.status[0].message.should.equal('document not found');
   });
   it('should upsert contact point with valid subject scope', async function deleteContactPoint() {
     const contactPoint = {

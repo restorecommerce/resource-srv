@@ -122,6 +122,7 @@ describe('resource-srv testing', () => {
     should.not.exist(result.error);
     should.exist(result.data);
     should.exist(result.data.items);
+    should.exist(result.data.status);
   };
 
   // start the server and get the clientService Obj based on resourceName
@@ -147,8 +148,8 @@ describe('resource-srv testing', () => {
     // create events for restoring
     events = new Events(cfg.get('events:kafka'), logger);
     await events.start();
-    organizationTopic = events.topic(cfg.get('events:kafka:topics:organizations:topic'));
-    commandTopic = events.topic(cfg.get('events:kafka:topics:command:topic'));
+    organizationTopic = await events.topic(cfg.get('events:kafka:topics:organizations:topic'));
+    commandTopic = await events.topic(cfg.get('events:kafka:topics:command:topic'));
 
     // create command service
     let commandMapValue = serviceMapping.microservice.mapClients.get('command');
@@ -160,20 +161,32 @@ describe('resource-srv testing', () => {
     await worker.stop();
   });
 
-  it('should create contact_point resource', async function createContactPoints() {
+  it('should create contact_point resource and verify data and status response', async function createContactPoints() {
     const result = await contactPointsService.create({ items: listOfContactPoints });
     baseValidation(result);
     result.data.items.should.be.length(2);
     result.data.items[0].website.should.equal('http://TestOrg1.de');
     result.data.items[1].website.should.equal('http://TestOrg2.de');
+    result.data.status.should.be.length(2);
+    result.data.status[0].id.should.equal('contact_point_1');
+    result.data.status[0].code.should.equal(200);
+    result.data.status[0].message.should.equal('success');
+    result.data.status[1].id.should.equal('contact_point_2');
+    result.data.status[1].code.should.equal(200);
+    result.data.status[1].message.should.equal('success');
   });
 
-  it('should create organization resource', async function createOrganizations() {
+  it('should create organization resource and verify data and status response', async function createOrganizations() {
     const result = await organizationService.create({ items: listOfOrganizations });
     baseValidation(result);
     result.data.items.should.be.length(2);
     result.data.items[0].name.should.equal('TestOrg1');
     result.data.items[1].name.should.equal('TestOrg2');
+    result.data.status.should.be.length(2);
+    result.data.status[0].code.should.equal(200);
+    result.data.status[0].message.should.equal('success');
+    result.data.status[1].code.should.equal(200);
+    result.data.status[1].message.should.equal('success');
   });
 
   it('should read organization resource', async function readOrganization() {
@@ -187,9 +200,12 @@ describe('resource-srv testing', () => {
     result.data.items.should.be.length(2);
     result.data.items[0].name.should.equal('TestOrg1');
     result.data.items[1].name.should.equal('TestOrg2');
+    should.exist(result.data.status);
+    result.data.status.code.should.equal(200);
+    result.data.status.message.should.equal('success');
   });
 
-  it('should update organization resource', async function updateOrganization() {
+  it('should update organization resource and validate status', async function updateOrganization() {
     const result = await organizationService.read({
       sort: [{
         field: 'name',
@@ -211,19 +227,22 @@ describe('resource-srv testing', () => {
     const update = await organizationService.update({ items: changedOrgList });
     baseValidation(update);
     result.data.items.should.be.length(2);
-    const updatedResult = await organizationService.read({
+    const updatedReadResult = await organizationService.read({
       sort: [{
         field: 'name',
         order: 1, // ASCENDING
       }]
     });
-    baseValidation(updatedResult);
+    baseValidation(updatedReadResult);
     result.data.items.should.be.length(2);
-    updatedResult.data.items[0].name.should.equal('TestOrg3');
-    updatedResult.data.items[1].name.should.equal('TestOrg4');
+    updatedReadResult.data.items[0].name.should.equal('TestOrg3');
+    updatedReadResult.data.items[1].name.should.equal('TestOrg4');
+    should.exist(updatedReadResult.data.status);
+    updatedReadResult.data.status.code.should.equal(200);
+    updatedReadResult.data.status.message.should.equal('success');
   });
 
-  it('should upsert organization resource', async function upsertOrganization() {
+  it('should upsert organization resource and validate status', async function upsertOrganization() {
     const result = await organizationService.read({
       sort: [{
         field: 'name',
@@ -246,6 +265,11 @@ describe('resource-srv testing', () => {
     const update = await organizationService.upsert({ items: updatedOrgList });
     baseValidation(update);
     update.data.items.should.be.length(2);
+    update.data.status.should.be.length(2);
+    update.data.status[0].code.should.equal(200);
+    update.data.status[0].message.should.equal('success');
+    update.data.status[1].code.should.equal(200);
+    update.data.status[1].message.should.equal('success');
     const updatedResult = await organizationService.read({
       sort: [{
         field: 'modified',
@@ -265,7 +289,7 @@ describe('resource-srv testing', () => {
   });
 
   // edge from org to cp resource is also delted when org is deleted
-  it('should delete organization resource', async function deleteOrganization() {
+  it('should delete organization resource and verify status', async function deleteOrganization() {
     const result = await organizationService.read({
       sort: [{
         field: 'created',
@@ -282,6 +306,10 @@ describe('resource-srv testing', () => {
     const deletedResult = await organizationService.delete(deleteIDs);
     should.exist(deletedResult);
     should.not.exist(deletedResult.error);
+    should.exist(deletedResult.data.status);
+    deletedResult.data.status[0].message.should.equal('success');
+    deletedResult.data.status[1].message.should.equal('success');
+    deletedResult.data.status[2].message.should.equal('success');
 
     const resultAfterDeletion = await organizationService.read({
       sort: [{

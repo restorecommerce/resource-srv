@@ -66,14 +66,25 @@
           "toVerticeName": "contact_points"
         }
       ]
-    }
+    },
+    "edgeDefinitions": [
+      {
+        "collection": "org_has_contact_points",
+        "from": "organizations",
+        "to": "contact_points"
+      }
+    ]
   },
   "events": {
     "kafka": {
       "provider": "kafka",
       "groupId": "resource-srv",
-      "clientId": "resource-srv",
-      "kafkaHost": "localhost:29092",
+      "kafka": {
+        "clientId": "resource-srv",
+        "brokers": [
+          "localhost:29092"
+        ]
+      },
       "latestOffset": true,
       "restoreCommand": {
         "protos": [

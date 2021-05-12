@@ -10,7 +10,9 @@
     }
   },
   "kafka": {
-    "kafkaHost": "kafka:9092"
+    "brokers": [
+      "kafka:9092"
+    ]
   },
   "redis": {
     "host": "redis"
