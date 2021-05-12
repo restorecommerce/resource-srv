@@ -260,24 +260,28 @@ describe('resource-srv testing with ACS enabled', () => {
     startGrpcMockServer([{method: 'WhatIsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: policySetRQ},
       {method: 'IsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: {decision: 'DENY'}}]);
     const result = await contactPointsService.create({items: listOfContactPoints, subject});
-    should.exist(result.error);
-    result.error.details.should.equal('7 PERMISSION_DENIED: Access not allowed for request with subject:admin_user_id, resource:contact_point, action:CREATE, target_scope:orgD; the response was DENY');
+    should.exist(result.data.status);
+    result.data.status[0].code.should.equal(403);
+    result.data.status[0].message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:CREATE, target_scope:orgD; the response was DENY');
   });
   it('should throw error updating contact point resource with invalid subject scope', async function deleteContactPoint() {
     const updateResult = await contactPointsService.update({items: listOfContactPoints, subject});
-    should.exist(updateResult.error);
-    updateResult.error.details.should.equal('7 PERMISSION_DENIED: Access not allowed for request with subject:admin_user_id, resource:contact_point, action:MODIFY, target_scope:orgD; the response was DENY');
+    should.exist(updateResult.data.status);
+    updateResult.data.status[0].code.should.equal(403);
+    updateResult.data.status[0].message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:MODIFY, target_scope:orgD; the response was DENY');
   });
   it('should throw error upserting contact point resource with invalid subject scope', async function deleteContactPoint() {
     const updateResult = await contactPointsService.upsert({items: listOfContactPoints, subject});
-    should.exist(updateResult.error);
-    updateResult.error.details.should.equal('7 PERMISSION_DENIED: Access not allowed for request with subject:admin_user_id, resource:contact_point, action:MODIFY, target_scope:orgD; the response was DENY');
+    should.exist(updateResult.data.status);
+    updateResult.data.status[0].code.should.equal(403);
+    updateResult.data.status[0].message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:MODIFY, target_scope:orgD; the response was DENY');
   });
   it('should throw error deleting contact point resource with invalid subject scope', async function deleteContactPoint() {
     const deletedResult = await contactPointsService.delete({ids: ['contact_point_1', 'contact_point_2'], subject});
-    should.exist(deletedResult);
-    should.exist(deletedResult.error);
-    deletedResult.error.details.should.equal('7 PERMISSION_DENIED: Access not allowed for request with subject:admin_user_id, resource:contact_point, action:DELETE, target_scope:orgD; the response was DENY');
+
+    should.exist(deletedResult.data.status);
+    deletedResult.data.status[0].code.should.equal(403);
+    deletedResult.data.status[0].message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:DELETE, target_scope:orgD; the response was DENY');
   });
   it('should update contact point resource with valid subject scope', async function deleteContactPoint() {
     subject.scope = 'orgC';

@@ -30,10 +30,22 @@ export class ResourceService extends ServiceBase {
         this.resourceName, this);
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv', err);
-      throw err;
+      return {
+        status: [{
+          id: '',
+          code: err.code,
+          message: err.message
+        }]
+      };
     }
     if (acsResponse.decision != Decision.PERMIT) {
-      throw new PermissionDenied(acsResponse.response.status.message, acsResponse.response.status.code);
+      return {
+        status: [{
+          id: '',
+          code: acsResponse.response.status.code,
+          message: acsResponse.response.status.message
+        }]
+      };
     }
     return await super.create(call, ctx);
   }
@@ -47,10 +59,22 @@ export class ResourceService extends ServiceBase {
         this.resourceName, this);
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
-      throw err;
+      return {
+        status: {
+          id: '',
+          code: err.code,
+          message: err.message
+        }
+      };
     }
     if (acsResponse.decision != Decision.PERMIT) {
-      throw new PermissionDenied(acsResponse.response.status.message, acsResponse.response.status.code);
+      return {
+        status: {
+          id: '',
+          code: acsResponse.response.status.code,
+          message: acsResponse.response.status.message
+        }
+      };
     }
     return await super.read({ request: readRequest });
   }
@@ -66,10 +90,22 @@ export class ResourceService extends ServiceBase {
         this.resourceName, this);
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
-      throw err;
+      return {
+        status: [{
+          id: '',
+          code: err.code,
+          message: err.message
+        }]
+      };
     }
     if (acsResponse.decision != Decision.PERMIT) {
-      throw new PermissionDenied(acsResponse.response.status.message, acsResponse.response.status.code);
+      return {
+        status: [{
+          id: '',
+          code: acsResponse.response.status.code,
+          message: acsResponse.response.status.message
+        }]
+      };
     }
     return await super.update(call, ctx);
   }
@@ -84,10 +120,22 @@ export class ResourceService extends ServiceBase {
         this.resourceName, this);
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
-      throw err;
+      return {
+        status: [{
+          id: '',
+          code: err.code,
+          message: err.message
+        }]
+      };
     }
     if (acsResponse.decision != Decision.PERMIT) {
-      throw new PermissionDenied(acsResponse.response.status.message, acsResponse.response.status.code);
+      return {
+        status: [{
+          id: '',
+          code: acsResponse.response.status.code,
+          message: acsResponse.response.status.message
+        }]
+      };
     }
     return await super.upsert(call, ctx);
   }
@@ -119,10 +167,22 @@ export class ResourceService extends ServiceBase {
         this.resourceName, this);
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
-      throw err;
+      return {
+        status: [{
+          id: '',
+          code: err.code,
+          message: err.message
+        }]
+      };
     }
     if (acsResponse.decision != Decision.PERMIT) {
-      throw new PermissionDenied(acsResponse.response.status.message, acsResponse.response.status.code);
+      return {
+        status: [{
+          id: '',
+          code: acsResponse.response.status.code,
+          message: acsResponse.response.status.message
+        }]
+      };
     }
     return await super.delete(call, ctx);
   }
