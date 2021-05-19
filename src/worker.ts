@@ -162,7 +162,7 @@ export class Worker {
         // TODO dont use service base direcly extend with class and then override the apis used in resources (making ACS request)
         const resourceAPI = new ResourcesAPIBase(db, `${resourceName}s`,
           resourceFieldConfig, edgeCfg, graphName);
-        const resourceEvents = events.topic(`${resourcesServiceNamePrefix}${resourceName}s.resource`);
+        const resourceEvents = await events.topic(`${resourcesServiceNamePrefix}${resourceName}s.resource`);
         this.service[resourceName] = new ResourceService(resourceName,
           resourceEvents, cfg, logger, resourceAPI, isEventsEnabled, authZ, redisClientSubject);
         await server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, this.service[resourceName]);
@@ -193,7 +193,7 @@ export class Worker {
     const topicTypes = _.keys(kafkaCfg.topics);
     for (let topicType of topicTypes) {
       const topicName = kafkaCfg.topics[topicType].topic;
-      const topic: Topic = events.topic(topicName);
+      const topic: Topic = await events.topic(topicName);
       const offSetValue = await this.offsetStore.getOffset(topicName);
       logger.info('subscribing to topic with offset value', topicName, offSetValue);
       if (kafkaCfg.topics[topicType].events) {

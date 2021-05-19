@@ -185,8 +185,12 @@
     "kafka": {
       "provider": "kafka",
       "groupId": "resource-srv",
-      "clientId": "resource-srv",
-      "kafkaHost": "localhost:29092",
+      "kafka": {
+        "clientId": "resource-srv",
+        "brokers": [
+          "localhost:29092"
+        ]
+      },
       "latestOffset": false,
       "restoreCommand": {
         "protos": [

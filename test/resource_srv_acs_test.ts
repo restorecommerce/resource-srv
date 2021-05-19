@@ -230,8 +230,8 @@ describe('resource-srv testing with ACS enabled', () => {
     // create events for restoring
     events = new Events(cfg.get('events:kafka'), logger);
     await events.start();
-    organizationTopic = events.topic(cfg.get('events:kafka:topics:organizations:topic'));
-    commandTopic = events.topic(cfg.get('events:kafka:topics:command:topic'));
+    organizationTopic = await events.topic(cfg.get('events:kafka:topics:organizations:topic'));
+    commandTopic = await events.topic(cfg.get('events:kafka:topics:command:topic'));
 
     // create command service
     let commandMapValue = serviceMapping.microservice.mapClients.get('command');

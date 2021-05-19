@@ -12,9 +12,9 @@ async function createTopics() {
   const events = new Events(cfg.get('events:kafka'), logger);
   await events.start();
 
-  process.argv.forEach((value, index, array) => {
+  process.argv.forEach(async (value, index, array) => {
     if (index >= 2) {
-      events.topic(value);
+      await events.topic(value);
       logger.info('Created topic', value, ' successfully');
     }
   });
