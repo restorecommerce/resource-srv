@@ -5,6 +5,7 @@ import { Worker } from '../lib/worker';
 import { updateConfig } from '@restorecommerce/acs-client';
 import { createLogger } from '@restorecommerce/logger';
 import { createServiceConfig } from '@restorecommerce/service-config';
+import { FilterOperation } from '@restorecommerce/resource-base-interface';
 
 const cfg = createServiceConfig(process.cwd() + '/test');
 const logger = createLogger(cfg.get('logger'));
@@ -330,6 +331,33 @@ describe('resource-srv testing', () => {
     });
     should.not.exist(resp.error);
     // await commandTopic.$wait(commnadTopicOffset);
+  });
+
+  it('should read contact point resource using filter', async function readContactPoint() {
+    const readResult = await contactPointsService.read({ filters: [{
+      filter: [{
+        field: 'id',
+        operation: FilterOperation.eq,
+        value: 'contact_point_1'
+      }]
+    }] });
+    should.not.exist(readResult.error);
+    should.exist(readResult.data);
+    should.exist(readResult.data.items[0]);
+    readResult.data.items[0].id.should.equal('contact_point_1');
+  });
+
+  it('should not return data using filter for invalid id', async function readContactPoint() {
+    const readResult = await contactPointsService.read({ filters: [{
+      filter: [{
+        field: 'id',
+        operation: FilterOperation.eq,
+        value: 'invalid_id'
+      }]
+    }] });
+    should.not.exist(readResult.error);
+    should.exist(readResult.data);
+    readResult.data.items.should.be.empty();
   });
 
   // delete contact_point resource

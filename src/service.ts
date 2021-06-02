@@ -1,10 +1,9 @@
 import * as _ from 'lodash';
 import * as redis from 'redis';
-import { ServiceBase } from '@restorecommerce/resource-base-interface';
+import { ServiceBase, FilterOperation } from '@restorecommerce/resource-base-interface';
 import { ACSAuthZ, Subject } from '@restorecommerce/acs-client';
 import { Decision, AuthZAction, PermissionDenied } from '@restorecommerce/acs-client';
 import { AccessResponse, getSubjectFromRedis, checkAccessRequest, ReadPolicyResponse } from './utils';
-import { toStruct } from '@restorecommerce/grpc-client';
 
 export class ResourceService extends ServiceBase {
   authZ: ACSAuthZ;
@@ -160,11 +159,13 @@ export class ResourceService extends ServiceBase {
         if (action === AuthZAction.MODIFY || action === AuthZAction.DELETE) {
           let result = await super.read({
             request: {
-              filter: toStruct({
-                id: {
-                  $eq: resource.id
-                }
-              })
+              filters: [{
+                filter: [{
+                  field: 'id',
+                  operation: FilterOperation.eq,
+                  value: resource.id
+                }]
+              }]
             }
           });
           // update owner info
