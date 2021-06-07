@@ -140,20 +140,20 @@ export class ResourceService extends ServiceBase {
   }
 
   async delete(call, ctx) {
-    let userIDs = call.request.ids;
+    let resourceIDs = call.request.ids;
     let resources = [];
     let subject = call.request.subject;
     let action;
-    if (userIDs) {
+    if (resourceIDs) {
       action = AuthZAction.DELETE;
-      if (_.isArray(userIDs)) {
-        for (let id of userIDs) {
+      if (_.isArray(resourceIDs)) {
+        for (let id of resourceIDs) {
           resources.push({ id });
         }
       } else {
-        resources = [{ id: userIDs }];
+        resources = [{ id: resourceIDs }];
       }
-      Object.assign(resources, { id: userIDs });
+      Object.assign(resources, { id: resourceIDs });
       await this.createMetadata(resources, action, subject);
     }
     if (call.request.collection) {

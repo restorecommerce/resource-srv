@@ -322,10 +322,6 @@ describe('resource-srv testing', () => {
     });
     baseValidation(resultAfterDeletion);
     resultAfterDeletion.items.should.be.length(0);
-
-    const orgDeletionResult = await organizationService.delete({ collection: true });
-    should.exist(orgDeletionResult);
-    should.not.exist(orgDeletionResult.error);
   });
 
   // test case to re-read the data from that offset and test insert, update
