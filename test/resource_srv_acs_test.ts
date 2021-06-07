@@ -300,26 +300,26 @@ describe('resource-srv testing with ACS enabled', () => {
     updateResult.items[1].website.should.equal('http://newtest2.de');
   });
   it('should throw error when trying to update contact point not existing with valid subject scope', async function deleteContactPoint() {
-    const contactPoint = {
+    const contactPoint = [{
       id: 'contact_point_3',
       website: 'http://TestOrg3.de',
       meta
-    };
+    }];
     const updateResult = await contactPointsService.update({items: contactPoint, subject});
-    should.exist(updateResult.data.status);
-    updateResult.status[0].id.should.equal('contact_point_3');
+    should.exist(updateResult.status);
+    updateResult.items.should.be.empty();
     updateResult.status[0].code.should.equal(404);
     updateResult.status[0].message.should.equal('document not found');
   });
   it('should upsert contact point with valid subject scope', async function deleteContactPoint() {
-    const contactPoint = {
+    const contactPoint = [{
       id: 'contact_point_3',
       website: 'http://TestOrg3.de',
       meta
-    };
+    }];
     const upsertResult = await contactPointsService.upsert({items: contactPoint, subject});
     baseValidation(upsertResult);
-    upsertResult.items[0].website.should.equal(contactPoint.website);
+    upsertResult.items[0].website.should.equal(contactPoint[0].website);
   });
   it('should delete contact point resource', async function deleteContactPoint() {
     subject.scope = 'orgC';
