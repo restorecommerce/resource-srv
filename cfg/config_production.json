@@ -9,9 +9,6 @@
       "source": "resource-srv"
     }
   },
-  "kafka": {
-    "kafkaHost": "kafka:9092"
-  },
   "redis": {
     "host": "redis"
   },
@@ -61,11 +58,7 @@
   },
   "client": {
     "acs-srv": {
-      "publisher": {
-        "instances": [
-          "grpc://access-control-srv:50051"
-        ]
-      }
+      "address": "access-control-srv:50051"
     }
   }
 }

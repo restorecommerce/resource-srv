@@ -2,8 +2,8 @@ import * as _ from 'lodash';
 import * as redis from 'redis';
 import { ServiceBase, FilterOperation } from '@restorecommerce/resource-base-interface';
 import { ACSAuthZ, Subject } from '@restorecommerce/acs-client';
-import { Decision, AuthZAction, PermissionDenied } from '@restorecommerce/acs-client';
-import { AccessResponse, getSubjectFromRedis, checkAccessRequest, ReadPolicyResponse } from './utils';
+import { Decision, AuthZAction } from '@restorecommerce/acs-client';
+import { AccessResponse, checkAccessRequest, ReadPolicyResponse } from './utils';
 
 export class ResourceService extends ServiceBase {
   authZ: ACSAuthZ;
@@ -20,7 +20,7 @@ export class ResourceService extends ServiceBase {
 
   async create(call, ctx) {
     let data = call.request.items;
-    let subject = await getSubjectFromRedis(call, this);
+    let subject = call.request.subject;
     // update meta data for owner information
     await this.createMetadata(data, AuthZAction.CREATE, subject);
     let acsResponse: AccessResponse;
@@ -29,34 +29,58 @@ export class ResourceService extends ServiceBase {
         this.resourceName, this);
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv', err);
-      throw err;
+      return {
+        status: [{
+          id: '',
+          code: err.code,
+          message: err.message
+        }]
+      };
     }
     if (acsResponse.decision != Decision.PERMIT) {
-      throw new PermissionDenied(acsResponse.response.status.message, acsResponse.response.status.code);
+      return {
+        status: [{
+          id: '',
+          code: acsResponse.response.status.code,
+          message: acsResponse.response.status.message
+        }]
+      };
     }
     return await super.create(call, ctx);
   }
 
   async read(call, ctx) {
     const readRequest = call.request;
-    let subject = await getSubjectFromRedis(call, this);
+    let subject = call.request.subject;
     let acsResponse: ReadPolicyResponse;
     try {
       acsResponse = await checkAccessRequest(subject, readRequest, AuthZAction.READ,
         this.resourceName, this);
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
-      throw err;
+      return {
+        status: {
+          id: '',
+          code: err.code,
+          message: err.message
+        }
+      };
     }
     if (acsResponse.decision != Decision.PERMIT) {
-      throw new PermissionDenied(acsResponse.response.status.message, acsResponse.response.status.code);
+      return {
+        status: [{
+          id: '',
+          code: acsResponse.response.status.code,
+          message: acsResponse.response.status.message
+        }]
+      };
     }
     return await super.read({ request: readRequest });
   }
 
   async update(call, ctx) {
     const items = call.request.items;
-    let subject = await getSubjectFromRedis(call, this);
+    let subject = call.request.subject;
     // update meta data for owner information
     await this.createMetadata(call.request.items, AuthZAction.MODIFY, subject);
     let acsResponse: AccessResponse;
@@ -65,17 +89,29 @@ export class ResourceService extends ServiceBase {
         this.resourceName, this);
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
-      throw err;
+      return {
+        status: [{
+          id: '',
+          code: err.code,
+          message: err.message
+        }]
+      };
     }
     if (acsResponse.decision != Decision.PERMIT) {
-      throw new PermissionDenied(acsResponse.response.status.message, acsResponse.response.status.code);
+      return {
+        status: [{
+          id: '',
+          code: acsResponse.response.status.code,
+          message: acsResponse.response.status.message
+        }]
+      };
     }
     return await super.update(call, ctx);
   }
 
   async upsert(call, ctx) {
     const usersList = call.request.items;
-    let subject = await getSubjectFromRedis(call, this);
+    let subject = call.request.subject;
     await this.createMetadata(call.request.items, AuthZAction.MODIFY, subject);
     let acsResponse;
     try {
@@ -83,10 +119,22 @@ export class ResourceService extends ServiceBase {
         this.resourceName, this);
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
-      throw err;
+      return {
+        status: [{
+          id: '',
+          code: err.code,
+          message: err.message
+        }]
+      };
     }
     if (acsResponse.decision != Decision.PERMIT) {
-      throw new PermissionDenied(acsResponse.response.status.message, acsResponse.response.status.code);
+      return {
+        status: [{
+          id: '',
+          code: acsResponse.response.status.code,
+          message: acsResponse.response.status.message
+        }]
+      };
     }
     return await super.upsert(call, ctx);
   }
@@ -94,7 +142,7 @@ export class ResourceService extends ServiceBase {
   async delete(call, ctx) {
     let userIDs = call.request.ids;
     let resources = [];
-    let subject = await getSubjectFromRedis(call, this);
+    let subject = call.request.subject;
     let action;
     if (userIDs) {
       action = AuthZAction.DELETE;
@@ -118,10 +166,22 @@ export class ResourceService extends ServiceBase {
         this.resourceName, this);
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
-      throw err;
+      return {
+        status: [{
+          id: '',
+          code: err.code,
+          message: err.message
+        }]
+      };
     }
     if (acsResponse.decision != Decision.PERMIT) {
-      throw new PermissionDenied(acsResponse.response.status.message, acsResponse.response.status.code);
+      return {
+        status: [{
+          id: '',
+          code: acsResponse.response.status.code,
+          message: acsResponse.response.status.message
+        }]
+      };
     }
     return await super.delete(call, ctx);
   }

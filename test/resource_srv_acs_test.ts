@@ -1,5 +1,5 @@
 import * as should from 'should';
-import * as grpcClient from '@restorecommerce/grpc-client';
+import { GrpcClient } from '@restorecommerce/grpc-client';
 import {Events, Topic} from '@restorecommerce/kafka-client';
 import {Worker} from '../lib/worker';
 import {createMockServer} from 'grpc-mock';
@@ -171,19 +171,24 @@ async function getClientResourceServices() {
       if (resource === 'command') {
         // if resource is command create a commandInterface client
         const serviceName = 'io.restorecommerce.commandinterface.Service';
-        const client = new grpcClient.Client(cfg.get('client:commandinterface'), logger);
-        options.microservice.service[serviceName] = await client.connect();
+        const client = new GrpcClient(cfg.get('client:commandinterface'), logger);
+        options.microservice.service[serviceName] = client.commandinterface;
         options.microservice.mapClients.set(resource, serviceName);
         continue;
       }
       const protos = [`${protosPrefix}/${resource}.proto`];
       const serviceName = `${servicePrefix}${resource}.Service`;
+      const packageName = `${servicePrefix}${resource}`;
       const defaultConfig = clientConfig['default-resource-srv'];
-      defaultConfig.transports.grpc.protos = protos;
-      defaultConfig.transports.grpc.service = serviceName;
+      defaultConfig.proto.protoPath = protos;
+      defaultConfig.proto.services = {};
+      defaultConfig.proto.services[resource] = {
+        packageName: packageName,
+        serviceName: 'Service'
+      };
       try {
-        const client = new grpcClient.Client(defaultConfig, logger);
-        options.microservice.service[serviceName] = await client.connect();
+        const client = new GrpcClient(defaultConfig, logger);
+        options.microservice.service[serviceName] = client[resource];
         options.microservice.mapClients.set(resource, serviceName);
         logger.verbose('connected to microservice', serviceName);
       } catch (err) {
@@ -209,8 +214,8 @@ describe('resource-srv testing with ACS enabled', () => {
   let baseValidation = function (result: any) {
     should.exist(result);
     should.not.exist(result.error);
-    should.exist(result.data);
-    should.exist(result.data.items);
+    should.exist(result.items);
+    should.exist(result.status);
   };
 
   // start the server and get the clientService Obj based on resourceName
@@ -246,13 +251,13 @@ describe('resource-srv testing with ACS enabled', () => {
   it('should create contact_point resource', async function createContactPoints() {
     // start mock acs-srv - needed for read operation since acs-client makes a req to acs-srv
     // to get applicable policies although acs-lookup is disabled
-    startGrpcMockServer([{method: 'WhatIsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: policySetRQ},
-      {method: 'IsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: {decision: 'PERMIT'}}]);
+    startGrpcMockServer([{method: 'WhatIsAllowed', input: '.*', output: policySetRQ},
+      {method: 'IsAllowed', input: '.*', output: {decision: 'PERMIT'}}]);
     const result = await contactPointsService.create({items: listOfContactPoints, subject});
     baseValidation(result);
-    result.data.items.should.be.length(2);
-    result.data.items[0].website.should.equal('http://TestOrg1.de');
-    result.data.items[1].website.should.equal('http://TestOrg2.de');
+    result.items.should.be.length(2);
+    result.items[0].website.should.equal('http://TestOrg1.de');
+    result.items[1].website.should.equal('http://TestOrg2.de');
   });
   it('should throw an error when creating contact_point resource with invalid subject scope', async function createContactPoints() {
     subject.scope = 'orgD';
@@ -260,24 +265,27 @@ describe('resource-srv testing with ACS enabled', () => {
     startGrpcMockServer([{method: 'WhatIsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: policySetRQ},
       {method: 'IsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: {decision: 'DENY'}}]);
     const result = await contactPointsService.create({items: listOfContactPoints, subject});
-    should.exist(result.error);
-    result.error.details.should.equal('7 PERMISSION_DENIED: Access not allowed for request with subject:admin_user_id, resource:contact_point, action:CREATE, target_scope:orgD; the response was DENY');
+    should.exist(result.status);
+    result.status[0].code.should.equal(403);
+    result.status[0].message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:CREATE, target_scope:orgD; the response was DENY');
   });
   it('should throw error updating contact point resource with invalid subject scope', async function deleteContactPoint() {
     const updateResult = await contactPointsService.update({items: listOfContactPoints, subject});
-    should.exist(updateResult.error);
-    updateResult.error.details.should.equal('7 PERMISSION_DENIED: Access not allowed for request with subject:admin_user_id, resource:contact_point, action:MODIFY, target_scope:orgD; the response was DENY');
+    should.exist(updateResult.status);
+    updateResult.status[0].code.should.equal(403);
+    updateResult.status[0].message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:MODIFY, target_scope:orgD; the response was DENY');
   });
   it('should throw error upserting contact point resource with invalid subject scope', async function deleteContactPoint() {
     const updateResult = await contactPointsService.upsert({items: listOfContactPoints, subject});
-    should.exist(updateResult.error);
-    updateResult.error.details.should.equal('7 PERMISSION_DENIED: Access not allowed for request with subject:admin_user_id, resource:contact_point, action:MODIFY, target_scope:orgD; the response was DENY');
+    should.exist(updateResult.status);
+    updateResult.status[0].code.should.equal(403);
+    updateResult.status[0].message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:MODIFY, target_scope:orgD; the response was DENY');
   });
   it('should throw error deleting contact point resource with invalid subject scope', async function deleteContactPoint() {
     const deletedResult = await contactPointsService.delete({ids: ['contact_point_1', 'contact_point_2'], subject});
-    should.exist(deletedResult);
-    should.exist(deletedResult.error);
-    deletedResult.error.details.should.equal('7 PERMISSION_DENIED: Access not allowed for request with subject:admin_user_id, resource:contact_point, action:DELETE, target_scope:orgD; the response was DENY');
+    should.exist(deletedResult.status);
+    deletedResult.status[0].code.should.equal(403);
+    deletedResult.status[0].message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:DELETE, target_scope:orgD; the response was DENY');
   });
   it('should update contact point resource with valid subject scope', async function deleteContactPoint() {
     subject.scope = 'orgC';
@@ -288,8 +296,8 @@ describe('resource-srv testing with ACS enabled', () => {
     listOfContactPoints[1].website = 'http://newtest2.de';
     const updateResult = await contactPointsService.update({items: listOfContactPoints, subject});
     baseValidation(updateResult);
-    updateResult.data.items[0].website.should.equal('http://newtest1.de');
-    updateResult.data.items[1].website.should.equal('http://newtest2.de');
+    updateResult.items[0].website.should.equal('http://newtest1.de');
+    updateResult.items[1].website.should.equal('http://newtest2.de');
   });
   it('should throw error when trying to update contact point not existing with valid subject scope', async function deleteContactPoint() {
     const contactPoint = {
@@ -298,8 +306,10 @@ describe('resource-srv testing with ACS enabled', () => {
       meta
     };
     const updateResult = await contactPointsService.update({items: contactPoint, subject});
-    should.exist(updateResult.error);
-    updateResult.error.message.should.equal('not found');
+    should.exist(updateResult.data.status);
+    updateResult.status[0].id.should.equal('contact_point_3');
+    updateResult.status[0].code.should.equal(404);
+    updateResult.status[0].message.should.equal('document not found');
   });
   it('should upsert contact point with valid subject scope', async function deleteContactPoint() {
     const contactPoint = {
@@ -309,7 +319,7 @@ describe('resource-srv testing with ACS enabled', () => {
     };
     const upsertResult = await contactPointsService.upsert({items: contactPoint, subject});
     baseValidation(upsertResult);
-    upsertResult.data.items[0].website.should.equal(contactPoint.website);
+    upsertResult.items[0].website.should.equal(contactPoint.website);
   });
   it('should delete contact point resource', async function deleteContactPoint() {
     subject.scope = 'orgC';
@@ -328,6 +338,6 @@ describe('resource-srv testing with ACS enabled', () => {
       subject
     });
     baseValidation(resultAfterDeletion);
-    resultAfterDeletion.data.items.should.be.length(0);
+    resultAfterDeletion.items.should.be.length(0);
   });
 });

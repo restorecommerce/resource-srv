@@ -66,7 +66,14 @@
           "toVerticeName": "contact_points"
         }
       ]
-    }
+    },
+    "edgeDefinitions": [
+      {
+        "collection": "org_has_contact_points",
+        "from": "organizations",
+        "to": "contact_points"
+      }
+    ]
   },
   "events": {
     "kafka": {
@@ -284,77 +291,38 @@
       "organization"
     ],
     "default-resource-srv": {
-      "transports": {
-        "grpc": {
-          "service": "",
-          "timeout": 3000,
-          "protoRoot": "node_modules/@restorecommerce/protos/"
+      "address": "localhost:50053",
+      "proto": {
+        "protoRoot": "node_modules/@restorecommerce/protos/",
+        "protoPath": "",
+        "services": {
         }
-      },
-      "loadbalancer": {
-        "name": "roundRobin"
-      },
-      "publisher": {
-        "name": "static",
-        "instances": [
-          "grpc://localhost:50053"
-        ]
-      },
-      "endpoints": {
-        "read": {},
-        "create": {},
-        "delete": {},
-        "update": {},
-        "upsert": {}
       }
     },
     "commandinterface": {
-      "transports": {
-        "grpc": {
-          "service": "io.restorecommerce.commandinterface.Service",
-          "protos": [
-            "io/restorecommerce/commandinterface.proto"
-          ],
-          "protoRoot": "node_modules/@restorecommerce/protos/",
-          "timeout": 3000
+      "address": "localhost:50053",
+      "proto": {
+        "protoRoot": "node_modules/@restorecommerce/protos/",
+        "protoPath": "io/restorecommerce/commandinterface.proto",
+        "services": {
+          "commandinterface": {
+            "packageName": "io.restorecommerce.commandinterface",
+            "serviceName": "Service"
+          }
         }
-      },
-      "loadbalancer": {
-        "name": "roundRobin"
-      },
-      "publisher": {
-        "name": "static",
-        "instances": [
-          "grpc://localhost:50053"
-        ]
-      },
-      "endpoints": {
-        "command": {}
       }
     },
     "acs-srv": {
-      "transports": {
-        "grpc": {
-          "service": "io.restorecommerce.access_control.Service",
-          "protos": [
-            "io/restorecommerce/access_control.proto"
-          ],
-          "protoRoot": "node_modules/@restorecommerce/protos/",
-          "timeout": 3000
+      "address": "localhost:50061",
+      "proto": {
+        "protoRoot": "node_modules/@restorecommerce/protos/",
+        "protoPath": "io/restorecommerce/access_control.proto",
+        "services": {
+          "acs-srv": {
+            "packageName": "io.restorecommerce.access_control",
+            "serviceName": "Service"
+          }
         }
-      },
-      "loadbalancer": {
-        "name": "roundRobin"
-      },
-      "publisher": {
-        "name": "static",
-        "instances": [
-          "grpc://localhost:50061"
-        ]
-      },
-      "endpoints": {
-        "isAllowed": {},
-        "whatIsAllowed": {}
       }
     },
     "errors": {

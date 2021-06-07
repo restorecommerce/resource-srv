@@ -102,7 +102,8 @@ export class ResourceCommandInterface extends CommandInterface {
             }
           }
         }
-        await db.update(collectionName, { id: message.id }, _.omitBy(message, _.isNil));
+        message = _.omitBy(message, _.isNil);
+        await db.update(collectionName, message);
         return {};
       },
       [`${resource}Deleted`]: async function restoreDeleted(message: any, context: any, config: any,
@@ -111,7 +112,7 @@ export class ResourceCommandInterface extends CommandInterface {
           // Modify the Ids to include documentHandle
           await db.removeVertex(collectionName, `${collectionName}/${message.id}`);
         } else {
-          await db.delete(collectionName, { id: message.id });
+          await db.delete(collectionName, [message.id]);
         }
         return {};
       }

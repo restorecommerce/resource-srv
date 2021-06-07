@@ -1,5 +1,5 @@
 import * as should from 'should';
-import * as grpcClient from '@restorecommerce/grpc-client';
+import { GrpcClient } from '@restorecommerce/grpc-client';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import { Worker } from '../lib/worker';
 import { updateConfig } from '@restorecommerce/acs-client';
@@ -83,19 +83,24 @@ async function getClientResourceServices() {
       if (resource === 'command') {
         // if resource is command create a commandInterface client
         const serviceName = 'io.restorecommerce.commandinterface.Service';
-        const client = new grpcClient.Client(cfg.get('client:commandinterface'), logger);
-        options.microservice.service[serviceName] = await client.connect();
+        const client = new GrpcClient(cfg.get('client:commandinterface'), logger);
+        options.microservice.service[serviceName] = client.commandinterface;
         options.microservice.mapClients.set(resource, serviceName);
         continue;
       }
-      const protos = [`${protosPrefix}/${resource}.proto`];
+      const protos = `${protosPrefix}${resource}.proto`;
       const serviceName = `${servicePrefix}${resource}.Service`;
+      const packageName = `${servicePrefix}${resource}`;
       const defaultConfig = clientConfig['default-resource-srv'];
-      defaultConfig.transports.grpc.protos = protos;
-      defaultConfig.transports.grpc.service = serviceName;
+      defaultConfig.proto.protoPath = protos;
+      defaultConfig.proto.services = {};
+      defaultConfig.proto.services[resource] = {
+        packageName: packageName,
+        serviceName: 'Service'
+      };
       try {
-        const client = new grpcClient.Client(defaultConfig, logger);
-        options.microservice.service[serviceName] = await client.connect();
+        const client = new GrpcClient(defaultConfig, logger);
+        options.microservice.service[serviceName] = client[resource];
         options.microservice.mapClients.set(resource, serviceName);
         logger.verbose('connected to microservice', serviceName);
       } catch (err) {
@@ -120,9 +125,8 @@ describe('resource-srv testing', () => {
   let validate;
   let baseValidation = function (result: any) {
     should.exist(result);
-    should.not.exist(result.error);
-    should.exist(result.data);
-    should.exist(result.data.items);
+    should.exist(result.items);
+    should.exist(result.status);
   };
 
   // start the server and get the clientService Obj based on resourceName
@@ -161,20 +165,32 @@ describe('resource-srv testing', () => {
     await worker.stop();
   });
 
-  it('should create contact_point resource', async function createContactPoints() {
+  it('should create contact_point resource and verify data and status response', async function createContactPoints() {
     const result = await contactPointsService.create({ items: listOfContactPoints });
     baseValidation(result);
-    result.data.items.should.be.length(2);
-    result.data.items[0].website.should.equal('http://TestOrg1.de');
-    result.data.items[1].website.should.equal('http://TestOrg2.de');
+    result.items.should.be.length(2);
+    result.items[0].website.should.equal('http://TestOrg1.de');
+    result.items[1].website.should.equal('http://TestOrg2.de');
+    result.status.should.be.length(2);
+    result.status[0].id.should.equal('contact_point_1');
+    result.status[0].code.should.equal(200);
+    result.status[0].message.should.equal('success');
+    result.status[1].id.should.equal('contact_point_2');
+    result.status[1].code.should.equal(200);
+    result.status[1].message.should.equal('success');
   });
 
-  it('should create organization resource', async function createOrganizations() {
+  it('should create organization resource and verify data and status response', async function createOrganizations() {
     const result = await organizationService.create({ items: listOfOrganizations });
     baseValidation(result);
-    result.data.items.should.be.length(2);
-    result.data.items[0].name.should.equal('TestOrg1');
-    result.data.items[1].name.should.equal('TestOrg2');
+    result.items.should.be.length(2);
+    result.items[0].name.should.equal('TestOrg1');
+    result.items[1].name.should.equal('TestOrg2');
+    result.status.should.be.length(2);
+    result.status[0].code.should.equal(200);
+    result.status[0].message.should.equal('success');
+    result.status[1].code.should.equal(200);
+    result.status[1].message.should.equal('success');
   });
 
   it('should read organization resource', async function readOrganization() {
@@ -185,12 +201,15 @@ describe('resource-srv testing', () => {
       }]
     });
     baseValidation(result);
-    result.data.items.should.be.length(2);
-    result.data.items[0].name.should.equal('TestOrg1');
-    result.data.items[1].name.should.equal('TestOrg2');
+    result.items.should.be.length(2);
+    result.items[0].name.should.equal('TestOrg1');
+    result.items[1].name.should.equal('TestOrg2');
+    should.exist(result.status);
+    result.status.code.should.equal(200);
+    result.status.message.should.equal('success');
   });
 
-  it('should update organization resource', async function updateOrganization() {
+  it('should update organization resource and validate status', async function updateOrganization() {
     const result = await organizationService.read({
       sort: [{
         field: 'name',
@@ -198,33 +217,36 @@ describe('resource-srv testing', () => {
       }]
     });
     baseValidation(result);
-    result.data.items.should.be.length(2);
+    result.items.should.be.length(2);
     const changedOrgList = [{
-      id: result.data.items[0].id,
+      id: result.items[0].id,
       name: 'TestOrg3',
       meta
     },
     {
-      id: result.data.items[1].id,
+      id: result.items[1].id,
       name: 'TestOrg4',
       meta
     }];
     const update = await organizationService.update({ items: changedOrgList });
     baseValidation(update);
-    result.data.items.should.be.length(2);
-    const updatedResult = await organizationService.read({
+    result.items.should.be.length(2);
+    const updatedReadResult = await organizationService.read({
       sort: [{
         field: 'name',
         order: 1, // ASCENDING
       }]
     });
-    baseValidation(updatedResult);
-    result.data.items.should.be.length(2);
-    updatedResult.data.items[0].name.should.equal('TestOrg3');
-    updatedResult.data.items[1].name.should.equal('TestOrg4');
+    baseValidation(updatedReadResult);
+    result.items.should.be.length(2);
+    updatedReadResult.items[0].name.should.equal('TestOrg3');
+    updatedReadResult.items[1].name.should.equal('TestOrg4');
+    should.exist(updatedReadResult.status);
+    updatedReadResult.status.code.should.equal(200);
+    updatedReadResult.status.message.should.equal('success');
   });
 
-  it('should upsert organization resource', async function upsertOrganization() {
+  it('should upsert organization resource and validate status', async function upsertOrganization() {
     const result = await organizationService.read({
       sort: [{
         field: 'name',
@@ -232,9 +254,9 @@ describe('resource-srv testing', () => {
       }]
     });
     baseValidation(result);
-    result.data.items.should.be.length(2);
+    result.items.should.be.length(2);
     const updatedOrgList = [{
-      id: result.data.items[0].id,
+      id: result.items[0].id,
       name: 'TestOrg5',
       meta
     },
@@ -246,7 +268,12 @@ describe('resource-srv testing', () => {
     }];
     const update = await organizationService.upsert({ items: updatedOrgList });
     baseValidation(update);
-    update.data.items.should.be.length(2);
+    update.items.should.be.length(2);
+    update.status.should.be.length(2);
+    update.status[0].code.should.equal(200);
+    update.status[0].message.should.equal('success');
+    update.status[1].code.should.equal(200);
+    update.status[1].message.should.equal('success');
     const updatedResult = await organizationService.read({
       sort: [{
         field: 'modified',
@@ -259,14 +286,14 @@ describe('resource-srv testing', () => {
       ]
     });
     baseValidation(updatedResult);
-    updatedResult.data.items.should.be.length(3);
-    updatedResult.data.items[0].name.should.equal('TestOrg4');
-    updatedResult.data.items[1].name.should.equal('TestOrg5');
-    updatedResult.data.items[2].name.should.equal('TestOrg6');
+    updatedResult.items.should.be.length(3);
+    updatedResult.items[0].name.should.equal('TestOrg4');
+    updatedResult.items[1].name.should.equal('TestOrg5');
+    updatedResult.items[2].name.should.equal('TestOrg6');
   });
 
   // edge from org to cp resource is also delted when org is deleted
-  it('should delete organization resource', async function deleteOrganization() {
+  it('should delete organization resource and verify status', async function deleteOrganization() {
     const result = await organizationService.read({
       sort: [{
         field: 'created',
@@ -276,13 +303,16 @@ describe('resource-srv testing', () => {
     baseValidation(result);
     const deleteIDs = {
       ids:
-        [result.data.items[0].id,
-        result.data.items[1].id,
-        result.data.items[2].id]
+        [result.items[0].id,
+        result.items[1].id,
+        result.items[2].id]
     };
     const deletedResult = await organizationService.delete(deleteIDs);
     should.exist(deletedResult);
-    should.not.exist(deletedResult.error);
+    should.exist(deletedResult.status);
+    deletedResult.status[0].message.should.equal('success');
+    deletedResult.status[1].message.should.equal('success');
+    deletedResult.status[2].message.should.equal('success');
 
     const resultAfterDeletion = await organizationService.read({
       sort: [{
@@ -291,7 +321,7 @@ describe('resource-srv testing', () => {
       }]
     });
     baseValidation(resultAfterDeletion);
-    resultAfterDeletion.data.items.should.be.length(0);
+    resultAfterDeletion.items.should.be.length(0);
 
     const orgDeletionResult = await organizationService.delete({ collection: true });
     should.exist(orgDeletionResult);
@@ -341,10 +371,9 @@ describe('resource-srv testing', () => {
         value: 'contact_point_1'
       }]
     }] });
-    should.not.exist(readResult.error);
-    should.exist(readResult.data);
-    should.exist(readResult.data.items[0]);
-    readResult.data.items[0].id.should.equal('contact_point_1');
+    should.exist(readResult);
+    should.exist(readResult.items[0]);
+    readResult.items[0].id.should.equal('contact_point_1');
   });
 
   it('should not return data using filter for invalid id', async function readContactPoint() {
@@ -355,9 +384,8 @@ describe('resource-srv testing', () => {
         value: 'invalid_id'
       }]
     }] });
-    should.not.exist(readResult.error);
-    should.exist(readResult.data);
-    readResult.data.items.should.be.empty();
+    should.exist(readResult);
+    readResult.items.should.be.empty();
   });
 
   // delete contact_point resource
@@ -373,6 +401,6 @@ describe('resource-srv testing', () => {
       }]
     });
     baseValidation(resultAfterDeletion);
-    resultAfterDeletion.data.items.should.be.length(0);
+    resultAfterDeletion.items.should.be.length(0);
   });
 });

@@ -65,7 +65,6 @@
     "build:tsc": "tsc -d",
     "build:clean": "rimraf lib",
     "build": "npm-run-all lint build:clean build:tsc",
-    "healthcheck": "node lib/healthcheck.js",
     "postinstall": "npm run build:tsc"
   },
   "engines": {

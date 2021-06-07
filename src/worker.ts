@@ -98,7 +98,7 @@ export class Worker {
     const logger = createLogger(cfg.get('logger'));
     const server = new Server(cfg.get('server'), logger);
     const db = await database.get(cfg.get('database:arango'),
-      logger, cfg.get('graph:graphName')) as GraphDatabaseProvider;
+      logger, cfg.get('graph:graphName'), cfg.get('graph:edgeDefinitions')) as GraphDatabaseProvider;
     const events = new Events(cfg.get('events:kafka'), logger);
 
     await events.start();
@@ -159,7 +159,6 @@ export class Worker {
         if (graphCfg) {
           graphName = graphCfg.graphName;
         }
-        // TODO dont use service base direcly extend with class and then override the apis used in resources (making ACS request)
         const resourceAPI = new ResourcesAPIBase(db, `${resourceName}s`,
           resourceFieldConfig, edgeCfg, graphName);
         const resourceEvents = await events.topic(`${resourcesServiceNamePrefix}${resourceName}s.resource`);
@@ -184,12 +183,10 @@ export class Worker {
         try {
           await cis.command(msg, context);
         } catch (err) {
-          that.logger.error('Error while executing command', err);
+          logger.error('Error while executing command', err);
         }
       };
     }
-
-    const topics = kafkaCfg.topics;
     const topicTypes = _.keys(kafkaCfg.topics);
     for (let topicType of topicTypes) {
       const topicName = kafkaCfg.topics[topicType].topic;
