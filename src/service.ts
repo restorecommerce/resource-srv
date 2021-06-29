@@ -230,7 +230,7 @@ export class ResourceService extends ServiceBase {
           });
           // update owner info
           if (result.items.length === 1) {
-            let item = result.items[0];
+            let item = result.items[0].payload;
             resource.meta.owner = item.meta.owner;
           } else if (result.items.length === 0 && !resource.meta.owner) {
             let ownerAttributes = _.cloneDeep(orgOwnerAttributes);
