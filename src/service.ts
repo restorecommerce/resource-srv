@@ -30,20 +30,20 @@ export class ResourceService extends ServiceBase {
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv', err);
       return {
-        status: [{
+        status: {
           id: '',
           code: err.code,
           message: err.message
-        }]
+        }
       };
     }
     if (acsResponse.decision != Decision.PERMIT) {
       return {
-        status: [{
+        status: {
           id: '',
           code: acsResponse.response.status.code,
           message: acsResponse.response.status.message
-        }]
+        }
       };
     }
     return await super.create(call, ctx);
@@ -68,11 +68,11 @@ export class ResourceService extends ServiceBase {
     }
     if (acsResponse.decision != Decision.PERMIT) {
       return {
-        status: [{
+        status: {
           id: '',
           code: acsResponse.response.status.code,
           message: acsResponse.response.status.message
-        }]
+        }
       };
     }
     return await super.read({ request: readRequest });
@@ -90,20 +90,20 @@ export class ResourceService extends ServiceBase {
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
       return {
-        status: [{
+        status: {
           id: '',
           code: err.code,
           message: err.message
-        }]
+        }
       };
     }
     if (acsResponse.decision != Decision.PERMIT) {
       return {
-        status: [{
+        status: {
           id: '',
           code: acsResponse.response.status.code,
           message: acsResponse.response.status.message
-        }]
+        }
       };
     }
     return await super.update(call, ctx);
@@ -120,20 +120,20 @@ export class ResourceService extends ServiceBase {
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
       return {
-        status: [{
+        status: {
           id: '',
           code: err.code,
           message: err.message
-        }]
+        }
       };
     }
     if (acsResponse.decision != Decision.PERMIT) {
       return {
-        status: [{
+        status: {
           id: '',
           code: acsResponse.response.status.code,
           message: acsResponse.response.status.message
-        }]
+        }
       };
     }
     return await super.upsert(call, ctx);
