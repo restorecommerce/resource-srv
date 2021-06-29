@@ -228,13 +228,11 @@ describe('resource-srv testing', () => {
     const changedOrgList = [{
       id: result.items[0].payload.id,
       name: 'TestOrg3',
-      contact_point_ids: ['contact_point_1', 'contact_point_2'],
       meta
     },
     {
       id: result.items[1].payload.id,
       name: 'TestOrg4',
-      contact_point_ids: ['contact_point_1', 'contact_point_2'],
       meta
     }];
     const update = await organizationService.update({ items: changedOrgList });
