@@ -3,6 +3,7 @@ import {
 } from '@restorecommerce/acs-client';
 import * as _ from 'lodash';
 import { ResourceService } from './service';
+import { FilterOp } from '@restorecommerce/resource-base-interface';
 
 export interface HierarchicalScope {
   id: string;
@@ -28,7 +29,7 @@ export interface FilterType {
 
 export interface ReadPolicyResponse extends AccessResponse {
   policy_sets?: PolicySetRQ[];
-  filters?: FilterType[];
+  filters?: FilterOp [];
   custom_query_args?: {
     custom_queries: any;
     custom_arguments: any;
