@@ -122,11 +122,10 @@ describe('resource-srv testing', () => {
   let events: Events;
   let commandTopic: Topic;
   let organizationTopic: Topic;
-  let validate;
   let baseValidation = function (result: any) {
     should.exist(result);
     should.exist(result.items);
-    should.exist(result.status);
+    should.exist(result.operation_status);
   };
 
   // start the server and get the clientService Obj based on resourceName
@@ -172,8 +171,8 @@ describe('resource-srv testing', () => {
     result.items[0].payload.website.should.equal('http://TestOrg1.de');
     result.items[1].payload.website.should.equal('http://TestOrg2.de');
     // validate overall status
-    result.status.code.should.equal(200);
-    result.status.message.should.equal('success');
+    result.operation_status.code.should.equal(200);
+    result.operation_status.message.should.equal('success');
     // validate payload status messages
     result.items[0].status.id.should.equal('contact_point_1');
     result.items[0].status.code.should.equal(200);
@@ -190,8 +189,8 @@ describe('resource-srv testing', () => {
     result.items[0].payload.name.should.equal('TestOrg1');
     result.items[1].payload.name.should.equal('TestOrg2');
     // validate overall status
-    result.status.code.should.equal(200);
-    result.status.message.should.equal('success');
+    result.operation_status.code.should.equal(200);
+    result.operation_status.message.should.equal('success');
     // validate payload status messages
     result.items[0].status.code.should.equal(200);
     result.items[0].status.message.should.equal('success');
@@ -210,10 +209,10 @@ describe('resource-srv testing', () => {
     result.items.should.be.length(2);
     result.items[0].payload.name.should.equal('TestOrg1');
     result.items[1].payload.name.should.equal('TestOrg2');
-    should.exist(result.status);
+    should.exist(result.operation_status);
     // validate overall status
-    result.status.code.should.equal(200);
-    result.status.message.should.equal('success');
+    result.operation_status.code.should.equal(200);
+    result.operation_status.message.should.equal('success');
   });
 
   it('should update organization resource and validate status', async function updateOrganization() {
@@ -248,9 +247,9 @@ describe('resource-srv testing', () => {
     result.items.should.be.length(2);
     updatedReadResult.items[0].payload.name.should.equal('TestOrg3');
     updatedReadResult.items[1].payload.name.should.equal('TestOrg4');
-    should.exist(updatedReadResult.status);
-    updatedReadResult.status.code.should.equal(200);
-    updatedReadResult.status.message.should.equal('success');
+    should.exist(updatedReadResult.operation_status);
+    updatedReadResult.operation_status.code.should.equal(200);
+    updatedReadResult.operation_status.message.should.equal('success');
   });
 
   it('should upsert organization resource and validate status', async function upsertOrganization() {
@@ -275,11 +274,10 @@ describe('resource-srv testing', () => {
     }];
     const update = await organizationService.upsert({ items: updatedOrgList });
     baseValidation(update);
-    update.status.message.should.equal('success');
     // overall status
-    should.exist(update.status);
-    update.status.code.should.equal(200);
-    update.status.message.should.equal('success');
+    should.exist(update.operation_status);
+    update.operation_status.code.should.equal(200);
+    update.operation_status.message.should.equal('success');
     update.items.should.be.length(2);
     update.items[0].status.code.should.equal(200);
     update.items[0].status.message.should.equal('success');
@@ -324,6 +322,10 @@ describe('resource-srv testing', () => {
     deletedResult.status[0].message.should.equal('success');
     deletedResult.status[1].message.should.equal('success');
     deletedResult.status[2].message.should.equal('success');
+    should.exist(deletedResult.operation_status);
+    deletedResult.operation_status.code.should.equal(200);
+    deletedResult.operation_status.message.should.equal('success');
+
 
     const resultAfterDeletion = await organizationService.read({
       sort: [{
@@ -405,6 +407,10 @@ describe('resource-srv testing', () => {
     deletedResult.status[1].id.should.equal('contact_point_2');
     deletedResult.status[1].code.should.equal(200);
     deletedResult.status[1].message.should.equal('success');
+    // overall_status
+    should.exist(deletedResult.operation_status);
+    deletedResult.operation_status.code.should.equal(200);
+    deletedResult.operation_status.message.should.equal('success');
 
     const resultAfterDeletion = await contactPointsService.read({
       sort: [{

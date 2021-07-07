@@ -213,9 +213,8 @@ describe('resource-srv testing with ACS enabled', () => {
   let validate;
   let baseValidation = function (result: any) {
     should.exist(result);
-    should.not.exist(result.error);
     should.exist(result.items);
-    should.exist(result.status);
+    should.exist(result.operation_status);
   };
 
   // start the server and get the clientService Obj based on resourceName
@@ -265,27 +264,28 @@ describe('resource-srv testing with ACS enabled', () => {
     startGrpcMockServer([{method: 'WhatIsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: policySetRQ},
       {method: 'IsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: {decision: 'DENY'}}]);
     const result = await contactPointsService.create({items: listOfContactPoints, subject});
-    should.exist(result.status);
-    result.status.code.should.equal(403);
-    result.status.message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:CREATE, target_scope:orgD; the response was DENY');
+    should.exist(result.operation_status);
+    result.operation_status.code.should.equal(403);
+    result.operation_status.message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:CREATE, target_scope:orgD; the response was DENY');
   });
   it('should throw error updating contact point resource with invalid subject scope', async function deleteContactPoint() {
     const updateResult = await contactPointsService.update({items: listOfContactPoints, subject});
-    should.exist(updateResult.status);
-    updateResult.status.code.should.equal(403);
-    updateResult.status.message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:MODIFY, target_scope:orgD; the response was DENY');
+    should.exist(updateResult.operation_status);
+    updateResult.operation_status.code.should.equal(403);
+    updateResult.operation_status.message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:MODIFY, target_scope:orgD; the response was DENY');
   });
   it('should throw error upserting contact point resource with invalid subject scope', async function deleteContactPoint() {
     const updateResult = await contactPointsService.upsert({items: listOfContactPoints, subject});
-    should.exist(updateResult.status);
-    updateResult.status.code.should.equal(403);
-    updateResult.status.message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:MODIFY, target_scope:orgD; the response was DENY');
+    should.exist(updateResult.operation_status);
+    updateResult.operation_status.code.should.equal(403);
+    updateResult.operation_status.message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:MODIFY, target_scope:orgD; the response was DENY');
   });
   it('should throw error deleting contact point resource with invalid subject scope', async function deleteContactPoint() {
     const deletedResult = await contactPointsService.delete({ids: ['contact_point_1', 'contact_point_2'], subject});
-    should.exist(deletedResult.status);
-    deletedResult.status[0].code.should.equal(403);
-    deletedResult.status[0].message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:DELETE, target_scope:orgD; the response was DENY');
+    deletedResult.status.should.be.empty();
+    should.exist(deletedResult.operation_status);
+    deletedResult.operation_status.code.should.equal(403);
+    deletedResult.operation_status.message.should.equal('Access not allowed for request with subject:admin_user_id, resource:contact_point, action:DELETE, target_scope:orgD; the response was DENY');
   });
   it('should update contact point resource with valid subject scope', async function deleteContactPoint() {
     subject.scope = 'orgC';
@@ -306,14 +306,14 @@ describe('resource-srv testing with ACS enabled', () => {
       meta
     }];
     const updateResult = await contactPointsService.update({items: contactPoint, subject});
-    should.exist(updateResult.status);
+    should.exist(updateResult.operation_status);
     // update status for item failure
     updateResult.items[0].status.id.should.equal('contact_point_3');
     updateResult.items[0].status.code.should.equal(404);
     updateResult.items[0].status.message.should.equal('document not found');
     // overall status success
-    updateResult.status.code.should.equal(200);
-    updateResult.status.message.should.equal('success');
+    updateResult.operation_status.code.should.equal(200);
+    updateResult.operation_status.message.should.equal('success');
   });
   it('should upsert contact point with valid subject scope', async function deleteContactPoint() {
     const contactPoint = [{
@@ -341,6 +341,7 @@ describe('resource-srv testing with ACS enabled', () => {
     deletedResult.status[2].id.should.equal('contact_point_3');
     deletedResult.status[2].code.should.equal(200);
     deletedResult.status[2].message.should.equal('success');
+    console.log('Finala deletion result is...', JSON.stringify(deletedResult));
 
     const resultAfterDeletion = await contactPointsService.read({
       sort: [{
