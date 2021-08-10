@@ -1,3 +1,11 @@
+## 0.1.0 (August 10th, 2021)
+
+- latest grpc-client
+- migraged kafka-client to kafkajs
+- chassis-srv using the latest grpc-js and protobufdef loader
+- filter changes (removed google.protobuf.struct completely and defined nested proto structure)
+- added status object to each item and also overall operation_status.
+
 ## 0.0.12 (March 25th, 2021)
 
 - switch to official grpc healthcheck proto
