@@ -16,19 +16,19 @@
     "resource"
   ],
   "dependencies": {
-    "@restorecommerce/acs-client": "^0.4.8",
+    "@restorecommerce/acs-client": "^0.4.11",
     "@restorecommerce/chassis-srv": "^0.3.2",
     "@restorecommerce/cluster-service": "^0.1.10",
-    "@restorecommerce/grpc-client": "^0.2.8",
-    "@restorecommerce/kafka-client": "^0.2.22",
+    "@restorecommerce/grpc-client": "^0.2.10",
+    "@restorecommerce/kafka-client": "^0.2.23",
     "@restorecommerce/protos": "^0.4.4",
     "@restorecommerce/resource-base-interface": "^0.2.0",
-    "@restorecommerce/service-config": "^0.4.17",
+    "@restorecommerce/service-config": "^0.4.18",
     "lodash": "^4.17.21",
     "redis": "^3.1.1"
   },
   "devDependencies": {
-    "@restorecommerce/logger": "^0.10.7",
+    "@restorecommerce/logger": "^0.10.8",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.9.1",
     "@types/redis": "^2.8.32",
