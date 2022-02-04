@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import * as redis from 'redis';
+import { RedisClientType } from 'redis';
 import {
   CommandInterface, Server, GraphDatabaseProvider
 } from '@restorecommerce/chassis-srv';
@@ -8,7 +8,7 @@ import { Events } from '@restorecommerce/kafka-client';
 export class ResourceCommandInterface extends CommandInterface {
   edgeCfg: any;
   // graphName: any;
-  constructor(server: Server, cfg: any, logger: any, events: Events, redisClient: redis.RedisClient) {
+  constructor(server: Server, cfg: any, logger: any, events: Events, redisClient: RedisClientType) {
     super(server, cfg, logger, events, redisClient);
     if (cfg.graph && cfg.graph.vertices) {
       this.edgeCfg = cfg.graph.vertices;

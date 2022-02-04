@@ -1,7 +1,7 @@
-import {Events, Topic} from '@restorecommerce/kafka-client';
-import {GraphResourcesServiceBase, ResourcesAPIBase, ServiceBase} from '@restorecommerce/resource-base-interface';
-import {ACSAuthZ, initAuthZ, initializeCache} from '@restorecommerce/acs-client';
-import {ResourceCommandInterface} from './commandInterface';
+import { Events, Topic } from '@restorecommerce/kafka-client';
+import { GraphResourcesServiceBase, ResourcesAPIBase, ServiceBase } from '@restorecommerce/resource-base-interface';
+import { ACSAuthZ, initAuthZ, initializeCache } from '@restorecommerce/acs-client';
+import { ResourceCommandInterface } from './commandInterface';
 import * as _ from 'lodash';
 import * as redis from 'redis';
 import {
@@ -13,10 +13,11 @@ import {
   Server,
   Health
 } from '@restorecommerce/chassis-srv';
-import {ResourceService} from './service';
-import {Logger} from 'winston';
-import {createLogger} from '@restorecommerce/logger';
-import {createServiceConfig} from '@restorecommerce/service-config';
+import { ResourceService } from './service';
+import { Logger } from 'winston';
+import { createLogger } from '@restorecommerce/logger';
+import { createServiceConfig } from '@restorecommerce/service-config';
+import { RedisClientType } from 'redis';
 
 export class Worker {
   server: Server;
@@ -95,7 +96,12 @@ export class Worker {
     grpcConfig.protos.push(descriptorProto);
     cfg.set('server:transports', [grpcConfig]);
 
-    const logger = createLogger(cfg.get('logger'));
+    const loggerCfg = cfg.get('logger');
+    loggerCfg.esTransformer = (msg) => {
+      msg.fields = JSON.stringify(msg.fields);
+      return msg;
+    };
+    const logger = createLogger(loggerCfg);
     const server = new Server(cfg.get('server'), logger);
     const db = await database.get(cfg.get('database:arango'),
       logger, cfg.get('graph:graphName'), cfg.get('graph:edgeDefinitions')) as GraphDatabaseProvider;
@@ -122,7 +128,7 @@ export class Worker {
     // init Redis Client for subject index
     const redisConfig = cfg.get('redis');
     redisConfig.db = cfg.get('redis:db-indexes:db-subject');
-    const redisClientSubject = redis.createClient(redisConfig);
+    const redisClientSubject: RedisClientType<any, any> = redis.createClient(redisConfig);
     for (let resourceType in resources) {
       const resourceCfg = resources[resourceType];
       const resourcesServiceConfigPrefix = resourceCfg.resourcesServiceConfigPrefix;
@@ -169,14 +175,13 @@ export class Worker {
     }
 
     // init ACS cache
-    initializeCache();
+    await initializeCache();
 
     // Add CommandInterfaceService
     const cis: ResourceCommandInterface = new ResourceCommandInterface(server, cfg, logger, events, redisClientSubject);
     const cisName = cfg.get('command-interface:name');
     await server.bind(cisName, cis);
 
-    const that = this;
     if (!resourcesServiceEventListener) {
       resourcesServiceEventListener = async (msg: any,
         context: any, config: any, eventName: string): Promise<any> => {
@@ -196,7 +201,7 @@ export class Worker {
       if (kafkaCfg.topics[topicType].events) {
         const eventNames = kafkaCfg.topics[topicType].events;
         for (let eventName of eventNames) {
-          await topic.on(eventName, resourcesServiceEventListener, {startingOffset: offSetValue});
+          await topic.on(eventName, resourcesServiceEventListener, { startingOffset: offSetValue });
         }
       }
     }
@@ -234,9 +239,6 @@ export class Worker {
     await this.server.stop();
     await this.events.stop();
     await this.offsetStore.stop();
-    if (this.redisClient) {
-      await this.redisClient.quit();
-    }
   }
 }
 

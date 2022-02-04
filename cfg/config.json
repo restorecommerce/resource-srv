@@ -415,6 +415,22 @@
           }
         }
       }
+    },
+    "user": {
+      "address": "localhost:50051",
+      "proto": {
+        "protoRoot": "node_modules/@restorecommerce/protos/",
+        "protoPath": "io/restorecommerce/user.proto",
+        "services": {
+          "user": {
+            "packageName": "io.restorecommerce.user",
+            "serviceName": "Service"
+          }
+        }
+      },
+      "omittedFields": {
+        "ReadRequest": "custom_arguments"
+      }
     }
   },
   "server": {

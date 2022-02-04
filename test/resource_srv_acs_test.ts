@@ -341,7 +341,6 @@ describe('resource-srv testing with ACS enabled', () => {
     deletedResult.status[2].id.should.equal('contact_point_3');
     deletedResult.status[2].code.should.equal(200);
     deletedResult.status[2].message.should.equal('success');
-    console.log('Finala deletion result is...', JSON.stringify(deletedResult));
 
     const resultAfterDeletion = await contactPointsService.read({
       sort: [{

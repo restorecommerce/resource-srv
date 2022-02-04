@@ -1,13 +1,14 @@
 import * as _ from 'lodash';
-import * as redis from 'redis';
+import { RedisClientType } from 'redis';
 import { ServiceBase, FilterOperation } from '@restorecommerce/resource-base-interface';
-import { ACSAuthZ, Subject } from '@restorecommerce/acs-client';
+import { ACSAuthZ, Subject, DecisionResponse, Operation, PolicySetRQResponse } from '@restorecommerce/acs-client';
 import { Decision, AuthZAction } from '@restorecommerce/acs-client';
-import { AccessResponse, checkAccessRequest, ReadPolicyResponse } from './utils';
+import { checkAccessRequest } from './utils';
+import * as uuid from 'uuid';
 
 export class ResourceService extends ServiceBase {
   authZ: ACSAuthZ;
-  redisClient: redis.RedisClient;
+  redisClient: RedisClientType;
   cfg: any;
   resourceName: string;
   constructor(resourceName, resourceEvents, cfg, logger, resourceAPI, isEventsEnabled, authZ, redisClientSubject) {
@@ -22,11 +23,14 @@ export class ResourceService extends ServiceBase {
     let data = call.request.items;
     let subject = call.request.subject;
     // update meta data for owner information
-    await this.createMetadata(data, AuthZAction.CREATE, subject);
-    let acsResponse: AccessResponse;
+    const acsResources = await this.createMetadata(data, AuthZAction.CREATE, subject);
+    let acsResponse: DecisionResponse;
     try {
-      acsResponse = await checkAccessRequest(subject, data, AuthZAction.CREATE,
-        this.resourceName, this);
+      if (!ctx) { ctx = {}; };
+      ctx.subject = subject;
+      ctx.resources = acsResources;
+      acsResponse = await checkAccessRequest(ctx, [{ resource: this.resourceName, id: acsResources.map(item => item.id) }], AuthZAction.CREATE,
+        Operation.isAllowed);
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv', err);
       return {
@@ -45,10 +49,13 @@ export class ResourceService extends ServiceBase {
   async read(call, ctx) {
     const readRequest = call.request;
     let subject = call.request.subject;
-    let acsResponse: ReadPolicyResponse;
+    let acsResponse: PolicySetRQResponse;
     try {
-      acsResponse = await checkAccessRequest(subject, readRequest, AuthZAction.READ,
-        this.resourceName, this);
+      if (!ctx) { ctx = {}; };
+      ctx.subject = subject;
+      ctx.resources = [];
+      acsResponse = await checkAccessRequest(ctx, [{ resource: this.resourceName }], AuthZAction.READ,
+        Operation.whatIsAllowed);
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
       return {
@@ -65,14 +72,16 @@ export class ResourceService extends ServiceBase {
   }
 
   async update(call, ctx) {
-    const items = call.request.items;
     let subject = call.request.subject;
     // update meta data for owner information
-    await this.createMetadata(call.request.items, AuthZAction.MODIFY, subject);
-    let acsResponse: AccessResponse;
+    const acsResources = await this.createMetadata(call.request.items, AuthZAction.MODIFY, subject);
+    let acsResponse: DecisionResponse;
     try {
-      acsResponse = await checkAccessRequest(subject, items, AuthZAction.MODIFY,
-        this.resourceName, this);
+      if (!ctx) { ctx = {}; };
+      ctx.subject = subject;
+      ctx.resources = acsResources;
+      acsResponse = await checkAccessRequest(ctx, [{ resource: this.resourceName, id: acsResources.map(e => e.id) }], AuthZAction.MODIFY,
+        Operation.isAllowed);
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
       return {
@@ -89,13 +98,15 @@ export class ResourceService extends ServiceBase {
   }
 
   async upsert(call, ctx) {
-    const usersList = call.request.items;
     let subject = call.request.subject;
-    await this.createMetadata(call.request.items, AuthZAction.MODIFY, subject);
-    let acsResponse;
+    const acsResources = await this.createMetadata(call.request.items, AuthZAction.MODIFY, subject);
+    let acsResponse: DecisionResponse;
     try {
-      acsResponse = await checkAccessRequest(subject, usersList, AuthZAction.MODIFY,
-        this.resourceName, this);
+      if (!ctx) { ctx = {}; };
+      ctx.subject = subject;
+      ctx.resources = acsResources;
+      acsResponse = await checkAccessRequest(ctx, [{ resource: this.resourceName, id: acsResources.map(e => e.id) }], AuthZAction.MODIFY,
+        Operation.isAllowed);
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
       return {
@@ -114,6 +125,7 @@ export class ResourceService extends ServiceBase {
   async delete(call, ctx) {
     let resourceIDs = call.request.ids;
     let resources = [];
+    let acsResources = [];
     let subject = call.request.subject;
     let action;
     if (resourceIDs) {
@@ -126,16 +138,19 @@ export class ResourceService extends ServiceBase {
         resources = [{ id: resourceIDs }];
       }
       Object.assign(resources, { id: resourceIDs });
-      await this.createMetadata(resources, action, subject);
+      acsResources = await this.createMetadata(resources, action, subject);
     }
     if (call.request.collection) {
       action = AuthZAction.DROP;
-      resources = [{ collection: call.request.collection }];
+      acsResources = [{ collection: call.request.collection }];
     }
-    let acsResponse: AccessResponse;
+    let acsResponse: DecisionResponse;
     try {
-      acsResponse = await checkAccessRequest(subject, resources, action,
-        this.resourceName, this);
+      if (!ctx) { ctx = {}; };
+      ctx.subject = subject;
+      ctx.resources = acsResources;
+      acsResponse = await checkAccessRequest(ctx, [{ resource: this.resourceName, id: acsResources.map(e => e.id) }], action,
+        Operation.isAllowed);
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
       return {
@@ -197,8 +212,16 @@ export class ResourceService extends ServiceBase {
           if (result.items.length === 1) {
             let item = result.items[0].payload;
             resource.meta.owner = item.meta.owner;
-          } else if (result.items.length === 0 && !resource.meta.owner) {
-            let ownerAttributes = _.cloneDeep(orgOwnerAttributes);
+          } else if (result.items.length === 0) {
+            if (_.isEmpty(resource.id)) {
+              resource.id = uuid.v4().replace(/-/g, '');
+            }
+            let ownerAttributes;
+            if (!resource.meta.owner) {
+              ownerAttributes = _.cloneDeep(orgOwnerAttributes);
+            } else {
+              ownerAttributes = resource.meta.owner;
+            }
             ownerAttributes.push(
               {
                 id: urns.ownerIndicatoryEntity,
@@ -210,17 +233,27 @@ export class ResourceService extends ServiceBase {
               });
             resource.meta.owner = ownerAttributes;
           }
-        } else if (action === AuthZAction.CREATE && !resource.meta.owner) {
-          let ownerAttributes = _.cloneDeep(orgOwnerAttributes);
-          ownerAttributes.push(
-            {
-              id: urns.ownerIndicatoryEntity,
-              value: urns.user
-            },
-            {
-              id: urns.ownerInstance,
-              value: resource.id
-            });
+        } else if (action === AuthZAction.CREATE) {
+          if (_.isEmpty(resource.id)) {
+            resource.id = uuid.v4().replace(/-/g, '');
+          }
+          let ownerAttributes;
+          if (!resource.meta.owner) {
+            ownerAttributes = _.cloneDeep(orgOwnerAttributes);
+          } else {
+            ownerAttributes = resource.meta.owner;
+          }
+          if (subject?.id) {
+            ownerAttributes.push(
+              {
+                id: urns.ownerIndicatoryEntity,
+                value: urns.user
+              },
+              {
+                id: urns.ownerInstance,
+                value: subject?.id
+              });
+          }
           resource.meta.owner = ownerAttributes;
         }
       }
