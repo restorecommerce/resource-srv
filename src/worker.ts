@@ -109,11 +109,13 @@ export class Worker {
 
     await events.start();
     this.offsetStore = new OffsetStore(events, cfg, logger);
-    let redisClient: any;
+    let redisClient: RedisClientType<any, any>;
     if (cfg.get('redis')) {
       const redisConfig = cfg.get('redis');
       redisConfig.db = cfg.get('redis:db-indexes:db-resourcesCounter');
       redisClient = redis.createClient(redisConfig);
+      redisClient.on('error', (err) => logger.error('Redis Client Error', err));
+      await redisClient.connect();
     }
     const fieldGeneratorConfig: any = cfg.get('fieldHandlers:fieldGenerators');
     const bufferHandlerConfig: any = cfg.get('fieldHandlers:bufferFields');
@@ -129,6 +131,8 @@ export class Worker {
     const redisConfig = cfg.get('redis');
     redisConfig.db = cfg.get('redis:db-indexes:db-subject');
     const redisClientSubject: RedisClientType<any, any> = redis.createClient(redisConfig);
+    await redisClientSubject.on('error', (err) => logger.error('Redis Client Error', err));
+    await redisClientSubject.connect();
     for (let resourceType in resources) {
       const resourceCfg = resources[resourceType];
       const resourcesServiceConfigPrefix = resourceCfg.resourcesServiceConfigPrefix;
