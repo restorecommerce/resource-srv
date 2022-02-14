@@ -1,3 +1,7 @@
+## 0.1.4 (February 14th, 2022)
+
+- fix import and redis db config
+
 ## 0.1.3 (February 14th, 2022)
 
 - up dependencies
