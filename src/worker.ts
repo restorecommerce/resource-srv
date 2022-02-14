@@ -3,7 +3,6 @@ import { GraphResourcesServiceBase, ResourcesAPIBase, ServiceBase } from '@resto
 import { ACSAuthZ, initAuthZ, initializeCache } from '@restorecommerce/acs-client';
 import { ResourceCommandInterface } from './commandInterface';
 import * as _ from 'lodash';
-import * as redis from 'redis';
 import {
   database,
   GraphDatabaseProvider,
@@ -17,7 +16,7 @@ import { ResourceService } from './service';
 import { Logger } from 'winston';
 import { createLogger } from '@restorecommerce/logger';
 import { createServiceConfig } from '@restorecommerce/service-config';
-import { RedisClientType } from 'redis';
+import { createClient, RedisClientType } from 'redis';
 
 export class Worker {
   server: Server;
@@ -112,8 +111,8 @@ export class Worker {
     let redisClient: RedisClientType<any, any>;
     if (cfg.get('redis')) {
       const redisConfig = cfg.get('redis');
-      redisConfig.db = cfg.get('redis:db-indexes:db-resourcesCounter');
-      redisClient = redis.createClient(redisConfig);
+      redisConfig.database = cfg.get('redis:db-indexes:db-resourcesCounter');
+      redisClient = createClient(redisConfig);
       redisClient.on('error', (err) => logger.error('Redis Client Error', err));
       await redisClient.connect();
     }
@@ -129,8 +128,8 @@ export class Worker {
     const authZ = await initAuthZ(cfg) as ACSAuthZ;
     // init Redis Client for subject index
     const redisConfig = cfg.get('redis');
-    redisConfig.db = cfg.get('redis:db-indexes:db-subject');
-    const redisClientSubject: RedisClientType<any, any> = redis.createClient(redisConfig);
+    redisConfig.database = cfg.get('redis:db-indexes:db-subject');
+    const redisClientSubject: RedisClientType<any, any> = createClient(redisConfig);
     await redisClientSubject.on('error', (err) => logger.error('Redis Client Error', err));
     await redisClientSubject.connect();
     for (let resourceType in resources) {

@@ -1,6 +1,6 @@
 'use strict';
 
-import * as Cluster from '@restorecommerce/cluster-service';
+import Cluster from '@restorecommerce/cluster-service';
 import { Worker } from './worker';
 export { Worker };
 
