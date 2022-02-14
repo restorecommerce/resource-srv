@@ -1,3 +1,7 @@
+## 0.1.5 (February 14th, 2022)
+
+- up redis config
+
 ## 0.1.4 (February 14th, 2022)
 
 - fix import and redis db config
