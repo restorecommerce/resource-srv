@@ -1,3 +1,7 @@
+## 0.1.3 (February 14th, 2022)
+
+- up dependencies
+
 ## 0.1.2 (February 7th, 2022)
 
 - up dependencies
