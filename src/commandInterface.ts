@@ -8,7 +8,7 @@ import { Events } from '@restorecommerce/kafka-client';
 export class ResourceCommandInterface extends CommandInterface {
   edgeCfg: any;
   // graphName: any;
-  constructor(server: Server, cfg: any, logger: any, events: Events, redisClient: RedisClientType) {
+  constructor(server: Server, cfg: any, logger: any, events: Events, redisClient: RedisClientType<any, any>) {
     super(server, cfg, logger, events, redisClient);
     if (cfg.graph && cfg.graph.vertices) {
       this.edgeCfg = cfg.graph.vertices;
