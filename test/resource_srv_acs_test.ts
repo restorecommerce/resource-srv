@@ -2,7 +2,9 @@ import * as should from 'should';
 import { GrpcClient } from '@restorecommerce/grpc-client';
 import {Events, Topic} from '@restorecommerce/kafka-client';
 import {Worker} from '../lib/worker';
-import {createMockServer} from 'grpc-mock';
+import { GrpcMockServer, ProtoUtils } from '@alenon/grpc-mock-server';
+import * as proto_loader from '@grpc/proto-loader';
+import * as grpc from '@grpc/grpc-js';
 import {createLogger} from '@restorecommerce/logger';
 import {createServiceConfig} from '@restorecommerce/service-config';
 
@@ -120,35 +122,74 @@ interface serverRule {
   output: any
 }
 
-let mockServer: any;
-const startGrpcMockServer = async (rules: serverRule[]) => {
-  // Create a mock ACS server to expose isAllowed and whatIsAllowed
-  mockServer = createMockServer({
-    protoPath: 'test/protos/io/restorecommerce/access_control.proto',
-    packageName: 'io.restorecommerce.access_control',
-    serviceName: 'Service',
-    options: {
-      keepCase: true
+interface MethodWithOutput {
+  method: string,
+  output: any
+};
+
+const PROTO_PATH: string = 'io/restorecommerce/access_control.proto';
+const PKG_NAME: string = 'io.restorecommerce.access_control';
+const SERVICE_NAME: string = 'Service';
+const pkgDef: grpc.GrpcObject = grpc.loadPackageDefinition(
+  proto_loader.loadSync(PROTO_PATH, {
+    includeDirs: ['node_modules/@restorecommerce/protos'],
+    keepCase: true,
+    longs: String,
+    enums: String,
+    defaults: true,
+    oneofs: true
+  })
+);
+
+const proto: any = ProtoUtils.getProtoFromPkgDefinition(
+  PKG_NAME,
+  pkgDef
+);
+
+const mockServer = new GrpcMockServer('localhost:50061');
+
+const startGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
+  // create mock implementation based on the method name and output
+  const implementations = {
+    isAllowed: (call: any, callback: any) => {
+      const isAllowedResponse = methodWithOutput.filter(e => e.method === 'IsAllowed');
+      let response: any = new proto.Response.constructor(isAllowedResponse[0].output);
+      // Delete request with invalid scope - DENY
+      if (call.request && call.request.target && call.request.target.subject && call.request.target.subject.length === 3) {
+        let reqSubject = call.request.target.subject;
+        if (reqSubject[2]?.id === 'urn:restorecommerce:acs:names:roleScopingInstance' && reqSubject[2]?.value === 'orgD') {
+          response = { decision: 'DENY' };
+        }
+      }
+      callback(null, response);
     },
-    rules
-  });
-  mockServer.listen('0.0.0.0:50061');
-  logger.info('ACS Server started on port 50061');
+    whatIsAllowed: (call: any, callback: any) => {
+      // check the request object and provide UserPolicies / RolePolicies
+      const whatIsAllowedResponse = methodWithOutput.filter(e => e.method === 'WhatIsAllowed');
+      const response: any = new proto.ReverseQuery.constructor(whatIsAllowedResponse[0].output);
+      callback(null, response);
+    }
+  };
+  try {
+    mockServer.addService(PROTO_PATH, PKG_NAME, SERVICE_NAME, implementations, {
+      includeDirs: ['node_modules/@restorecommerce/protos/'],
+      keepCase: true,
+      longs: String,
+      enums: String,
+      defaults: true,
+      oneofs: true
+    });
+    await mockServer.start();
+    logger.info('Mock ACS Server started on port 50061');
+  } catch (err) {
+    logger.error('Error starting mock ACS server', err);
+  }
 };
 
 const stopGrpcMockServer = async () => {
-  await mockServer.close(() => {
-    logger.info('Server closed successfully');
-  });
+  await mockServer.stop();
+  logger.info('Mock ACS Server closed successfully');
 };
-
-function encodeMsg(data: any): any {
-  const encoded = Buffer.from(JSON.stringify(data));
-  return {
-    type_url: 'payload',
-    value: encoded
-  };
-}
 
 // get client connection object
 async function getClientResourceServices() {
@@ -250,8 +291,8 @@ describe('resource-srv testing with ACS enabled', () => {
   it('should create contact_point resource', async function createContactPoints() {
     // start mock acs-srv - needed for read operation since acs-client makes a req to acs-srv
     // to get applicable policies although acs-lookup is disabled
-    startGrpcMockServer([{method: 'WhatIsAllowed', input: '.*', output: policySetRQ},
-      {method: 'IsAllowed', input: '.*', output: {decision: 'PERMIT'}}]);
+    startGrpcMockServer([{method: 'WhatIsAllowed', output: policySetRQ},
+      {method: 'IsAllowed', output: {decision: 'PERMIT'}}]);
     const result = await contactPointsService.create({items: listOfContactPoints, subject});
     baseValidation(result);
     result.items.should.be.length(2);
@@ -260,9 +301,6 @@ describe('resource-srv testing with ACS enabled', () => {
   });
   it('should throw an error when creating contact_point resource with invalid subject scope', async function createContactPoints() {
     subject.scope = 'orgD';
-    stopGrpcMockServer();
-    startGrpcMockServer([{method: 'WhatIsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: policySetRQ},
-      {method: 'IsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: {decision: 'DENY'}}]);
     const result = await contactPointsService.create({items: listOfContactPoints, subject});
     should.exist(result.operation_status);
     result.operation_status.code.should.equal(403);
@@ -289,9 +327,6 @@ describe('resource-srv testing with ACS enabled', () => {
   });
   it('should update contact point resource with valid subject scope', async function deleteContactPoint() {
     subject.scope = 'orgC';
-    stopGrpcMockServer();
-    startGrpcMockServer([{method: 'WhatIsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: policySetRQ},
-      {method: 'IsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: {decision: 'PERMIT'}}]);
     listOfContactPoints[0].website = 'http://newtest1.de';
     listOfContactPoints[1].website = 'http://newtest2.de';
     const updateResult = await contactPointsService.update({items: listOfContactPoints, subject});
@@ -327,9 +362,6 @@ describe('resource-srv testing with ACS enabled', () => {
   });
   it('should delete contact point resource', async function deleteContactPoint() {
     subject.scope = 'orgC';
-    stopGrpcMockServer();
-    startGrpcMockServer([{method: 'WhatIsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: policySetRQ},
-      {method: 'IsAllowed', input: '\{.*\:\{.*\:.*\}\}', output: {decision: 'PERMIT'}}]);
     const deletedResult = await contactPointsService.delete({collection: true, subject});
     should.exist(deletedResult);
     deletedResult.status[0].id.should.equal('contact_point_1');
