@@ -90,11 +90,6 @@ export class Worker {
     }
     cfg.set('events:kafka', kafkaCfg);
 
-    // Load google descriptor proto file in the end - this is used by other proto files.
-    const descriptorProto = `google/protobuf/descriptor.proto`;
-    grpcConfig.protos.push(descriptorProto);
-    cfg.set('server:transports', [grpcConfig]);
-
     const loggerCfg = cfg.get('logger');
     loggerCfg.esTransformer = (msg) => {
       msg.fields = JSON.stringify(msg.fields);
