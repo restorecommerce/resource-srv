@@ -1,3 +1,7 @@
+## 0.2.0 (June 30th, 2022)
+
+- updated dependencies and migrated from grpc-mock to grpc-mock-server
+
 ## 0.1.6 (February 18th, 2022)
 
 - updated chassis-srv (includes fix for offset store config)
