@@ -55,6 +55,7 @@ export class Worker {
         cfg.set(`server:services:${resourcesServiceConfigPrefix}${resource}-srv`, standardConfig);
         const proto = resourcesProtoPathPrefix + `${resource}.proto`;
         grpcConfig.protos.push(proto);
+        cfg.set('server:transports:0', grpcConfig);
 
         const serviceName = resourcesServiceNamePrefix + `${resource}.Service`;
         grpcConfig.services[`${resourcesServiceConfigPrefix}${resource}-srv`] = serviceName;
