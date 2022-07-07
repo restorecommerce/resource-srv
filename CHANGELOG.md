@@ -1,3 +1,7 @@
+## 0.2.1 (July 7th, 2022)
+
+- updated dependencies
+
 ## 0.2.0 (June 30th, 2022)
 
 - updated dependencies and migrated from grpc-mock to grpc-mock-server
