@@ -94,3 +94,22 @@ export async function checkAccessRequest(ctx: GQLClientContext, resource: Resour
   }
   return result;
 }
+
+/**
+ * accessResponse returned from `acs-client` contains the filters for the list of
+ * resources requested and it returns resource filter map, below api
+ * returns applicable `Filters[]` for the specified resource, it iterates through
+ * the ACS response and returns the applicable `Filters[]` for the resource.
+ * @param accessResponse ACS response
+ * @param enitity enitity name
+ */
+export const getACSFilters = (accessResponse: PolicySetRQResponse, resource: string): Filters[] => {
+  let acsFilters = [];
+  const resourceFilterMap = accessResponse?.filters;
+  const resourceFilter = resourceFilterMap?.filter((e) => e?.resource === resource);
+  // for a given entity there should be one filter map
+  if (resourceFilter && resourceFilter.length === 1 && resourceFilter[0].filters && resourceFilter[0].filters[0]?.filter.length > 0) {
+    acsFilters = resourceFilter[0].filters;
+  }
+  return acsFilters;
+};

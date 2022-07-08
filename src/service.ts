@@ -3,7 +3,7 @@ import { RedisClientType } from 'redis';
 import { ServiceBase, FilterOperation } from '@restorecommerce/resource-base-interface';
 import { ACSAuthZ, Subject, DecisionResponse, Operation, PolicySetRQResponse } from '@restorecommerce/acs-client';
 import { Decision, AuthZAction } from '@restorecommerce/acs-client';
-import { checkAccessRequest } from './utils';
+import { checkAccessRequest, getACSFilters } from './utils';
 import * as uuid from 'uuid';
 
 export class ResourceService extends ServiceBase {
@@ -67,6 +67,24 @@ export class ResourceService extends ServiceBase {
     }
     if (acsResponse.decision != Decision.PERMIT) {
       return { operation_status: acsResponse.operation_status };
+    }
+    const acsFilters = getACSFilters(acsResponse, this.resourceName);
+    if (acsResponse && acsResponse.filters && acsFilters) {
+      if (!readRequest.filters) {
+        readRequest.filters = [];
+      }
+      if (_.isArray(acsFilters)) {
+        for (let acsFilter of acsFilters) {
+          readRequest.filters.push(acsFilter);
+        }
+      } else {
+        readRequest.filters.push(acsFilters);
+      }
+    }
+
+    if (acsResponse?.custom_query_args && acsResponse.custom_query_args.length > 0) {
+      readRequest.custom_queries = acsResponse.custom_query_args[0].custom_queries;
+      readRequest.custom_arguments = acsResponse.custom_query_args[0].custom_arguments;
     }
     return await super.read({ request: readRequest });
   }
