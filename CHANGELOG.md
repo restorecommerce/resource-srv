@@ -1,4 +1,8 @@
-## 0.2.1 (July 8th, 2022)
+## 0.2.3 (July 8th, 2022)
+
+- up deps
+
+## 0.2.2 (July 8th, 2022)
 
 - add acs filters for read operation
 
