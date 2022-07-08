@@ -1,3 +1,7 @@
+## 0.2.1 (July 8th, 2022)
+
+- add acs filters for read operation
+
 ## 0.2.1 (July 7th, 2022)
 
 - updated dependencies
