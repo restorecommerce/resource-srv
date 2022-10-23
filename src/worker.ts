@@ -1,4 +1,4 @@
-import { Events, Topic } from '@restorecommerce/kafka-client';
+import { Events, Topic, registerProtoMeta } from '@restorecommerce/kafka-client';
 import { GraphResourcesServiceBase, ResourcesAPIBase, ServiceBase } from '@restorecommerce/resource-base-interface';
 import { ACSAuthZ, initAuthZ, initializeCache } from '@restorecommerce/acs-client';
 import { ResourceCommandInterface } from './commandInterface';
@@ -17,6 +17,23 @@ import { Logger } from 'winston';
 import { createLogger } from '@restorecommerce/logger';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import { createClient, RedisClientType } from 'redis';
+import { protoMetadata as commandProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command';
+import { protoMetadata as addressProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/address';
+import { protoMetadata as contactPointTypeProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point_type';
+import { protoMetadata as countryProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/country';
+import { protoMetadata as contactPointProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point';
+import { protoMetadata as credentialProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/credential';
+import { protoMetadata as localeProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/locale';
+import { protoMetadata as locationProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/location';
+import { protoMetadata as organizationProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization';
+import { protoMetadata as taxProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/tax';
+import { protoMetadata as taxTypeProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/tax_type';
+import { protoMetadata as timezoneProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/timezone';
+import { protoMetadata as customerProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/customer';
+
+registerProtoMeta(commandProto, addressProto, contactPointTypeProto, countryProto,
+  contactPointProto, credentialProto, localeProto, locationProto, organizationProto,
+  taxProto, taxTypeProto, timezoneProto, customerProto);
 
 export class Worker {
   server: Server;
@@ -73,10 +90,6 @@ export class Worker {
 
         for (let event of eventTypes) {
           kafkaCfg[`${resource}${event}`] = {
-            protos: [
-              proto
-            ],
-            protoRoot: root,
             messageObject: `${resourcesServiceNamePrefix}${resource}.${resourceObjectName}`
           };
 
