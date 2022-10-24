@@ -1,5 +1,5 @@
 import * as should from 'should';
-import { GrpcClient } from '@restorecommerce/grpc-client';
+import { createChannel, createClient } from '@restorecommerce/grpc-client';
 import {Events, Topic} from '@restorecommerce/kafka-client';
 import {Worker} from '../lib/worker';
 import { GrpcMockServer, ProtoUtils } from '@alenon/grpc-mock-server';
@@ -7,9 +7,17 @@ import * as proto_loader from '@grpc/proto-loader';
 import * as grpc from '@grpc/grpc-js';
 import {createLogger} from '@restorecommerce/logger';
 import {createServiceConfig} from '@restorecommerce/service-config';
+import { ServiceDefinition as CommandInterfaceServiceDefinition, ServiceClient as cisClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
+import { ServiceDefinition as command } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command';
+import { ServiceDefinition as organization } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization';
+import { ServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point';
+import { createClient as RedisCreateClient, RedisClientType } from 'redis';
 
 const cfg = createServiceConfig(process.cwd() + '/test');
 const logger = createLogger(cfg.get('logger'));
+const ServiceDefinitionList = [command, organization, contact_point];
+let redisClient: RedisClientType;
+let tokenRedisClient: RedisClientType;
 
 /**
  * Note: To run below tests a running Kafka, Redis and ArangoDB instance is required.
@@ -86,6 +94,8 @@ let policySetRQ = {
 let subject = {
   id: 'admin_user_id',
   scope: 'orgC',
+  token: 'admin_token',
+  tokens: [{ token: 'admin_token', expires_in: 0 }],
   role_associations: [
     {
       role: 'admin-r-id',
@@ -186,9 +196,47 @@ const startGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
   }
 };
 
+const IDS_PROTO_PATH = 'test/protos/io/restorecommerce/user.proto';
+const IDS_PKG_NAME = 'io.restorecommerce.user';
+const IDS_SERVICE_NAME = 'Service';
+
+const mockServerIDS = new GrpcMockServer('localhost:50051');
+
+// Mock server for ids - findByToken
+const startIDSGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
+  // create mock implementation based on the method name and output
+  const implementations = {
+    findByToken: (call: any, callback: any) => {
+      if (call.request.token === 'admin_token') {
+        // admin user
+        callback(null, { payload: subject, status: { code: 200, message: 'success' } });
+      }
+    }
+  };
+  try {
+    mockServerIDS.addService(IDS_PROTO_PATH, IDS_PKG_NAME, IDS_SERVICE_NAME, implementations, {
+      includeDirs: ['node_modules/@restorecommerce/protos/'],
+      keepCase: true,
+      longs: String,
+      enums: String,
+      defaults: true,
+      oneofs: true
+    });
+    await mockServerIDS.start();
+    logger.info('Mock IDS Server started on port 50051');
+  } catch (err) {
+    logger.error('Error starting mock IDS server', err);
+  }
+};
+
 const stopGrpcMockServer = async () => {
   await mockServer.stop();
   logger.info('Mock ACS Server closed successfully');
+};
+
+const stopIDSGrpcMockServer = async () => {
+  await mockServerIDS.stop();
+  logger.info('Mock IDS Server closed successfully');
 };
 
 // get client connection object
@@ -203,7 +251,6 @@ async function getClientResourceServices() {
   for (let resource in resources) {
     const resourceCfg = resources[resource];
     const resourceNames = resourceCfg.resources;
-    const protosPrefix = resourceCfg.resourcesProtoPathPrefix;
     const servicePrefix = resourceCfg.resourcesServiceNamePrefix;
 
     logger.silly('microservice clients', resourceNames);
@@ -212,24 +259,18 @@ async function getClientResourceServices() {
       if (resource === 'command') {
         // if resource is command create a commandInterface client
         const serviceName = 'io.restorecommerce.commandinterface.Service';
-        const client = new GrpcClient(cfg.get('client:commandinterface'), logger);
-        options.microservice.service[serviceName] = client.commandinterface;
+        const cisConfig = cfg.get('client:commandinterface');
+        const client: cisClient = createClient({ ...cisConfig, logger }, CommandInterfaceServiceDefinition, createChannel(cisConfig.address));
+        options.microservice.service[serviceName] = client;
         options.microservice.mapClients.set(resource, serviceName);
         continue;
       }
-      const protos = [`${protosPrefix}/${resource}.proto`];
       const serviceName = `${servicePrefix}${resource}.Service`;
-      const packageName = `${servicePrefix}${resource}`;
       const defaultConfig = clientConfig['default-resource-srv'];
-      defaultConfig.proto.protoPath = protos;
-      defaultConfig.proto.services = {};
-      defaultConfig.proto.services[resource] = {
-        packageName: packageName,
-        serviceName: 'Service'
-      };
       try {
-        const client = new GrpcClient(defaultConfig, logger);
-        options.microservice.service[serviceName] = client[resource];
+        let serviceDefinition = ServiceDefinitionList.filter((obj) => obj.fullName.split('.')[2] === resource)[0];
+        const client = createClient({ ...defaultConfig, logger }, serviceDefinition as any, createChannel(defaultConfig.address));
+        options.microservice.service[serviceName] = client;
         options.microservice.mapClients.set(resource, serviceName);
         logger.verbose('connected to microservice', serviceName);
       } catch (err) {
@@ -285,6 +326,8 @@ describe('resource-srv testing with ACS enabled', () => {
 
   // stop the server
   after(async function stopServer() {
+    await stopGrpcMockServer();
+    await stopIDSGrpcMockServer();
     await worker.stop();
   });
 
@@ -293,6 +336,34 @@ describe('resource-srv testing with ACS enabled', () => {
     // to get applicable policies although acs-lookup is disabled
     startGrpcMockServer([{method: 'WhatIsAllowed', output: policySetRQ},
       {method: 'IsAllowed', output: {decision: 'PERMIT'}}]);
+
+    // start mock ids-srv needed for findByToken response and return subject
+    await startIDSGrpcMockServer([{ method: 'findByToken', output: subject }]);
+
+    // set redis client
+    // since its not possible to mock findByToken as it is same service, storing the token value with subject
+    // HR scopes resolved to db-subject redis store and token to findByToken redis store
+    const redisConfig = cfg.get('redis');
+    redisConfig.database = cfg.get('redis:db-indexes:db-subject') || 0;
+    redisClient = RedisCreateClient(redisConfig);
+    redisClient.on('error', (err) => logger.error('Redis Client Error', err));
+    await redisClient.connect();
+
+    // for findByToken
+    redisConfig.database = cfg.get('redis:db-indexes:db-findByToken') || 0;
+    tokenRedisClient = RedisCreateClient(redisConfig);
+    tokenRedisClient.on('error', (err) => logger.error('Redis client error in token cache store', err));
+    await tokenRedisClient.connect();
+
+    // store hrScopesKey and subjectKey to Redis index `db-subject`
+    const hrScopeskey = `cache:${subject.id}:${subject.token}:hrScopes`;
+    const subjectKey = `cache:${subject.id}:subject`;
+    await redisClient.set(subjectKey, JSON.stringify(subject));
+    await redisClient.set(hrScopeskey, JSON.stringify(subject.hierarchical_scopes));
+
+    // store user with tokens and role associations to Redis index `db-findByToken`
+    await tokenRedisClient.set('admin-token', JSON.stringify(subject));
+
     const result = await contactPointsService.create({items: listOfContactPoints, subject});
     baseValidation(result);
     result.items.should.be.length(2);
