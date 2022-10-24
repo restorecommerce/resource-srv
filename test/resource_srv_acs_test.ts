@@ -142,7 +142,7 @@ const PKG_NAME: string = 'io.restorecommerce.access_control';
 const SERVICE_NAME: string = 'Service';
 const pkgDef: grpc.GrpcObject = grpc.loadPackageDefinition(
   proto_loader.loadSync(PROTO_PATH, {
-    includeDirs: ['node_modules/@restorecommerce/protos'],
+    includeDirs: ['test/protos'],
     keepCase: true,
     longs: String,
     enums: String,
@@ -182,7 +182,7 @@ const startGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
   };
   try {
     mockServer.addService(PROTO_PATH, PKG_NAME, SERVICE_NAME, implementations, {
-      includeDirs: ['node_modules/@restorecommerce/protos/'],
+      includeDirs: ['test/protos/'],
       keepCase: true,
       longs: String,
       enums: String,
@@ -215,7 +215,7 @@ const startIDSGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
   };
   try {
     mockServerIDS.addService(IDS_PROTO_PATH, IDS_PKG_NAME, IDS_SERVICE_NAME, implementations, {
-      includeDirs: ['node_modules/@restorecommerce/protos/'],
+      includeDirs: ['test/protos/'],
       keepCase: true,
       longs: String,
       enums: String,
