@@ -10,8 +10,9 @@ export class ResourceCommandInterface extends CommandInterface {
   // graphName: any;
   constructor(server: Server, cfg: any, logger: any, events: Events, redisClient: RedisClientType<any, any>) {
     super(server, cfg, logger, events, redisClient);
-    if (cfg.graph && cfg.graph.vertices) {
-      this.edgeCfg = cfg.graph.vertices;
+    let graphCfg = cfg.get('graph');
+    if (graphCfg && graphCfg.vertices) {
+      this.edgeCfg = graphCfg.vertices;
       // this.graphName = cfg.graph.graphName;
     }
   }

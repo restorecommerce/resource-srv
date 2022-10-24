@@ -6,7 +6,7 @@ import { AuthZAction } from '@restorecommerce/acs-client';
 import { checkAccessRequest, getACSFilters } from './utils';
 import * as uuid from 'uuid';
 import { Response_Decision } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control';
-import { ReadRequest } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base';
+import { ReadRequest, DeleteRequest, DeepPartial, DeleteResponse } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base';
 import { Filter_Operation } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/filter';
 
 export class ResourceService extends ServiceBase<any, any> {
@@ -22,9 +22,9 @@ export class ResourceService extends ServiceBase<any, any> {
     this.redisClient = redisClientSubject;
   }
 
-  async create(call, ctx) {
-    let data = call.request.items;
-    let subject = call.request.subject;
+  async create(request, ctx) {
+    let data = request.items;
+    let subject = request.subject;
     // update meta data for owner information
     const acsResources = await this.createMetadata(data, AuthZAction.CREATE, subject);
     let acsResponse: DecisionResponse;
@@ -46,12 +46,12 @@ export class ResourceService extends ServiceBase<any, any> {
     if (acsResponse.decision != Response_Decision.PERMIT) {
       return { operation_status: acsResponse.operation_status };
     }
-    return await super.create(call, ctx);
+    return await super.create(request, ctx);
   }
 
-  async read(call, ctx) {
-    const readRequest = call.request;
-    let subject = call.request.subject;
+  async read(request, ctx) {
+    const readRequest = request;
+    let subject = request.subject;
     let acsResponse: PolicySetRQResponse;
     try {
       if (!ctx) { ctx = {}; };
@@ -92,10 +92,10 @@ export class ResourceService extends ServiceBase<any, any> {
     return await super.read(ReadRequest.fromPartial(readRequest), ctx);
   }
 
-  async update(call, ctx) {
-    let subject = call.request.subject;
+  async update(request, ctx) {
+    let subject = request.subject;
     // update meta data for owner information
-    const acsResources = await this.createMetadata(call.request.items, AuthZAction.MODIFY, subject);
+    const acsResources = await this.createMetadata(request.items, AuthZAction.MODIFY, subject);
     let acsResponse: DecisionResponse;
     try {
       if (!ctx) { ctx = {}; };
@@ -115,12 +115,12 @@ export class ResourceService extends ServiceBase<any, any> {
     if (acsResponse.decision != Response_Decision.PERMIT) {
       return { operation_status: acsResponse.operation_status };
     }
-    return await super.update(call, ctx);
+    return await super.update(request, ctx);
   }
 
-  async upsert(call, ctx) {
-    let subject = call.request.subject;
-    const acsResources = await this.createMetadata(call.request.items, AuthZAction.MODIFY, subject);
+  async upsert(request, ctx) {
+    let subject = request.subject;
+    const acsResources = await this.createMetadata(request.items, AuthZAction.MODIFY, subject);
     let acsResponse: DecisionResponse;
     try {
       if (!ctx) { ctx = {}; };
@@ -140,14 +140,14 @@ export class ResourceService extends ServiceBase<any, any> {
     if (acsResponse.decision != Response_Decision.PERMIT) {
       return { operation_status: acsResponse.operation_status };
     }
-    return await super.upsert(call, ctx);
+    return await super.upsert(request, ctx);
   }
 
-  async delete(call, ctx) {
-    let resourceIDs = call.request.ids;
+  async delete(request: DeleteRequest, ctx): Promise<DeepPartial<DeleteResponse>> {
+    let resourceIDs = request.ids;
     let resources = [];
     let acsResources = [];
-    let subject = call.request.subject;
+    let subject = request.subject;
     let action;
     if (resourceIDs) {
       action = AuthZAction.DELETE;
@@ -161,9 +161,9 @@ export class ResourceService extends ServiceBase<any, any> {
       Object.assign(resources, { id: resourceIDs });
       acsResources = await this.createMetadata(resources, action, subject);
     }
-    if (call.request.collection) {
+    if (request.collection) {
       action = AuthZAction.DROP;
-      acsResources = [{ collection: call.request.collection }];
+      acsResources = [{ collection: request.collection }];
     }
     let acsResponse: DecisionResponse;
     try {
@@ -184,7 +184,7 @@ export class ResourceService extends ServiceBase<any, any> {
     if (acsResponse.decision != Response_Decision.PERMIT) {
       return { operation_status: acsResponse.operation_status };
     }
-    return await super.delete(call, ctx);
+    return await super.delete(request, ctx);
   }
 
   /**

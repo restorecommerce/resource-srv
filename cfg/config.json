@@ -221,7 +221,6 @@
       "resourcesProtoPathPrefix": "io/restorecommerce/",
       "resourcesServiceNamePrefix": "io.restorecommerce.",
       "resourcesServiceConfigPrefix": "restore-",
-      "resourcesProtoRoot": "node_modules/@restorecommerce/protos/",
       "resources": [
         "command",
         "address",

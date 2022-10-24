@@ -47,7 +47,7 @@ import { BindConfig } from '@restorecommerce/chassis-srv/lib/microservice/transp
 
 registerProtoMeta(commandMeta, addressMeta, contactPointTypeMeta, countryMeta,
   contactPointMeta, credentialMeta, localeMeta, locationMeta, organizationMeta,
-  taxMeta, taxTypeMeta, timezoneMeta, customerMeta, commandInterfaceMeta, reflectionMeta);
+  taxMeta, taxTypeMeta, timezoneMeta, customerMeta, commandInterfaceMeta, reflectionMeta, graphMeta);
 
 const ServiceDefinitions: any = [command, address, contact_point_type, country, contact_point, credential, locale, location, organization,
   tax, tax_type, timezone, customer];

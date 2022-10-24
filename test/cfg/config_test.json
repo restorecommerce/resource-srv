@@ -2,7 +2,7 @@
   "logger": {
     "console": {
       "handleExceptions": false,
-      "level": "crit",
+      "level": "silly",
       "colorize": true,
       "prettyPrint": true
     }
@@ -46,7 +46,6 @@
       "resourcesProtoPathPrefix": "io/restorecommerce/",
       "resourcesServiceNamePrefix": "io.restorecommerce.",
       "resourcesServiceConfigPrefix": "restore-",
-      "resourcesProtoRoot": "node_modules/@restorecommerce/protos/",
       "resources": [
         "command",
         "organization",

@@ -1,14 +1,23 @@
 import * as should from 'should';
-import { GrpcClient } from '@restorecommerce/grpc-client';
-import { Events, Topic } from '@restorecommerce/kafka-client';
+import { createChannel, createClient } from '@restorecommerce/grpc-client';
+import { Events, Topic, registerProtoMeta } from '@restorecommerce/kafka-client';
 import { Worker } from '../lib/worker';
 import { updateConfig } from '@restorecommerce/acs-client';
 import { createLogger } from '@restorecommerce/logger';
 import { createServiceConfig } from '@restorecommerce/service-config';
-import { FilterOperation } from '@restorecommerce/resource-base-interface';
+import { ServiceDefinition as CommandInterfaceServiceDefinition, ServiceClient as cisClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
+import { ServiceDefinition as command } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command';
+import { ServiceDefinition as organization, protoMetadata as organizationMeta } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization';
+import { ServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point';
+import { ReadRequest, Sort_SortOrder } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base';
+import { Filter_Operation } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/filter';
 
 const cfg = createServiceConfig(process.cwd() + '/test');
 const logger = createLogger(cfg.get('logger'));
+const ServiceDefinitionList = [command, organization, contact_point];
+
+// for test `should re read messages for organization resource` (since a local listener for Organization events is created in unit test below)
+registerProtoMeta(organizationMeta);
 
 /**
  * Note: To run below tests a running Kafka, Redis and ArangoDB instance is required.
@@ -74,7 +83,7 @@ async function getClientResourceServices() {
   for (let resource in resources) {
     const resourceCfg = resources[resource];
     const resourceNames = resourceCfg.resources;
-    const protosPrefix = resourceCfg.resourcesProtoPathPrefix;
+    // const protosPrefix = resourceCfg.resourcesProtoPathPrefix;
     const servicePrefix = resourceCfg.resourcesServiceNamePrefix;
 
     logger.silly('microservice clients', resourceNames);
@@ -83,24 +92,22 @@ async function getClientResourceServices() {
       if (resource === 'command') {
         // if resource is command create a commandInterface client
         const serviceName = 'io.restorecommerce.commandinterface.Service';
-        const client = new GrpcClient(cfg.get('client:commandinterface'), logger);
-        options.microservice.service[serviceName] = client.commandinterface;
+        const cisConfig = cfg.get('client:commandinterface');
+        let client: cisClient;
+        if (cisConfig) {
+          client = createClient({ ...cisConfig, logger }, CommandInterfaceServiceDefinition, createChannel(cisConfig.address));
+        }
+        // const client = new GrpcClient(cfg.get('client:commandinterface'), logger);
+        options.microservice.service[serviceName] = client;
         options.microservice.mapClients.set(resource, serviceName);
         continue;
       }
-      const protos = `${protosPrefix}${resource}.proto`;
       const serviceName = `${servicePrefix}${resource}.Service`;
-      const packageName = `${servicePrefix}${resource}`;
       const defaultConfig = clientConfig['default-resource-srv'];
-      defaultConfig.proto.protoPath = protos;
-      defaultConfig.proto.services = {};
-      defaultConfig.proto.services[resource] = {
-        packageName: packageName,
-        serviceName: 'Service'
-      };
       try {
-        const client = new GrpcClient(defaultConfig, logger);
-        options.microservice.service[serviceName] = client[resource];
+        let serviceDefinition = ServiceDefinitionList.filter((obj) => obj.fullName.split('.')[2] === resource)[0];
+        const client = createClient({ ...defaultConfig, logger }, serviceDefinition, createChannel(defaultConfig.address));
+        options.microservice.service[serviceName] = client;
         options.microservice.mapClients.set(resource, serviceName);
         logger.verbose('connected to microservice', serviceName);
       } catch (err) {
@@ -199,12 +206,12 @@ describe('resource-srv testing', () => {
   });
 
   it('should read organization resource', async function readOrganization() {
-    const result = await organizationService.read({
+    const result = await organizationService.read(ReadRequest.fromPartial({
       sort: [{
         field: 'name',
-        order: 1, // ASCENDING
+        order: Sort_SortOrder.ASCENDING
       }]
-    });
+    }), {});
     baseValidation(result);
     result.items.should.be.length(2);
     result.items[0].payload.name.should.equal('TestOrg1');
@@ -216,12 +223,12 @@ describe('resource-srv testing', () => {
   });
 
   it('should update organization resource and validate status', async function updateOrganization() {
-    const result = await organizationService.read({
+    const result = await organizationService.read(ReadRequest.fromPartial({
       sort: [{
         field: 'name',
-        order: 1, // ASCENDING
+        order: Sort_SortOrder.DESCENDING, // ASCENDING
       }]
-    });
+    }), {});
     baseValidation(result);
     result.items.should.be.length(2);
     const changedOrgList = [{
@@ -237,12 +244,12 @@ describe('resource-srv testing', () => {
     const update = await organizationService.update({ items: changedOrgList });
     baseValidation(update);
     result.items.should.be.length(2);
-    const updatedReadResult = await organizationService.read({
+    const updatedReadResult = await organizationService.read(ReadRequest.fromPartial({
       sort: [{
         field: 'name',
-        order: 1, // ASCENDING
+        order: Sort_SortOrder.ASCENDING, // ASCENDING
       }]
-    });
+    }), {});
     baseValidation(updatedReadResult);
     result.items.should.be.length(2);
     updatedReadResult.items[0].payload.name.should.equal('TestOrg3');
@@ -253,12 +260,12 @@ describe('resource-srv testing', () => {
   });
 
   it('should upsert organization resource and validate status', async function upsertOrganization() {
-    const result = await organizationService.read({
+    const result = await organizationService.read(ReadRequest.fromPartial({
       sort: [{
         field: 'name',
-        order: 1, // ASCENDING
+        order: Sort_SortOrder.ASCENDING, // ASCENDING
       }]
-    });
+    }), {});
     baseValidation(result);
     result.items.should.be.length(2);
     const updatedOrgList = [{
@@ -283,17 +290,17 @@ describe('resource-srv testing', () => {
     update.items[0].status.message.should.equal('success');
     update.items[1].status.code.should.equal(200);
     update.items[1].status.message.should.equal('success');
-    const updatedResult = await organizationService.read({
+    const updatedResult = await organizationService.read(ReadRequest.fromPartial({
       sort: [{
         field: 'modified',
-        order: 1, // ASCENDING
+        order: Sort_SortOrder.ASCENDING, // ASCENDING
       },
       {
         field: 'name',
-        order: 1
+        order: Sort_SortOrder.ASCENDING
       }
       ]
-    });
+    }));
     baseValidation(updatedResult);
     updatedResult.items.should.be.length(3);
     updatedResult.items[0].payload.name.should.equal('TestOrg4');
@@ -303,12 +310,12 @@ describe('resource-srv testing', () => {
 
   // edge from org to cp resource is also delted when org is deleted
   it('should delete organization resource and verify status', async function deleteOrganization() {
-    const result = await organizationService.read({
+    const result = await organizationService.read(ReadRequest.fromPartial({
       sort: [{
         field: 'created',
-        order: 1, // ASCENDING
+        order: Sort_SortOrder.ASCENDING // ASCENDING
       }]
-    });
+    }), {});
     baseValidation(result);
     const deleteIDs = {
       ids:
@@ -327,72 +334,76 @@ describe('resource-srv testing', () => {
     deletedResult.operation_status.message.should.equal('success');
 
 
-    const resultAfterDeletion = await organizationService.read({
+    const resultAfterDeletion = await organizationService.read(ReadRequest.fromPartial({
       sort: [{
         field: 'created',
-        order: 1, // ASCENDING
+        order: Sort_SortOrder.ASCENDING, // ASCENDING
       }]
-    });
+    }), {});
     baseValidation(resultAfterDeletion);
     resultAfterDeletion.items.should.be.length(0);
   });
 
-  // test case to re-read the data from that offset and test insert, update
-  // and delete for organization
-  it('should re read messages for organization resource', async function reReeadContactPointMsgs() {
-    this.timeout(5000);
+  // // test case to re-read the data from that offset and test insert, update
+  // // and delete for organization
+  // it('should re read messages for organization resource', async function reReeadContactPointMsgs() {
+  //   this.timeout(5000);
 
-    const restoreListener = async function (msg: any,
-      context: any, config: any, eventName: string): Promise<any> {
-    };
+  //   const restoreListener = async function (msg: any,
+  //     context: any, config: any, eventName: string): Promise<any> {
+  //   };
 
-    // subscribe to command topic events
-    // this is needed to update offset (in kafka-client for $wait)
-    // for commandTopic (since we listen for restoreResponse event)
-    await commandTopic.on('restoreResponse', restoreListener);
+  //   // subscribe to command topic events
+  //   // this is needed to update offset (in kafka-client for $wait)
+  //   // for commandTopic (since we listen for restoreResponse event)
+  //   await commandTopic.on('restoreResponse', restoreListener);
 
-    const commnadTopicOffset = await commandTopic.$offset(-1);
-    const currentOrgOffset = await organizationTopic.$offset(-1);
-    // Total 9 messages are emitted for organizations
-    // organizationCreated -2, organizationModified - 2, organziationDeleted - 3
-    const cmdPayload = encodeMsg({
-      data: [
-        {
-          entity: 'organization',
-          base_offset: currentOrgOffset - 9,
-          ignore_offset: []
-        }
-      ]
-    });
-    const resp = await commandService.command({
-      name: 'restore',
-      payload: cmdPayload
-    });
-    should.not.exist(resp.error);
-    // await commandTopic.$wait(commnadTopicOffset);
-  });
+  //   const commnadTopicOffset = await commandTopic.$offset(-1);
+  //   const currentOrgOffset = await organizationTopic.$offset(-1);
+  //   // Total 9 messages are emitted for organizations
+  //   // organizationCreated -2, organizationModified - 2, organziationDeleted - 3
+  //   const cmdPayload = encodeMsg({
+  //     data: [
+  //       {
+  //         entity: 'organization',
+  //         base_offset: currentOrgOffset - 9,
+  //         ignore_offset: []
+  //       }
+  //     ]
+  //   });
+  //   const resp = await commandService.command({
+  //     name: 'restore',
+  //     payload: cmdPayload
+  //   });
+  //   should.not.exist(resp.error);
+  //   await commandTopic.$wait(commnadTopicOffset);
+  // });
 
   it('should read contact point resource using filter', async function readContactPoint() {
-    const readResult = await contactPointsService.read({ filters: [{
-      filter: [{
-        field: 'id',
-        operation: FilterOperation.eq,
-        value: 'contact_point_1'
+    const readResult = await contactPointsService.read(ReadRequest.fromPartial({
+      filters: [{
+        filter: [{
+          field: 'id',
+          operation: Filter_Operation.eq,
+          value: 'contact_point_1'
+        }]
       }]
-    }] });
+    }), {});
     should.exist(readResult);
     should.exist(readResult.items[0]);
     readResult.items[0].payload.id.should.equal('contact_point_1');
   });
 
   it('should not return data using filter for invalid id', async function readContactPoint() {
-    const readResult = await contactPointsService.read({ filters: [{
-      filter: [{
-        field: 'id',
-        operation: FilterOperation.eq,
-        value: 'invalid_id'
+    const readResult = await contactPointsService.read(ReadRequest.fromPartial({
+      filters: [{
+        filter: [{
+          field: 'id',
+          operation: Filter_Operation.eq,
+          value: 'invalid_id'
+        }]
       }]
-    }] });
+    }), {});
     should.exist(readResult);
     readResult.items.should.be.empty();
   });
@@ -412,12 +423,12 @@ describe('resource-srv testing', () => {
     deletedResult.operation_status.code.should.equal(200);
     deletedResult.operation_status.message.should.equal('success');
 
-    const resultAfterDeletion = await contactPointsService.read({
+    const resultAfterDeletion = await contactPointsService.read(ReadRequest.fromPartial({
       sort: [{
         field: 'created',
-        order: 1, // ASCENDING
+        order: Sort_SortOrder.ASCENDING // ASCENDING
       }]
-    });
+    }), {});
     baseValidation(resultAfterDeletion);
     resultAfterDeletion.items.should.be.length(0);
   });
