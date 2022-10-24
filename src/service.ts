@@ -1,12 +1,15 @@
 import * as _ from 'lodash';
 import { RedisClientType } from 'redis';
-import { ServiceBase, FilterOperation } from '@restorecommerce/resource-base-interface';
-import { ACSAuthZ, Subject, DecisionResponse, Operation, PolicySetRQResponse } from '@restorecommerce/acs-client';
-import { Decision, AuthZAction } from '@restorecommerce/acs-client';
+import { ServiceBase } from '@restorecommerce/resource-base-interface';
+import { ACSAuthZ, DecisionResponse, Operation, PolicySetRQResponse, ResolvedSubject } from '@restorecommerce/acs-client';
+import { AuthZAction } from '@restorecommerce/acs-client';
 import { checkAccessRequest, getACSFilters } from './utils';
 import * as uuid from 'uuid';
+import { Response_Decision } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control';
+import { ReadRequest } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base';
+import { Filter_Operation } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/filter';
 
-export class ResourceService extends ServiceBase {
+export class ResourceService extends ServiceBase<any, any> {
   authZ: ACSAuthZ;
   redisClient: RedisClientType;
   cfg: any;
@@ -40,7 +43,7 @@ export class ResourceService extends ServiceBase {
         }
       };
     }
-    if (acsResponse.decision != Decision.PERMIT) {
+    if (acsResponse.decision != Response_Decision.PERMIT) {
       return { operation_status: acsResponse.operation_status };
     }
     return await super.create(call, ctx);
@@ -65,7 +68,7 @@ export class ResourceService extends ServiceBase {
         }
       };
     }
-    if (acsResponse.decision != Decision.PERMIT) {
+    if (acsResponse.decision != Response_Decision.PERMIT) {
       return { operation_status: acsResponse.operation_status };
     }
     const acsFilters = getACSFilters(acsResponse, this.resourceName);
@@ -86,7 +89,7 @@ export class ResourceService extends ServiceBase {
       readRequest.custom_queries = acsResponse.custom_query_args[0].custom_queries;
       readRequest.custom_arguments = acsResponse.custom_query_args[0].custom_arguments;
     }
-    return await super.read({ request: readRequest });
+    return await super.read(ReadRequest.fromPartial(readRequest), ctx);
   }
 
   async update(call, ctx) {
@@ -109,7 +112,7 @@ export class ResourceService extends ServiceBase {
         }
       };
     }
-    if (acsResponse.decision != Decision.PERMIT) {
+    if (acsResponse.decision != Response_Decision.PERMIT) {
       return { operation_status: acsResponse.operation_status };
     }
     return await super.update(call, ctx);
@@ -134,7 +137,7 @@ export class ResourceService extends ServiceBase {
         }
       };
     }
-    if (acsResponse.decision != Decision.PERMIT) {
+    if (acsResponse.decision != Response_Decision.PERMIT) {
       return { operation_status: acsResponse.operation_status };
     }
     return await super.upsert(call, ctx);
@@ -178,7 +181,7 @@ export class ResourceService extends ServiceBase {
         }
       };
     }
-    if (acsResponse.decision != Decision.PERMIT) {
+    if (acsResponse.decision != Response_Decision.PERMIT) {
       return { operation_status: acsResponse.operation_status };
     }
     return await super.delete(call, ctx);
@@ -190,7 +193,7 @@ export class ResourceService extends ServiceBase {
  * @param entity entity name
  * @param action resource action
  */
-  async createMetadata(resources: any, action: string, subject?: Subject): Promise<any> {
+  async createMetadata(resources: any, action: string, subject?: ResolvedSubject): Promise<any> {
     let orgOwnerAttributes = [];
     if (resources && !_.isArray(resources)) {
       resources = [resources];
@@ -215,17 +218,15 @@ export class ResourceService extends ServiceBase {
           resource.meta = {};
         }
         if (action === AuthZAction.MODIFY || action === AuthZAction.DELETE) {
-          let result = await super.read({
-            request: {
-              filters: [{
-                filter: [{
-                  field: 'id',
-                  operation: FilterOperation.eq,
-                  value: resource.id
-                }]
+          let result = await super.read(ReadRequest.fromPartial({
+            filters: [{
+              filter: [{
+                field: 'id',
+                operation: Filter_Operation.eq,
+                value: resource.id
               }]
-            }
-          });
+            }]
+          }), {});
           // update owner info
           if (result.items.length === 1) {
             let item = result.items[0].payload;

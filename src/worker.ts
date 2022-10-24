@@ -6,8 +6,8 @@ import * as _ from 'lodash';
 import {
   database,
   GraphDatabaseProvider,
-  grpc,
-  ICommandInterface,
+  buildReflectionService,
+  CommandInterface,
   OffsetStore,
   Server,
   Health
@@ -17,23 +17,40 @@ import { Logger } from 'winston';
 import { createLogger } from '@restorecommerce/logger';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import { createClient, RedisClientType } from 'redis';
-import { protoMetadata as commandProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command';
-import { protoMetadata as addressProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/address';
-import { protoMetadata as contactPointTypeProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point_type';
-import { protoMetadata as countryProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/country';
-import { protoMetadata as contactPointProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point';
-import { protoMetadata as credentialProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/credential';
-import { protoMetadata as localeProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/locale';
-import { protoMetadata as locationProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/location';
-import { protoMetadata as organizationProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization';
-import { protoMetadata as taxProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/tax';
-import { protoMetadata as taxTypeProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/tax_type';
-import { protoMetadata as timezoneProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/timezone';
-import { protoMetadata as customerProto } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/customer';
+import { protoMetadata as commandMeta, ServiceDefinition as command } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command';
+import { protoMetadata as addressMeta, ServiceDefinition as address } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/address';
+import { protoMetadata as contactPointTypeMeta, ServiceDefinition as contact_point_type } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point_type';
+import { protoMetadata as countryMeta, ServiceDefinition as country } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/country';
+import { protoMetadata as contactPointMeta, ServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point';
+import { protoMetadata as credentialMeta, ServiceDefinition as credential } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/credential';
+import { protoMetadata as localeMeta, ServiceDefinition as locale } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/locale';
+import { protoMetadata as locationMeta, ServiceDefinition as location } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/location';
+import { protoMetadata as organizationMeta, ServiceDefinition as organization } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization';
+import { protoMetadata as taxMeta, ServiceDefinition as tax } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/tax';
+import { protoMetadata as taxTypeMeta, ServiceDefinition as tax_type } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/tax_type';
+import { protoMetadata as timezoneMeta, ServiceDefinition as timezone } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/timezone';
+import { protoMetadata as customerMeta, ServiceDefinition as customer } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/customer';
+import {
+  ServiceDefinition as CommandInterfaceServiceDefinition,
+  protoMetadata as commandInterfaceMeta
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
+import {
+  protoMetadata as reflectionMeta
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/grpc/reflection/v1alpha/reflection';
+import { ServerReflectionService } from 'nice-grpc-server-reflection';
+import { HealthDefinition } from '@restorecommerce/rc-grpc-clients/dist/generated-server/grpc/health/v1/health';
+import {
+  ServiceDefinition as GraphServiceDefinition,
+  protoMetadata as graphMeta
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph';
+import { BindConfig } from '@restorecommerce/chassis-srv/lib/microservice/transport/provider/grpc';
 
-registerProtoMeta(commandProto, addressProto, contactPointTypeProto, countryProto,
-  contactPointProto, credentialProto, localeProto, locationProto, organizationProto,
-  taxProto, taxTypeProto, timezoneProto, customerProto);
+registerProtoMeta(commandMeta, addressMeta, contactPointTypeMeta, countryMeta,
+  contactPointMeta, credentialMeta, localeMeta, locationMeta, organizationMeta,
+  taxMeta, taxTypeMeta, timezoneMeta, customerMeta, commandInterfaceMeta, reflectionMeta);
+
+const ServiceDefinitions: any = [command, address, contact_point_type, country, contact_point, credential, locale, location, organization,
+  tax, tax_type, timezone, customer];
 
 export class Worker {
   server: Server;
@@ -41,15 +58,14 @@ export class Worker {
   logger: Logger;
   redisClient: any;
   offsetStore: OffsetStore;
-  cis: ICommandInterface;
-  service: ServiceBase[];
+  cis: CommandInterface;
+  service: any[];
 
   async start(cfg?: any, resourcesServiceEventListener?: Function) {
     // Load config
     if (!cfg) {
       cfg = createServiceConfig(process.cwd());
     }
-    const standardConfig = cfg.get('server:services:standard-cfg');
     const resources = cfg.get('resources');
     if (!resources) {
       throw new Error('config field resources does not exist');
@@ -64,19 +80,8 @@ export class Worker {
     const eventTypes = ['Created', 'Read', 'Modified', 'Deleted'];
     for (let resourceType in resources) {
       const resourceCfg = resources[resourceType];
-      const resourcesProtoPathPrefix = resourceCfg.resourcesProtoPathPrefix;
       const resourcesServiceNamePrefix = resourceCfg.resourcesServiceNamePrefix;
-      const resourcesServiceConfigPrefix = resourceCfg.resourcesServiceConfigPrefix;
-      const root = resourceCfg.resourcesProtoRoot;
       for (let resource of resourceCfg.resources) {
-        cfg.set(`server:services:${resourcesServiceConfigPrefix}${resource}-srv`, standardConfig);
-        const proto = resourcesProtoPathPrefix + `${resource}.proto`;
-        grpcConfig.protos.push(proto);
-        cfg.set('server:transports:0', grpcConfig);
-
-        const serviceName = resourcesServiceNamePrefix + `${resource}.Service`;
-        grpcConfig.services[`${resourcesServiceConfigPrefix}${resource}-srv`] = serviceName;
-
         let resourceObjectName = resource.charAt(0).toUpperCase() + resource.substr(1);
 
         if (resource.indexOf('_') != -1) {
@@ -180,9 +185,15 @@ export class Worker {
         const resourceAPI = new ResourcesAPIBase(db, `${resourceName}s`,
           resourceFieldConfig, edgeCfg, graphName);
         const resourceEvents = await events.topic(`${resourcesServiceNamePrefix}${resourceName}s.resource`);
+        // TODO provide typing on ResourceService<T, M>
         this.service[resourceName] = new ResourceService(resourceName,
           resourceEvents, cfg, logger, resourceAPI, isEventsEnabled, authZ, redisClientSubject);
-        await server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, this.service[resourceName]);
+        const resourceServiceDefinition = ServiceDefinitions.filter((obj) => obj.fullName.split('.')[2] === resourceName);
+        // todo add bindConfig typing
+        await server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, {
+          service: resourceServiceDefinition[0],
+          implementation: this.service[resourceName]
+        } as BindConfig<any>);
       }
     }
 
@@ -192,7 +203,10 @@ export class Worker {
     // Add CommandInterfaceService
     const cis: ResourceCommandInterface = new ResourceCommandInterface(server, cfg, logger, events, redisClientSubject);
     const cisName = cfg.get('command-interface:name');
-    await server.bind(cisName, cis);
+    await server.bind(cisName, {
+      service: CommandInterfaceServiceDefinition,
+      implementation: cis
+    } as BindConfig<CommandInterfaceServiceDefinition>);
 
     if (!resourcesServiceEventListener) {
       resourcesServiceEventListener = async (msg: any,
@@ -219,23 +233,45 @@ export class Worker {
     }
 
     // Add reflection service
-    const transportName = cfg.get('server:services:reflection:serverReflectionInfo:transport:0');
-    const transport = server.transport[transportName];
-    const reflectionService = new grpc.ServerReflection(transport.$builder, server.config);
-    await server.bind('reflection', reflectionService);
+    const reflectionService = buildReflectionService([
+      { descriptor: commandMeta.fileDescriptor },
+      { descriptor: addressMeta.fileDescriptor },
+      { descriptor: contactPointTypeMeta.fileDescriptor },
+      { descriptor: countryMeta.fileDescriptor },
+      { descriptor: credentialMeta.fileDescriptor },
+      { descriptor: localeMeta.fileDescriptor },
+      { descriptor: locationMeta.fileDescriptor },
+      { descriptor: organizationMeta.fileDescriptor },
+      { descriptor: taxMeta.fileDescriptor },
+      { descriptor: taxTypeMeta.fileDescriptor },
+      { descriptor: timezoneMeta.fileDescriptor },
+      { descriptor: customerMeta.fileDescriptor },
+      { descriptor: commandInterfaceMeta.fileDescriptor }
+    ]);
+    await server.bind('reflection', {
+      service: ServerReflectionService,
+      implementation: reflectionService
+    });
 
     // graph Service
     const graphAPIService = new GraphResourcesServiceBase(db, cfg.get('fieldHandlers:bufferFields'));
-    await server.bind('graph', graphAPIService);
+    await server.bind('graph', {
+      implementation: graphAPIService,
+      service: GraphServiceDefinition
+    } as BindConfig<GraphServiceDefinition>);
 
-    await server.bind('grpc-health-v1', new Health(cis, {
-      logger,
-      cfg,
-    }));
+    // health Service
+    await server.bind('grpc-health-v1', {
+      service: HealthDefinition,
+      implementation: new Health(cis, {
+        logger,
+        cfg
+      })
+    } as BindConfig<HealthDefinition>);
 
     // Start server
     await server.start();
-    logger.info('Server Started Correctly');
+    logger.info('Server Started Successfully');
     this.events = events;
     this.server = server;
     this.logger = logger;
