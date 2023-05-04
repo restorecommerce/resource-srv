@@ -1,5 +1,5 @@
 import {
-  AuthZAction, accessRequest, DecisionResponse, Operation, PolicySetRQResponse, ResourceFilterMap
+  AuthZAction, accessRequest, DecisionResponse, Operation, PolicySetRQResponse
 } from '@restorecommerce/acs-client';
 import * as _ from 'lodash';
 import { createServiceConfig } from '@restorecommerce/service-config';
@@ -8,6 +8,7 @@ import { createChannel, createClient } from '@restorecommerce/grpc-client';
 import { createLogger } from '@restorecommerce/logger';
 import { Response_Decision } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control';
 import { Subject } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/auth';
+import { FilterOp } from '@restorecommerce/rc-grpc-clients/dist/generated/io/restorecommerce/resource_base';
 
 // Create a ids client instance
 let idsClientInstance: UserClient;
@@ -108,7 +109,7 @@ export async function checkAccessRequest(ctx: GQLClientContext, resource: Resour
  * @param accessResponse ACS response
  * @param enitity enitity name
  */
-export const getACSFilters = (accessResponse: PolicySetRQResponse, resource: string): ResourceFilterMap[] => {
+export const getACSFilters = (accessResponse: PolicySetRQResponse, resource: string): FilterOp[] => {
   let acsFilters = [];
   const resourceFilterMap = accessResponse?.filters;
   const resourceFilter = resourceFilterMap?.filter((e) => e?.resource === resource);

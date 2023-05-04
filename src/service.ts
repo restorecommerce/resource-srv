@@ -49,8 +49,12 @@ export class ResourceService extends ServiceBase<any, any> {
     return await super.create(request, ctx);
   }
 
-  async read(request, ctx) {
-    const readRequest = request;
+  async read(request: ReadRequest, ctx: any): Promise<DeepPartial<any>> {
+    const readRequest = ReadRequest.fromPartial({
+      offset: request.offset, limit: request.limit,
+      sort: request.sort, filters: request.filters, field: request.field, locales_limiter: request.locales_limiter,
+      custom_arguments: request.custom_arguments, custom_queries: request.custom_queries, search: request.search
+    });
     let subject = request.subject;
     let acsResponse: PolicySetRQResponse;
     try {
@@ -76,13 +80,7 @@ export class ResourceService extends ServiceBase<any, any> {
       if (!readRequest.filters) {
         readRequest.filters = [];
       }
-      if (_.isArray(acsFilters)) {
-        for (let acsFilter of acsFilters) {
-          readRequest.filters.push(acsFilter);
-        }
-      } else {
-        readRequest.filters.push(acsFilters);
-      }
+      readRequest.filters.push(...acsFilters);
     }
 
     if (acsResponse?.custom_query_args && acsResponse.custom_query_args.length > 0) {
@@ -159,7 +157,7 @@ export class ResourceService extends ServiceBase<any, any> {
         resources = [{ id: resourceIDs }];
       }
       Object.assign(resources, { id: resourceIDs });
-      acsResources = await this.createMetadata(resources, action, subject);
+      acsResources = await this.createMetadata(resources, action, subject as ResolvedSubject);
     }
     if (request.collection) {
       action = AuthZAction.DROP;
