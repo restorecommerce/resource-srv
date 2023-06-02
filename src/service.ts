@@ -62,7 +62,7 @@ export class ResourceService extends ServiceBase<any, any> {
       ctx.subject = subject;
       ctx.resources = [];
       acsResponse = await checkAccessRequest(ctx, [{ resource: this.resourceName }], AuthZAction.READ,
-        Operation.whatIsAllowed);
+        Operation.whatIsAllowed) as PolicySetRQResponse;
     } catch (err) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
       return {
@@ -87,7 +87,7 @@ export class ResourceService extends ServiceBase<any, any> {
       readRequest.custom_queries = acsResponse.custom_query_args[0].custom_queries;
       readRequest.custom_arguments = acsResponse.custom_query_args[0].custom_arguments;
     }
-    return await super.read(ReadRequest.fromPartial(readRequest), ctx);
+    return await super.read(ReadRequest.fromPartial(readRequest) as any, ctx);
   }
 
   async update(request, ctx) {
@@ -182,7 +182,7 @@ export class ResourceService extends ServiceBase<any, any> {
     if (acsResponse.decision != Response_Decision.PERMIT) {
       return { operation_status: acsResponse.operation_status };
     }
-    return await super.delete(request, ctx);
+    return await super.delete(request as any, ctx);
   }
 
   /**
@@ -224,7 +224,7 @@ export class ResourceService extends ServiceBase<any, any> {
                 value: resource.id
               }]
             }]
-          }), {});
+          }) as any, {});
           // update owner info
           if (result.items.length === 1) {
             let item = result.items[0].payload;

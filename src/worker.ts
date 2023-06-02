@@ -17,21 +17,22 @@ import { Logger } from 'winston';
 import { createLogger } from '@restorecommerce/logger';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import { createClient, RedisClientType } from 'redis';
-import { protoMetadata as commandMeta, ServiceDefinition as command } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command';
-import { protoMetadata as addressMeta, ServiceDefinition as address } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/address';
-import { protoMetadata as contactPointTypeMeta, ServiceDefinition as contact_point_type } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point_type';
-import { protoMetadata as countryMeta, ServiceDefinition as country } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/country';
-import { protoMetadata as contactPointMeta, ServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point';
-import { protoMetadata as credentialMeta, ServiceDefinition as credential } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/credential';
-import { protoMetadata as localeMeta, ServiceDefinition as locale } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/locale';
-import { protoMetadata as locationMeta, ServiceDefinition as location } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/location';
-import { protoMetadata as organizationMeta, ServiceDefinition as organization } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization';
-import { protoMetadata as taxMeta, ServiceDefinition as tax } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/tax';
-import { protoMetadata as taxTypeMeta, ServiceDefinition as tax_type } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/tax_type';
-import { protoMetadata as timezoneMeta, ServiceDefinition as timezone } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/timezone';
-import { protoMetadata as customerMeta, ServiceDefinition as customer } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/customer';
+import { protoMetadata as commandMeta, CommandServiceDefinition as command } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command';
+import { protoMetadata as addressMeta, AddressServiceDefinition as address } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/address';
+import { protoMetadata as contactPointTypeMeta, ContactPointTypeServiceDefinition as contact_point_type } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point_type';
+import { protoMetadata as countryMeta, CountryServiceDefinition as country } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/country';
+import { protoMetadata as contactPointMeta, ContactPointServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point';
+import { protoMetadata as credentialMeta, CredentialServiceDefinition as credential } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/credential';
+import { protoMetadata as localeMeta, LocaleServiceDefinition as locale } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/locale';
+import { protoMetadata as locationMeta, LocationServiceDefinition as location } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/location';
+import { protoMetadata as organizationMeta, OrganizationServiceDefinition as organization } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization';
+import { protoMetadata as taxMeta, TaxServiceDefinition as tax } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/tax';
+import { protoMetadata as taxTypeMeta, TaxTypeServiceDefinition as tax_type } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/tax_type';
+import { protoMetadata as timezoneMeta, TimezoneServiceDefinition as timezone } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/timezone';
+import { protoMetadata as customerMeta, CustomerServiceDefinition as customer } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/customer';
+import { protoMetadata as codeMeta, CodeServiceDefinition as code } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/code';
 import {
-  ServiceDefinition as CommandInterfaceServiceDefinition,
+  CommandInterfaceServiceDefinition as CommandInterfaceServiceDefinition,
   protoMetadata as commandInterfaceMeta
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
 import {
@@ -40,17 +41,17 @@ import {
 import { ServerReflectionService } from 'nice-grpc-server-reflection';
 import { HealthDefinition } from '@restorecommerce/rc-grpc-clients/dist/generated-server/grpc/health/v1/health';
 import {
-  ServiceDefinition as GraphServiceDefinition,
+  GraphServiceDefinition as GraphServiceDefinition,
   protoMetadata as graphMeta
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph';
 import { BindConfig } from '@restorecommerce/chassis-srv/lib/microservice/transport/provider/grpc';
 
 registerProtoMeta(commandMeta, addressMeta, contactPointTypeMeta, countryMeta,
   contactPointMeta, credentialMeta, localeMeta, locationMeta, organizationMeta,
-  taxMeta, taxTypeMeta, timezoneMeta, customerMeta, commandInterfaceMeta, reflectionMeta, graphMeta);
+  taxMeta, taxTypeMeta, timezoneMeta, customerMeta, commandInterfaceMeta, reflectionMeta, graphMeta, codeMeta);
 
 const ServiceDefinitions: any = [command, address, contact_point_type, country, contact_point, credential, locale, location, organization,
-  tax, tax_type, timezone, customer];
+  tax, tax_type, timezone, customer, code];
 
 export class Worker {
   server: Server;
@@ -246,7 +247,8 @@ export class Worker {
       { descriptor: taxTypeMeta.fileDescriptor },
       { descriptor: timezoneMeta.fileDescriptor },
       { descriptor: customerMeta.fileDescriptor },
-      { descriptor: commandInterfaceMeta.fileDescriptor }
+      { descriptor: commandInterfaceMeta.fileDescriptor },
+      { descriptor: codeMeta.fileDescriptor }
     ]);
     await server.bind('reflection', {
       service: ServerReflectionService,

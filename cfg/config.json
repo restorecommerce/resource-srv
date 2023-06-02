@@ -19,7 +19,8 @@
         "tax",
         "tax_type",
         "timezone",
-        "customer"
+        "customer",
+        "code"
       ],
       "customQueries": [
         {
@@ -224,6 +225,7 @@
       "resources": [
         "command",
         "address",
+        "code",
         "contact_point_type",
         "country",
         "contact_point",

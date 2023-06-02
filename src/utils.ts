@@ -3,7 +3,7 @@ import {
 } from '@restorecommerce/acs-client';
 import * as _ from 'lodash';
 import { createServiceConfig } from '@restorecommerce/service-config';
-import { ServiceClient as UserClient, ServiceDefinition as UserServiceDefinition } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/user';
+import { UserServiceClient as UserClient, UserServiceDefinition as UserServiceDefinition } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/user';
 import { createChannel, createClient } from '@restorecommerce/grpc-client';
 import { createLogger } from '@restorecommerce/logger';
 import { Response_Decision } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control';
