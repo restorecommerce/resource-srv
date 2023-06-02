@@ -7,10 +7,10 @@ import * as proto_loader from '@grpc/proto-loader';
 import * as grpc from '@grpc/grpc-js';
 import {createLogger} from '@restorecommerce/logger';
 import {createServiceConfig} from '@restorecommerce/service-config';
-import { ServiceDefinition as CommandInterfaceServiceDefinition, ServiceClient as cisClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
-import { ServiceDefinition as command } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command';
-import { ServiceDefinition as organization } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization';
-import { ServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point';
+import { CommandInterfaceServiceDefinition, CommandInterfaceServiceClient as cisClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
+import { CommandServiceDefinition as command } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command';
+import { OrganizationServiceDefinition as organization } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization';
+import { ContactPointServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point';
 import { createClient as RedisCreateClient, RedisClientType } from 'redis';
 
 const cfg = createServiceConfig(process.cwd() + '/test');
@@ -25,7 +25,7 @@ let tokenRedisClient: RedisClientType;
  */
 const meta = {
   modified_by: 'AdminID',
-  owner: [{
+  owners: [{
     "id": "urn:restorecommerce:acs:names:ownerIndicatoryEntity",
     "value": "urn:restorecommerce:acs:model:organization.Organization"
   },
@@ -51,9 +51,9 @@ const listOfContactPoints = [
 const permitAllEntitiesRule = {
   id: 'permit_rule_id',
   target: {
-    action: [],
+    actions: [],
     resources: [{id: 'urn:restorecommerce:acs:names:model:entity', value: 'urn:restorecommerce:acs:model:*.*'}],
-    subject: [
+    subjects: [
       {
         id: 'urn:restorecommerce:acs:names:role',
         value: 'admin-r-id'
@@ -76,12 +76,12 @@ let policySetRQ = {
           combining_algorithm: 'urn:oasis:names:tc:xacml:3.0:rule-combining-algorithm:permit-overrides',
           id: 'user_test_policy_id',
           target: {
-            action: [],
+            actions: [],
             resources: [{
               id: 'urn:restorecommerce:acs:names:model:entity',
               value: 'urn:restorecommerce:acs:model:*.*'
             }],
-            subject: []
+            subjects: []
           }, effect: 'PERMIT',
           rules: [ // permit or deny rule will be added
             permitAllEntitiesRule
@@ -139,7 +139,7 @@ interface MethodWithOutput {
 
 const PROTO_PATH: string = 'io/restorecommerce/access_control.proto';
 const PKG_NAME: string = 'io.restorecommerce.access_control';
-const SERVICE_NAME: string = 'Service';
+const SERVICE_NAME: string = 'AccessControlService';
 const pkgDef: grpc.GrpcObject = grpc.loadPackageDefinition(
   proto_loader.loadSync(PROTO_PATH, {
     includeDirs: ['test/protos'],
@@ -198,7 +198,7 @@ const startGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
 
 const IDS_PROTO_PATH = 'test/protos/io/restorecommerce/user.proto';
 const IDS_PKG_NAME = 'io.restorecommerce.user';
-const IDS_SERVICE_NAME = 'Service';
+const IDS_SERVICE_NAME = 'UserService';
 
 const mockServerIDS = new GrpcMockServer('localhost:50051');
 

@@ -52,7 +52,7 @@ export class ResourceService extends ServiceBase<any, any> {
   async read(request: ReadRequest, ctx: any): Promise<DeepPartial<any>> {
     const readRequest = ReadRequest.fromPartial({
       offset: request.offset, limit: request.limit,
-      sort: request.sort, filters: request.filters, field: request.field, locales_limiter: request.locales_limiter,
+      sorts: request.sorts, filters: request.filters, fields: request.fields, locales_limiter: request.locales_limiter,
       custom_arguments: request.custom_arguments, custom_queries: request.custom_queries, search: request.search
     });
     let subject = request.subject;
@@ -218,7 +218,7 @@ export class ResourceService extends ServiceBase<any, any> {
         if (action === AuthZAction.MODIFY || action === AuthZAction.DELETE) {
           let result = await super.read(ReadRequest.fromPartial({
             filters: [{
-              filter: [{
+              filters: [{
                 field: 'id',
                 operation: Filter_Operation.eq,
                 value: resource.id
@@ -228,16 +228,16 @@ export class ResourceService extends ServiceBase<any, any> {
           // update owner info
           if (result.items.length === 1) {
             let item = result.items[0].payload;
-            resource.meta.owner = item.meta.owner;
+            resource.meta.owners = item.meta.owners;
           } else if (result.items.length === 0) {
             if (_.isEmpty(resource.id)) {
               resource.id = uuid.v4().replace(/-/g, '');
             }
             let ownerAttributes;
-            if (!resource.meta.owner) {
+            if (!resource.meta.owners) {
               ownerAttributes = _.cloneDeep(orgOwnerAttributes);
             } else {
-              ownerAttributes = resource.meta.owner;
+              ownerAttributes = resource.meta.owners;
             }
             ownerAttributes.push(
               {
@@ -248,17 +248,17 @@ export class ResourceService extends ServiceBase<any, any> {
                 id: urns.ownerInstance,
                 value: resource.id
               });
-            resource.meta.owner = ownerAttributes;
+            resource.meta.owners = ownerAttributes;
           }
         } else if (action === AuthZAction.CREATE) {
           if (_.isEmpty(resource.id)) {
             resource.id = uuid.v4().replace(/-/g, '');
           }
           let ownerAttributes;
-          if (!resource.meta.owner) {
+          if (!resource.meta.owners) {
             ownerAttributes = _.cloneDeep(orgOwnerAttributes);
           } else {
-            ownerAttributes = resource.meta.owner;
+            ownerAttributes = resource.meta.owners;
           }
           if (subject?.id) {
             ownerAttributes.push(
@@ -271,7 +271,7 @@ export class ResourceService extends ServiceBase<any, any> {
                 value: subject?.id
               });
           }
-          resource.meta.owner = ownerAttributes;
+          resource.meta.owners = ownerAttributes;
         }
       }
     }

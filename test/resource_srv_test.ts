@@ -5,10 +5,10 @@ import { Worker } from '../lib/worker';
 import { updateConfig } from '@restorecommerce/acs-client';
 import { createLogger } from '@restorecommerce/logger';
 import { createServiceConfig } from '@restorecommerce/service-config';
-import { ServiceDefinition as CommandInterfaceServiceDefinition, ServiceClient as cisClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
-import { ServiceDefinition as command } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command';
-import { ServiceDefinition as organization, protoMetadata as organizationMeta } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization';
-import { ServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point';
+import { CommandInterfaceServiceDefinition, CommandInterfaceServiceClient as cisClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
+import { CommandServiceDefinition as command } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command';
+import { OrganizationServiceDefinition as organization, protoMetadata as organizationMeta } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization';
+import { ContactPointServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point';
 import { ReadRequest, Sort_SortOrder } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base';
 import { Filter_Operation } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/filter';
 
@@ -25,7 +25,7 @@ registerProtoMeta(organizationMeta);
  */
 const meta = {
   modified_by: 'AdminID',
-  owner: [{
+  owners: [{
     "id": "urn:restorecommerce:acs:names:ownerIndicatoryEntity",
     "value": "urn:restorecommerce:acs:model:user.User"
   },
@@ -207,7 +207,7 @@ describe('resource-srv testing', () => {
 
   it('should read organization resource', async function readOrganization() {
     const result = await organizationService.read(ReadRequest.fromPartial({
-      sort: [{
+      sorts: [{
         field: 'name',
         order: Sort_SortOrder.ASCENDING
       }]
@@ -224,7 +224,7 @@ describe('resource-srv testing', () => {
 
   it('should update organization resource and validate status', async function updateOrganization() {
     const result = await organizationService.read(ReadRequest.fromPartial({
-      sort: [{
+      sorts: [{
         field: 'name',
         order: Sort_SortOrder.DESCENDING, // ASCENDING
       }]
@@ -245,7 +245,7 @@ describe('resource-srv testing', () => {
     baseValidation(update);
     result.items.should.be.length(2);
     const updatedReadResult = await organizationService.read(ReadRequest.fromPartial({
-      sort: [{
+      sorts: [{
         field: 'name',
         order: Sort_SortOrder.ASCENDING, // ASCENDING
       }]
@@ -261,7 +261,7 @@ describe('resource-srv testing', () => {
 
   it('should upsert organization resource and validate status', async function upsertOrganization() {
     const result = await organizationService.read(ReadRequest.fromPartial({
-      sort: [{
+      sorts: [{
         field: 'name',
         order: Sort_SortOrder.ASCENDING, // ASCENDING
       }]
@@ -291,7 +291,7 @@ describe('resource-srv testing', () => {
     update.items[1].status.code.should.equal(200);
     update.items[1].status.message.should.equal('success');
     const updatedResult = await organizationService.read(ReadRequest.fromPartial({
-      sort: [{
+      sorts: [{
         field: 'modified',
         order: Sort_SortOrder.ASCENDING, // ASCENDING
       },
@@ -311,7 +311,7 @@ describe('resource-srv testing', () => {
   // edge from org to cp resource is also delted when org is deleted
   it('should delete organization resource and verify status', async function deleteOrganization() {
     const result = await organizationService.read(ReadRequest.fromPartial({
-      sort: [{
+      sorts: [{
         field: 'created',
         order: Sort_SortOrder.ASCENDING // ASCENDING
       }]
@@ -335,7 +335,7 @@ describe('resource-srv testing', () => {
 
 
     const resultAfterDeletion = await organizationService.read(ReadRequest.fromPartial({
-      sort: [{
+      sorts: [{
         field: 'created',
         order: Sort_SortOrder.ASCENDING, // ASCENDING
       }]
@@ -382,7 +382,7 @@ describe('resource-srv testing', () => {
   it('should read contact point resource using filter', async function readContactPoint() {
     const readResult = await contactPointsService.read(ReadRequest.fromPartial({
       filters: [{
-        filter: [{
+        filters: [{
           field: 'id',
           operation: Filter_Operation.eq,
           value: 'contact_point_1'
@@ -397,7 +397,7 @@ describe('resource-srv testing', () => {
   it('should not return data using filter for invalid id', async function readContactPoint() {
     const readResult = await contactPointsService.read(ReadRequest.fromPartial({
       filters: [{
-        filter: [{
+        filters: [{
           field: 'id',
           operation: Filter_Operation.eq,
           value: 'invalid_id'
@@ -424,7 +424,7 @@ describe('resource-srv testing', () => {
     deletedResult.operation_status.message.should.equal('success');
 
     const resultAfterDeletion = await contactPointsService.read(ReadRequest.fromPartial({
-      sort: [{
+      sorts: [{
         field: 'created',
         order: Sort_SortOrder.ASCENDING // ASCENDING
       }]

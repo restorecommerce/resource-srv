@@ -42,7 +42,7 @@ export interface Resource {
 export interface Attribute {
   id: string;
   value: string;
-  attribute: Attribute[];
+  attributes: Attribute[];
 }
 
 export interface CtxResource {
@@ -51,7 +51,7 @@ export interface CtxResource {
     created?: number;
     modified?: number;
     modified_by?: string;
-    owner: Attribute[]; // id and owner is mandatory in ctx resource other attributes are optional
+    owners: Attribute[]; // id and owner is mandatory in ctx resource other attributes are optional
   };
   [key: string]: any;
 }
@@ -114,7 +114,7 @@ export const getACSFilters = (accessResponse: PolicySetRQResponse, resource: str
   const resourceFilterMap = accessResponse?.filters;
   const resourceFilter = resourceFilterMap?.filter((e) => e?.resource === resource);
   // for a given entity there should be one filter map
-  if (resourceFilter && resourceFilter.length === 1 && resourceFilter[0].filters && resourceFilter[0].filters[0]?.filter.length > 0) {
+  if (resourceFilter && resourceFilter.length === 1 && resourceFilter[0].filters && resourceFilter[0].filters[0]?.filters.length > 0) {
     acsFilters = resourceFilter[0].filters;
   }
   return acsFilters;
