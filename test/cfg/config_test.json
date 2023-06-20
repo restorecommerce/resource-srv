@@ -175,7 +175,11 @@
   },
   "fieldHandlers": {
     "fieldGenerators": {},
-    "bufferFields": {},
+    "bufferFields": {
+      "organization": "data",
+      "location": "data",
+      "credential": "credentials"
+    },
     "requiredFields": {}
   },
   "client": {

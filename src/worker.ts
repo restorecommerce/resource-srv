@@ -31,6 +31,8 @@ import { protoMetadata as taxTypeMeta, TaxTypeServiceDefinition as tax_type } fr
 import { protoMetadata as timezoneMeta, TimezoneServiceDefinition as timezone } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/timezone';
 import { protoMetadata as customerMeta, CustomerServiceDefinition as customer } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/customer';
 import { protoMetadata as codeMeta, CodeServiceDefinition as code } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/code';
+import { protoMetadata as notificationMeta, NotificationServiceDefinition as notification } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/notification';
+import { protoMetadata as notificationChannelMeta, NotificationChannelServiceDefinition as notification_channel } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/notification_channel';
 import {
   CommandInterfaceServiceDefinition as CommandInterfaceServiceDefinition,
   protoMetadata as commandInterfaceMeta
@@ -48,10 +50,11 @@ import { BindConfig } from '@restorecommerce/chassis-srv/lib/microservice/transp
 
 registerProtoMeta(commandMeta, addressMeta, contactPointTypeMeta, countryMeta,
   contactPointMeta, credentialMeta, localeMeta, locationMeta, organizationMeta,
-  taxMeta, taxTypeMeta, timezoneMeta, customerMeta, commandInterfaceMeta, reflectionMeta, graphMeta, codeMeta);
+  taxMeta, taxTypeMeta, timezoneMeta, customerMeta, commandInterfaceMeta,
+  reflectionMeta, graphMeta, codeMeta, notificationMeta, notificationChannelMeta);
 
 const ServiceDefinitions: any = [command, address, contact_point_type, country, contact_point, credential, locale, location, organization,
-  tax, tax_type, timezone, customer, code];
+  tax, tax_type, timezone, customer, code, notification, notification_channel];
 
 export class Worker {
   server: Server;
