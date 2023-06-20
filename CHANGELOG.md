@@ -1,3 +1,7 @@
+## 1.0.1 (June 20th, 2023)
+
+- updated all dependencies and added notification and notifcation_channel to config
+
 ## 1.0.0 (June 2nd, 2023)
 
 - up deps (libs - with proto changes inlcuding optional, pluralized fields)

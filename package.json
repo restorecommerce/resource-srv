@@ -1,6 +1,6 @@
 {
   "name": "@restorecommerce/resource-srv",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Restore Commerce Resource Microservice",
   "main": "lib/start.js",
   "author": "n-fuse GmbH",
