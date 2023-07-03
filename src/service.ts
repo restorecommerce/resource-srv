@@ -25,7 +25,7 @@ export class ResourceService extends ServiceBase<any, any> {
   async create(request, ctx) {
     let data = request.items;
     let subject = request.subject;
-    // update meta data for owner information
+    // update meta data for owners information
     const acsResources = await this.createMetadata(data, AuthZAction.CREATE, subject);
     let acsResponse: DecisionResponse;
     try {
@@ -202,11 +202,11 @@ export class ResourceService extends ServiceBase<any, any> {
       orgOwnerAttributes.push(
         {
           id: urns.ownerIndicatoryEntity,
-          value: urns.organization
-        },
-        {
-          id: urns.ownerInstance,
-          value: subject.scope
+          value: urns.organization,
+          attributes: [{
+            id: urns.ownerInstance,
+            value: subject.scope
+          }]
         });
     }
 
@@ -242,11 +242,11 @@ export class ResourceService extends ServiceBase<any, any> {
             ownerAttributes.push(
               {
                 id: urns.ownerIndicatoryEntity,
-                value: urns.user
-              },
-              {
-                id: urns.ownerInstance,
-                value: resource.id
+                value: urns.user,
+                attributes: [{
+                  id: urns.ownerInstance,
+                  value: resource.id
+                }]
               });
             resource.meta.owners = ownerAttributes;
           }
@@ -264,11 +264,11 @@ export class ResourceService extends ServiceBase<any, any> {
             ownerAttributes.push(
               {
                 id: urns.ownerIndicatoryEntity,
-                value: urns.user
-              },
-              {
-                id: urns.ownerInstance,
-                value: subject?.id
+                value: urns.user,
+                attributes: [{
+                  id: urns.ownerInstance,
+                  value: subject?.id
+                }]
               });
           }
           resource.meta.owners = ownerAttributes;
@@ -277,5 +277,4 @@ export class ResourceService extends ServiceBase<any, any> {
     }
     return resources;
   }
-
 }

@@ -27,11 +27,11 @@ const meta = {
   modified_by: 'AdminID',
   owners: [{
     "id": "urn:restorecommerce:acs:names:ownerIndicatoryEntity",
-    "value": "urn:restorecommerce:acs:model:user.User"
-  },
-  {
-    "id": "urn:restorecommerce:acs:names:ownerInstance",
-    "value": "Admin"
+    "value": "urn:restorecommerce:acs:model:user.User",
+    "attributes": [{
+      "id": "urn:restorecommerce:acs:names:ownerInstance",
+      "value": "Admin"
+    }]
   }]
 };
 

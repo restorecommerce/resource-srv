@@ -27,12 +27,12 @@ const meta = {
   modified_by: 'AdminID',
   owners: [{
     "id": "urn:restorecommerce:acs:names:ownerIndicatoryEntity",
-    "value": "urn:restorecommerce:acs:model:organization.Organization"
-  },
-    {
+    "value": "urn:restorecommerce:acs:model:organization.Organization",
+    "attributes": [{
       "id": "urn:restorecommerce:acs:names:ownerInstance",
       "value": "orgC"
     }]
+  }]
 };
 
 const listOfContactPoints = [
@@ -101,12 +101,12 @@ let subject = {
       role: 'admin-r-id',
       attributes: [{
         id: 'urn:restorecommerce:acs:names:roleScopingEntity',
-        value: 'urn:restorecommerce:acs:model:organization.Organization'
-      },
-        {
+        value: 'urn:restorecommerce:acs:model:organization.Organization',
+        attributes: [{
           id: 'urn:restorecommerce:acs:names:roleScopingInstance',
           value: 'mainOrg'
         }]
+      }]
     }
   ],
   hierarchical_scopes: [
@@ -165,9 +165,9 @@ const startGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
       const isAllowedResponse = methodWithOutput.filter(e => e.method === 'IsAllowed');
       let response: any = new proto.Response.constructor(isAllowedResponse[0].output);
       // Delete request with invalid scope - DENY
-      if (call?.request?.target?.subjects?.length === 3) {
+      if (call?.request?.target?.subjects?.length === 2) {
         let reqSubject = call.request.target.subjects;
-        if (reqSubject[2]?.id === 'urn:restorecommerce:acs:names:roleScopingInstance' && reqSubject[2]?.value === 'orgD') {
+        if (reqSubject[1]?.attributes[0]?.id === 'urn:restorecommerce:acs:names:roleScopingInstance' && reqSubject[1]?.attributes[0]?.value === 'orgD') {
           response = { decision: 'DENY' };
         }
       }
@@ -284,7 +284,6 @@ async function getClientResourceServices() {
 }
 
 describe('resource-srv testing with ACS enabled', () => {
-  let options;
   let organizationService;
   let contactPointsService;
   let commandService;
@@ -292,7 +291,6 @@ describe('resource-srv testing with ACS enabled', () => {
   let events: Events;
   let commandTopic: Topic;
   let organizationTopic: Topic;
-  let validate;
   let baseValidation = function (result: any) {
     should.exist(result);
     should.exist(result.items);
