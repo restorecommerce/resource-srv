@@ -109,6 +109,12 @@
       "versionResponse": {
         "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
       },
+      "hierarchicalScopesRequest": {
+        "messageObject": "io.restorecommerce.auth.HierarchicalScopesRequest"
+      },
+      "hierarchicalScopesResponse": {
+        "messageObject": "io.restorecommerce.auth.HierarchicalScopesResponse"
+      },
       "topics": {
         "command": {
           "topic": "io.restorecommerce.command",
@@ -121,6 +127,12 @@
         "organizations": {
           "topic": "io.restorecommerce.organizations.resource",
           "events": []
+        },
+        "user": {
+          "topic": "io.restorecommerce.user",
+          "events": [
+            "hierarchicalScopesRequest"
+          ]
         }
       }
     },
@@ -196,9 +208,6 @@
     ]
   },
   "client": {
-    "resources": [
-      "organization"
-    ],
     "default-resource-srv": {
       "address": "localhost:50053"
     },
@@ -208,19 +217,28 @@
     "acs-srv": {
       "address": "localhost:50061"
     },
-    "errors": {
-      "INVALID_CREDENTIALS": {
-        "code": "401",
-        "message": "Invalid credentials"
-      },
-      "USER_NOT_LOGGED_IN": {
-        "code": "401",
-        "message": "Invalid authentication context, please log in first"
-      },
-      "ACTION_NOT_ALLOWED": {
-        "code": "403",
-        "message": "Action not allowed on this resource"
-      }
+    "graph-srv": {
+      "address": "localhost:50053"
     }
-  }
+  },
+  "errors": {
+    "INVALID_CREDENTIALS": {
+      "code": "401",
+      "message": "Invalid credentials"
+    },
+    "USER_NOT_LOGGED_IN": {
+      "code": "401",
+      "message": "Invalid authentication context, please log in first"
+    },
+    "ACTION_NOT_ALLOWED": {
+      "code": "403",
+      "message": "Action not allowed on this resource"
+    }
+  },
+  "techUsers": [
+    {
+      "id": "upsert_user_tokens",
+      "token": "change.this.token.number"
+    }
+  ]
 }

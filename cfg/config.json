@@ -300,6 +300,12 @@
       "flushCacheResponse": {
         "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
       },
+      "hierarchicalScopesRequest": {
+        "messageObject": "io.restorecommerce.auth.HierarchicalScopesRequest"
+      },
+      "hierarchicalScopesResponse": {
+        "messageObject": "io.restorecommerce.auth.HierarchicalScopesResponse"
+      },
       "topics": {
         "command": {
           "topic": "io.restorecommerce.command",
@@ -311,6 +317,12 @@
             "configUpdateCommand",
             "setApiKeyCommand",
             "flushCacheCommand"
+          ]
+        },
+        "user": {
+          "topic": "io.restorecommerce.user",
+          "events": [
+            "hierarchicalScopesRequest"
           ]
         }
       }
@@ -360,6 +372,9 @@
     },
     "user": {
       "address": "localhost:50051"
+    },
+    "graph-srv": {
+      "address": "localhost:50053"
     }
   },
   "server": {
@@ -465,5 +480,11 @@
       "code": "403",
       "message": "Action not allowed on this resource"
     }
-  }
+  },
+  "techUsers": [
+    {
+      "id": "upsert_user_tokens",
+      "token": "change.this.token.number"
+    }
+  ]
 }

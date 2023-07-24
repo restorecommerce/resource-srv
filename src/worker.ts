@@ -44,14 +44,22 @@ import { ServerReflectionService } from 'nice-grpc-server-reflection';
 import { HealthDefinition } from '@restorecommerce/rc-grpc-clients/dist/generated-server/grpc/health/v1/health';
 import {
   GraphServiceDefinition as GraphServiceDefinition,
-  protoMetadata as graphMeta
+  protoMetadata as graphMeta,
+  GraphServiceClient
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph';
 import { BindConfig } from '@restorecommerce/chassis-srv/lib/microservice/transport/provider/grpc';
+import { protoMetadata as hierarchicalScopesMeta } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/auth';
+import { UserServiceClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/user';
+import { getUserServiceClient, getGraphServiceClient, createHRScope } from './utils';
+
+const COMMANDEVENTS = ['restoreCommand', 'healthCheckCommand', 'resetCommand',
+  'versionCommand', 'configUpdateCommand', 'setApiKeyCommand', 'flushCacheCommand'];
+const HIERARCHICAL_SCOPE_REQUEST_EVENT = 'hierarchicalScopesRequest';
 
 registerProtoMeta(commandMeta, addressMeta, contactPointTypeMeta, countryMeta,
   contactPointMeta, credentialMeta, localeMeta, locationMeta, organizationMeta,
   taxMeta, taxTypeMeta, timezoneMeta, customerMeta, commandInterfaceMeta,
-  reflectionMeta, graphMeta, codeMeta, notificationMeta, notificationChannelMeta);
+  reflectionMeta, graphMeta, codeMeta, notificationMeta, notificationChannelMeta, hierarchicalScopesMeta);
 
 const ServiceDefinitions: any = [command, address, contact_point_type, country, contact_point, credential, locale, location, organization,
   tax, tax_type, timezone, customer, code, notification, notification_channel];
@@ -64,6 +72,8 @@ export class Worker {
   offsetStore: OffsetStore;
   cis: CommandInterface;
   service: any[];
+  idsClient: UserServiceClient;
+  graphClient: GraphServiceClient;
 
   async start(cfg?: any, resourcesServiceEventListener?: Function) {
     // Load config
@@ -217,13 +227,43 @@ export class Worker {
       implementation: cis
     } as BindConfig<CommandInterfaceServiceDefinition>);
 
+    const hrTopicName = kafkaCfg?.topics?.user?.topic;
+    const hrTopic = await events.topic(hrTopicName);
+    this.idsClient = await getUserServiceClient();
+    this.graphClient = await getGraphServiceClient();
     if (!resourcesServiceEventListener) {
       resourcesServiceEventListener = async (msg: any,
         context: any, config: any, eventName: string): Promise<any> => {
-        try {
-          await cis.command(msg, context);
-        } catch (err) {
-          logger.error('Error while executing command', err);
+        if (COMMANDEVENTS.indexOf(eventName) > -1) {
+          try {
+            await cis.command(msg, context);
+          } catch (err) {
+            logger.error('Error while executing command', err);
+          }
+        } else if (eventName === HIERARCHICAL_SCOPE_REQUEST_EVENT) {
+          const tokenDate = msg.token;
+          let user, token;
+          if (tokenDate && this.idsClient) {
+            token = tokenDate.split(':')[0];
+            user = await this.idsClient.findByToken({ token });
+          }
+          let subject;
+          if (!user || !user.payload || !user.payload.id) {
+            this.logger.debug('Subject could not be resolved for token');
+          } else {
+            subject = await createHRScope(user, token, this.graphClient, null, cfg, this.logger);
+          }
+          if (!subject) {
+            subject = {};
+          }
+          if (hrTopic) {
+            // emit response with same messag id on same topic
+            this.logger.info(`Hierarchical scopes are created for subject ${user?.payload?.id}`);
+            await hrTopic.emit('hierarchicalScopesResponse', {
+              subject_id: user?.payload?.id,
+              token: msg.token, hierarchical_scopes: subject.hierarchical_scopes
+            });
+          }
         }
       };
     }

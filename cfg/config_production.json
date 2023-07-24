@@ -49,6 +49,9 @@
     },
     "user": {
       "address": "identity-srv:50051"
+    },
+    "graph-srv": {
+      "address": "resource-srv:50051"
     }
   }
 }

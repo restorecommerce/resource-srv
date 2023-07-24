@@ -1,5 +1,6 @@
 import {
-  AuthZAction, accessRequest, DecisionResponse, Operation, PolicySetRQResponse
+  AuthZAction, accessRequest, DecisionResponse, Operation, PolicySetRQResponse,
+  ResolvedSubject, HierarchicalScope
 } from '@restorecommerce/acs-client';
 import * as _ from 'lodash';
 import { createServiceConfig } from '@restorecommerce/service-config';
@@ -9,10 +10,11 @@ import { createLogger } from '@restorecommerce/logger';
 import { Response_Decision } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control';
 import { Subject } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/auth';
 import { FilterOp } from '@restorecommerce/rc-grpc-clients/dist/generated/io/restorecommerce/resource_base';
+import { GraphServiceClient as GraphClient, GraphServiceDefinition, Options_Direction as Direction } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph';
 
 // Create a ids client instance
 let idsClientInstance: UserClient;
-const getUserServiceClient = async () => {
+export const getUserServiceClient = async () => {
   if (!idsClientInstance) {
     const cfg = createServiceConfig(process.cwd());
     // identity-srv client to resolve subject ID by token
@@ -31,6 +33,28 @@ const getUserServiceClient = async () => {
     }
   }
   return idsClientInstance;
+};
+
+// Create a graph client instance for traversal requests
+let graphClientInstance: GraphClient;
+export const getGraphServiceClient = async () => {
+  if (!graphClientInstance) {
+    const cfg = createServiceConfig(process.cwd());
+    const grpcGraphConfig = cfg.get('client:graph-srv');
+    const loggerCfg = cfg.get('logger');
+    loggerCfg.esTransformer = (msg) => {
+      msg.fields = JSON.stringify(msg.fields);
+      return msg;
+    };
+    const logger = createLogger(loggerCfg);
+    if (grpcGraphConfig) {
+      graphClientInstance = createClient({
+        ...grpcGraphConfig,
+        logger
+      }, GraphServiceDefinition, createChannel(grpcGraphConfig.address));
+    }
+  }
+  return graphClientInstance;
 };
 
 export interface Resource {
@@ -118,4 +142,150 @@ export const getACSFilters = (accessResponse: PolicySetRQResponse, resource: str
     acsFilters = resourceFilter[0].filters;
   }
   return acsFilters;
+};
+
+const setNestedChildOrgs = (hrScope: any, targetOrgID, subOrgs) => {
+  if (!_.isArray(hrScope)) {
+    hrScope = [hrScope];
+  }
+  if (_.isArray(hrScope)) {
+    for (let subHrScope of hrScope) {
+      if (subHrScope.id === targetOrgID) {
+        if (!subHrScope.children) {
+          subHrScope.children = [];
+        }
+        subHrScope.children.push(...subOrgs);
+        return;
+      }
+      for (let item of subHrScope.children) {
+        if (item.id === targetOrgID) {
+          item.children.push(...subOrgs);
+          return hrScope;
+        } else {
+          setNestedChildOrgs(item.children, targetOrgID, subOrgs);
+        }
+      }
+    }
+  }
+};
+
+export const getSubTreeOrgs = async (orgID: string, role: string, cfg: any, graphClient, logger): Promise<HierarchicalScope> => {
+  const hrScope: HierarchicalScope = { role, id: orgID, children: [] };
+  let subOrgTreeList = new Set<string>();
+  let traversalResponse: any = [];
+  const hierarchicalResources = cfg.get('authorization:hierarchicalResources') || [];
+  let orgTechUser;
+  const techUsersCfg = cfg.get('techUsers');
+  if (techUsersCfg?.length > 0) {
+    orgTechUser = _.find(techUsersCfg, { id: 'upsert_user_tokens' });
+  }
+  for (let hierarchicalResource of hierarchicalResources) {
+    const { collection, edge } = hierarchicalResource;
+    // search in inbound - org has parent org
+    const traversalRequest = {
+      subject: orgTechUser,
+      vertices: { collection_name: collection, start_vertex_id: [orgID] },
+      opts: {
+        direction: { direction: Direction.INBOUND },
+        include_edge: [edge]
+      }
+    };
+    const result = await graphClient.traversal(traversalRequest);
+    for await (const partResp of result) {
+      if ((partResp && partResp.data && partResp.data.value)) {
+        traversalResponse.push(...JSON.parse(partResp.data.value.toString()));
+      }
+    }
+
+    for (let org of traversalResponse) {
+      if (org?._id?.indexOf(collection) > -1) {
+        delete org._id;
+        subOrgTreeList.add(org.id);
+      }
+    }
+  }
+
+  for (let i = 0; i < traversalResponse.length; i++) {
+    let targetID = traversalResponse[i].id;
+    const subOrgs = traversalResponse.filter(e => e.parent_id === targetID);
+    // find hrScopes id and then get the childer object
+    const filteredSubOrgFields = [];
+    for (let org of subOrgs) {
+      filteredSubOrgFields.push({ id: org.id, role, children: [] });
+    }
+    // leaf node or no more children nodes
+    if (_.isEmpty(filteredSubOrgFields)) {
+      filteredSubOrgFields.push({ id: targetID, role, children: [] });
+      targetID = traversalResponse[i].parent_id;
+    }
+    // set sub orgs on target org
+    setNestedChildOrgs(hrScope, targetID, filteredSubOrgFields);
+  }
+  return hrScope;
+};
+
+export const createHRScope = async (user, token, graphClient, cache, cfg, logger): Promise<ResolvedSubject> => {
+  let subject: ResolvedSubject;
+  if (user && user.payload) {
+    subject = user.payload;
+  }
+  const roleScopingEntityURN = cfg.get('authorization:urns:roleScopingEntity');
+  const roleScopingInstanceURN = cfg.get('authorization:urns:roleScopingInstance');
+  if (subject && subject.role_associations && _.isEmpty(subject.hierarchical_scopes)) {
+    // create HR scopes iterating through the user's assigned role scoping instances
+    let userRoleAssocs = subject.role_associations;
+    let assignedUserScopes = new Set<{ userScope: string; role: string }>();
+    let tokenData;
+    // verify the validity of subject tokens
+    if (token && (subject as any).tokens && (subject as any).tokens.length > 0) {
+      for (let tokenInfo of (subject as any).tokens) {
+        if (tokenInfo.token === token) {
+          tokenData = tokenInfo;
+          const currentDate = Math.round(new Date().getTime() / 1000);
+          const expiresIn = tokenInfo.expires_in;
+          if (expiresIn != 0 && expiresIn < currentDate) {
+            logger.info(`Token name ${tokenInfo.name} has expired`);
+            return;
+          }
+        }
+      }
+    }
+    let reducedUserRoleAssocs = [];
+    if (tokenData && tokenData.scopes && tokenData.scopes.length > 0) {
+      for (let tokenScope of tokenData.scopes) {
+        if (_.find(userRoleAssocs, { id: tokenScope })) {
+          reducedUserRoleAssocs.push(_.find(userRoleAssocs, { id: tokenScope }));
+        }
+      }
+    } else {
+      reducedUserRoleAssocs = userRoleAssocs;
+    }
+    for (let roleObj of reducedUserRoleAssocs) {
+      for (let roleAttribute of roleObj.attributes) {
+
+        if (roleAttribute.id === roleScopingEntityURN) {
+          for (let roleScopInstObj of roleAttribute.attributes) {
+            if (roleScopInstObj.id === roleScopingInstanceURN) {
+              let obj = { userScope: roleScopInstObj.value, role: roleObj.role };
+              assignedUserScopes.add(obj);
+            }
+          }
+        }
+      }
+    }
+    let hrScopes: HierarchicalScope[] = [];
+    let userScopesRoleArray = Array.from(assignedUserScopes);
+    for (let obj of userScopesRoleArray) {
+      try {
+        let hrScope = await getSubTreeOrgs(obj.userScope, obj.role, cfg, graphClient, logger);
+        if (hrScope) {
+          hrScopes.push(hrScope);
+        }
+      } catch (err) {
+        logger.error('Error computing hierarchical scopes', err);
+      }
+    }
+    subject.hierarchical_scopes = hrScopes;
+  }
+  return subject;
 };
