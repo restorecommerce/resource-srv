@@ -156,23 +156,28 @@ export class Worker {
       const resourcesServiceNamePrefix = resourceCfg.resourcesServiceNamePrefix;
 
       for (let resourceName of resourceCfg.resources) {
-        let resourceFieldConfig: any;
+        let resourceFieldConfig: any = {};
         if (fieldGeneratorConfig && (resourceName in fieldGeneratorConfig)) {
-          resourceFieldConfig = {};
           resourceFieldConfig['strategies'] = fieldGeneratorConfig[resourceName];
           logger.info('Setting up field generators on Redis...');
           resourceFieldConfig['redisClient'] = redisClient;
         }
-        if (bufferHandlerConfig && (resourceName in bufferHandlerConfig)) {
-          if (!resourceFieldConfig) {
-            resourceFieldConfig = {};
-          }
-          resourceFieldConfig['bufferField'] = bufferHandlerConfig[resourceName];
+        const collectionName = `${resourceName}s`;
+        // bufferFields handler
+        if (bufferHandlerConfig && (collectionName in bufferHandlerConfig)) {
+          resourceFieldConfig['bufferFields'] = bufferHandlerConfig[collectionName];
         }
-        if (requiredFieldsConfig && (resourceName in requiredFieldsConfig)) {
-          if (!resourceFieldConfig) {
-            resourceFieldConfig = {};
+        // dateTimeStampFields handler
+        if (cfg.get('fieldHandlers:timeStampFields')) {
+          resourceFieldConfig['timeStampFields'] = [];
+          for (let timeStampFiledConfig of cfg.get('fieldHandlers:timeStampFields')) {
+            if (timeStampFiledConfig.entities.includes(collectionName)) {
+              resourceFieldConfig['timeStampFields'].push(...timeStampFiledConfig.fields);
+            }
           }
+        }
+        // requiredFields handler
+        if (requiredFieldsConfig && (collectionName in requiredFieldsConfig)) {
           resourceFieldConfig['requiredFields'] = requiredFieldsConfig;
         }
         logger.info(`Setting up ${resourceName} resource service`);

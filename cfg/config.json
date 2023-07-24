@@ -373,12 +373,44 @@
   },
   "fieldHandlers": {
     "bufferFields": {
-      "organization": "data",
-      "location": "data",
-      "credential": "credentials"
+      "organizations": [
+        "data"
+      ],
+      "locations": [
+        "data"
+      ],
+      "credentials": [
+        "credentials"
+      ]
     },
+    "timeStampFields": [
+      {
+        "fields": [
+          "meta.created",
+          "meta.modified"
+        ],
+        "entities": [
+          "commands",
+          "addresss",
+          "contact_point_types",
+          "countrys",
+          "contact_points",
+          "credentials",
+          "locales",
+          "locations",
+          "notifications",
+          "notification_channels",
+          "organizations",
+          "taxs",
+          "tax_types",
+          "timezones",
+          "customers",
+          "codes"
+        ]
+      }
+    ],
     "requiredFields": {
-      "organization": [
+      "organizations": [
         "name"
       ],
       "contact_point_type": [

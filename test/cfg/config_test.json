@@ -176,11 +176,24 @@
   "fieldHandlers": {
     "fieldGenerators": {},
     "bufferFields": {
-      "organization": "data",
-      "location": "data",
-      "credential": "credentials"
+      "organizations": ["data"],
+      "locations": ["data"],
+      "credentials": ["credentials"]
     },
-    "requiredFields": {}
+    "requiredFields": {},
+    "timeStampFields": [
+      {
+        "fields": [
+          "meta.created",
+          "meta.modified"
+        ],
+        "entities": [
+          "commands",
+          "organizations",
+          "contact_points"
+        ]
+      }
+    ]
   },
   "client": {
     "resources": [
