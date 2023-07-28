@@ -9,7 +9,7 @@ import { createChannel, createClient } from '@restorecommerce/grpc-client';
 import { createLogger } from '@restorecommerce/logger';
 import { Response_Decision } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control';
 import { Subject } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/auth';
-import { FilterOp } from '@restorecommerce/rc-grpc-clients/dist/generated/io/restorecommerce/resource_base';
+import { FilterOp } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base';
 import { GraphServiceClient as GraphClient, GraphServiceDefinition, Options_Direction as Direction } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph';
 
 // Create a ids client instance
