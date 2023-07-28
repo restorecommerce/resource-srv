@@ -1,3 +1,11 @@
+## 1.0.2 (July 28th, 2023)
+
+- for owner and role Association object restructuring
+- filter ownership AQL due to object restructuring
+- for DateTimeStamp field handling and up deps
+- Added HR scope request listener and response sending calculating HR scopes using graph traversal
+- use server generated typings and up deps
+
 ## 1.0.1 (June 20th, 2023)
 
 - updated all dependencies and added notification and notifcation_channel to config
