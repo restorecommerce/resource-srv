@@ -83,7 +83,7 @@ export class ResourceService extends ServiceBase<any, any> {
       readRequest.filters.push(...acsFilters);
     }
 
-    if (acsResponse?.custom_query_args && acsResponse.custom_query_args.length > 0) {
+    if (acsResponse?.custom_query_args?.length > 0) {
       readRequest.custom_queries = acsResponse.custom_query_args[0].custom_queries;
       readRequest.custom_arguments = acsResponse.custom_query_args[0].custom_arguments;
     }
@@ -201,16 +201,16 @@ export class ResourceService extends ServiceBase<any, any> {
       // add user and subject scope as default owner
       orgOwnerAttributes.push(
         {
-          id: urns.ownerIndicatoryEntity,
-          value: urns.organization,
+          id: urns?.ownerIndicatoryEntity,
+          value: urns?.organization,
           attributes: [{
-            id: urns.ownerInstance,
-            value: subject.scope
+            id: urns?.ownerInstance,
+            value: subject?.scope
           }]
         });
     }
 
-    if (resources) {
+    if (resources?.length > 0) {
       for (let resource of resources) {
         if (!resource.meta) {
           resource.meta = {};
@@ -221,41 +221,41 @@ export class ResourceService extends ServiceBase<any, any> {
               filters: [{
                 field: 'id',
                 operation: Filter_Operation.eq,
-                value: resource.id
+                value: resource?.id
               }]
             }]
           }) as any, {});
           // update owner info
-          if (result.items.length === 1) {
+          if (result?.items?.length === 1) {
             let item = result.items[0].payload;
-            resource.meta.owners = item.meta.owners;
-          } else if (result.items.length === 0) {
-            if (_.isEmpty(resource.id)) {
+            resource.meta.owners = item?.meta?.owners;
+          } else if (result?.items?.length === 0) {
+            if (_.isEmpty(resource?.id)) {
               resource.id = uuid.v4().replace(/-/g, '');
             }
             let ownerAttributes;
-            if (!resource.meta.owners) {
+            if (!resource?.meta?.owners) {
               ownerAttributes = _.cloneDeep(orgOwnerAttributes);
             } else {
               ownerAttributes = resource.meta.owners;
             }
             ownerAttributes.push(
               {
-                id: urns.ownerIndicatoryEntity,
-                value: urns.user,
+                id: urns?.ownerIndicatoryEntity,
+                value: urns?.user,
                 attributes: [{
-                  id: urns.ownerInstance,
-                  value: resource.id
+                  id: urns?.ownerInstance,
+                  value: resource?.id
                 }]
               });
             resource.meta.owners = ownerAttributes;
           }
         } else if (action === AuthZAction.CREATE) {
-          if (_.isEmpty(resource.id)) {
+          if (_.isEmpty(resource?.id)) {
             resource.id = uuid.v4().replace(/-/g, '');
           }
           let ownerAttributes;
-          if (!resource.meta.owners) {
+          if (!resource?.meta?.owners) {
             ownerAttributes = _.cloneDeep(orgOwnerAttributes);
           } else {
             ownerAttributes = resource.meta.owners;
@@ -263,10 +263,10 @@ export class ResourceService extends ServiceBase<any, any> {
           if (subject?.id) {
             ownerAttributes.push(
               {
-                id: urns.ownerIndicatoryEntity,
-                value: urns.user,
+                id: urns?.ownerIndicatoryEntity,
+                value: urns?.user,
                 attributes: [{
-                  id: urns.ownerInstance,
+                  id: urns?.ownerInstance,
                   value: subject?.id
                 }]
               });

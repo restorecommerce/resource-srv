@@ -26,20 +26,20 @@ export class ResourceCommandInterface extends CommandInterface {
         that.decodeBufferField(message, resource);
         if (that.edgeCfg[collectionName]) {
           const result = await db.findByID(collectionName, message.id);
-          if (result.length > 0) {
+          if (result?.length > 0) {
             return {};
           }
           await db.createVertex(collectionName, message);
           // Based on graphCfg create the necessary edges
           for (let eachEdgeCfg of that.edgeCfg[collectionName]) {
-            const fromIDkey = eachEdgeCfg.from;
+            const fromIDkey = eachEdgeCfg?.from;
             const from_id = message[fromIDkey];
-            const toIDkey = eachEdgeCfg.to;
+            const toIDkey = eachEdgeCfg?.to;
             const to_id = message[toIDkey];
             const fromVerticeName = collectionName;
-            const toVerticeName = eachEdgeCfg.toVerticeName;
+            const toVerticeName = eachEdgeCfg?.toVerticeName;
             if (fromVerticeName && toVerticeName) {
-              const edgeDefRes = await db.addEdgeDefinition(eachEdgeCfg.edgeName, [fromVerticeName],
+              await db.addEdgeDefinition(eachEdgeCfg.edgeName, [fromVerticeName],
                 [toVerticeName]);
             }
             if (from_id && to_id) {
@@ -67,7 +67,7 @@ export class ResourceCommandInterface extends CommandInterface {
           const foundDocs = await db.find(collectionName, { id: message.id });
           const dbDoc = foundDocs[0];
           for (let eachEdgeCfg of that.edgeCfg[collectionName]) {
-            const toIDkey = eachEdgeCfg.to;
+            const toIDkey = eachEdgeCfg?.to;
             let modified_to_idValues = message[toIDkey];
             let db_to_idValues = dbDoc[toIDkey];
             if (_.isArray(modified_to_idValues)) {
@@ -78,12 +78,12 @@ export class ResourceCommandInterface extends CommandInterface {
             }
             // delete and recreate only if there is a difference in references
             if (!_.isEqual(modified_to_idValues, db_to_idValues)) {
-              const fromIDkey = eachEdgeCfg.from;
+              const fromIDkey = eachEdgeCfg?.from;
               const from_id = message[fromIDkey];
               const fromVerticeName = collectionName;
-              const toVerticeName = eachEdgeCfg.toVerticeName;
+              const toVerticeName = eachEdgeCfg?.toVerticeName;
 
-              const edgeCollectionName = eachEdgeCfg.edgeName;
+              const edgeCollectionName = eachEdgeCfg?.edgeName;
               let outgoingEdges: any = await db.getOutEdges(edgeCollectionName, `${collectionName}/${dbDoc.id}`);
               for (let outgoingEdge of outgoingEdges) {
                 const removedEdge = await db.removeEdge(edgeCollectionName, outgoingEdge._id);
@@ -92,7 +92,7 @@ export class ResourceCommandInterface extends CommandInterface {
               if (from_id && modified_to_idValues) {
                 if (_.isArray(modified_to_idValues)) {
                   for (let toID of modified_to_idValues) {
-                    await db.createEdge(eachEdgeCfg.edgeName, null,
+                    await db.createEdge(eachEdgeCfg?.edgeName, null,
                       `${fromVerticeName}/${from_id}`, `${toVerticeName}/${toID}`);
                   }
                   continue;

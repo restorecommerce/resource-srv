@@ -1,3 +1,7 @@
+## 1.1.0 (September 21st, 2023)
+
+- up protos and deps (set all fields as optionals)
+
 ## 1.0.2 (July 28th, 2023)
 
 - for owner and role Association object restructuring

@@ -129,9 +129,11 @@ describe('resource-srv testing', () => {
   let events: Events;
   let commandTopic: Topic;
   let organizationTopic: Topic;
-  let baseValidation = function (result: any) {
+  let baseValidation = function (result: any, itemsShouldExist: boolean = true) {
     should.exist(result);
-    should.exist(result.items);
+    if(itemsShouldExist) {
+      should.exist(result.items);
+    }
     should.exist(result.operation_status);
   };
 
@@ -340,8 +342,8 @@ describe('resource-srv testing', () => {
         order: Sort_SortOrder.ASCENDING, // ASCENDING
       }]
     }), {});
-    baseValidation(resultAfterDeletion);
-    resultAfterDeletion.items.should.be.length(0);
+    baseValidation(resultAfterDeletion, false);
+    should.not.exist(resultAfterDeletion.items);
   });
 
   // // test case to re-read the data from that offset and test insert, update
@@ -405,7 +407,7 @@ describe('resource-srv testing', () => {
       }]
     }), {});
     should.exist(readResult);
-    readResult.items.should.be.empty();
+    should.not.exist(readResult.items);
   });
 
   // delete contact_point resource
@@ -429,7 +431,7 @@ describe('resource-srv testing', () => {
         order: Sort_SortOrder.ASCENDING // ASCENDING
       }]
     }), {});
-    baseValidation(resultAfterDeletion);
-    resultAfterDeletion.items.should.be.length(0);
+    baseValidation(resultAfterDeletion, false);
+    should.not.exist(resultAfterDeletion.items);
   });
 });

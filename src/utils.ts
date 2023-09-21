@@ -261,13 +261,14 @@ export const createHRScope = async (user, token, graphClient, cache, cfg, logger
       reducedUserRoleAssocs = userRoleAssocs;
     }
     for (let roleObj of reducedUserRoleAssocs) {
-      for (let roleAttribute of roleObj.attributes) {
-
-        if (roleAttribute.id === roleScopingEntityURN) {
-          for (let roleScopInstObj of roleAttribute.attributes) {
-            if (roleScopInstObj.id === roleScopingInstanceURN) {
-              let obj = { userScope: roleScopInstObj.value, role: roleObj.role };
-              assignedUserScopes.add(obj);
+      if (roleObj?.attributes?.length > 0) {
+        for (let roleAttribute of roleObj?.attributes) {
+          if (roleAttribute.id === roleScopingEntityURN) {
+            for (let roleScopInstObj of roleAttribute.attributes) {
+              if (roleScopInstObj.id === roleScopingInstanceURN) {
+                let obj = { userScope: roleScopInstObj.value, role: roleObj.role };
+                assignedUserScopes.add(obj);
+              }
             }
           }
         }
