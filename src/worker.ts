@@ -30,7 +30,7 @@ import { protoMetadata as taxMeta, TaxServiceDefinition as tax } from '@restorec
 import { protoMetadata as taxTypeMeta, TaxTypeServiceDefinition as tax_type } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/tax_type';
 import { protoMetadata as timezoneMeta, TimezoneServiceDefinition as timezone } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/timezone';
 import { protoMetadata as customerMeta, CustomerServiceDefinition as customer } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/customer';
-import { protoMetadata as codeMeta, CodeServiceDefinition as code } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/code';
+import { protoMetadata as unitCodeMeta, UnitCodeServiceDefinition as unit_code } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/unit_code';
 import { protoMetadata as notificationMeta, NotificationServiceDefinition as notification } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/notification';
 import { protoMetadata as notificationChannelMeta, NotificationChannelServiceDefinition as notification_channel } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/notification_channel';
 import {
@@ -59,10 +59,10 @@ const HIERARCHICAL_SCOPE_REQUEST_EVENT = 'hierarchicalScopesRequest';
 registerProtoMeta(commandMeta, addressMeta, contactPointTypeMeta, countryMeta,
   contactPointMeta, credentialMeta, localeMeta, locationMeta, organizationMeta,
   taxMeta, taxTypeMeta, timezoneMeta, customerMeta, commandInterfaceMeta,
-  reflectionMeta, graphMeta, codeMeta, notificationMeta, notificationChannelMeta, hierarchicalScopesMeta);
+  reflectionMeta, graphMeta, unitCodeMeta, notificationMeta, notificationChannelMeta, hierarchicalScopesMeta);
 
 const ServiceDefinitions: any = [command, address, contact_point_type, country, contact_point, credential, locale, location, organization,
-  tax, tax_type, timezone, customer, code, notification, notification_channel];
+  tax, tax_type, timezone, customer, unit_code, notification, notification_channel];
 
 export class Worker {
   server: Server;
@@ -296,7 +296,7 @@ export class Worker {
       { descriptor: timezoneMeta.fileDescriptor },
       { descriptor: customerMeta.fileDescriptor },
       { descriptor: commandInterfaceMeta.fileDescriptor },
-      { descriptor: codeMeta.fileDescriptor }
+      { descriptor: unitCodeMeta.fileDescriptor }
     ]);
     await server.bind('reflection', {
       service: ServerReflectionService,

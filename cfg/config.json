@@ -22,7 +22,7 @@
         "tax_type",
         "timezone",
         "customer",
-        "code"
+        "unit_code"
       ],
       "customQueries": [
         {
@@ -225,7 +225,7 @@
       "resourcesServiceNamePrefix": "io.restorecommerce.",
       "resourcesServiceConfigPrefix": "restore-",
       "resources": [
-        "code",
+        "unit_code",
         "command",
         "customer",
         "address",
@@ -420,7 +420,7 @@
           "tax_types",
           "timezones",
           "customers",
-          "codes"
+          "unit_codes"
         ]
       }
     ],

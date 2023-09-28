@@ -1,3 +1,7 @@
+## 1.2.0 (September 29th, 2023)
+
+- add unit codes
+
 ## 1.1.0 (September 21st, 2023)
 
 - up protos and deps (set all fields as optionals)
