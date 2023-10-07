@@ -1,3 +1,7 @@
+## 1.3.0 (October 7th, 2023)
+
+- up node and dependencies
+
 ## 1.2.0 (September 29th, 2023)
 
 - add unit codes

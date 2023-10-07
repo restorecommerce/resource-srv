@@ -72,8 +72,8 @@ export interface Attribute {
 export interface CtxResource {
   id: string;
   meta: {
-    created?: number;
-    modified?: number;
+    created?: Date;
+    modified?: Date;
     modified_by?: string;
     owners: Attribute[]; // id and owner is mandatory in ctx resource other attributes are optional
   };
