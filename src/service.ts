@@ -245,7 +245,7 @@ export class ResourceService extends ServiceBase<any, any> {
                 value: urns?.user,
                 attributes: [{
                   id: urns?.ownerInstance,
-                  value: resource?.id
+                  value: subject?.id
                 }]
               });
             resource.meta.owners = ownerAttributes;
