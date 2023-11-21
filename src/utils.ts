@@ -86,6 +86,9 @@ export interface GQLClientContext {
   resources?: CtxResource[];
 }
 
+export async function checkAccessRequest(ctx: GQLClientContext, resource: Resource[], action: AuthZAction, operation: Operation.isAllowed, useCache?: boolean): Promise<DecisionResponse>;
+export async function checkAccessRequest(ctx: GQLClientContext, resource: Resource[], action: AuthZAction, operation: Operation.whatIsAllowed, useCache?: boolean): Promise<PolicySetRQResponse>;
+
 /**
  * Perform an access request using inputs from a GQL request
  *

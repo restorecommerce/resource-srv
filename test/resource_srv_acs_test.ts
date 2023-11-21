@@ -91,11 +91,13 @@ let policySetRQ = {
     }]
 };
 
+let expires_in = new Date(); // set expires_in to +1 day
+expires_in.setDate(expires_in.getDate() + 1);
 let subject = {
   id: 'admin_user_id',
   scope: 'orgC',
   token: 'admin_token',
-  tokens: [{ token: 'admin_token', expires_in: 0 }],
+  tokens: [{ token: 'admin_token', expires_in }],
   role_associations: [
     {
       role: 'admin-r-id',

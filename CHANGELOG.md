@@ -1,3 +1,7 @@
+## 1.3.2 (November 21st, 2023)
+
+- up deps
+
 ## 1.3.1 (October 7th, 2023)
 
 - up config to omit token from logging
