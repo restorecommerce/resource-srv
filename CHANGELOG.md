@@ -1,3 +1,7 @@
+### 1.3.4 (November 26th, 2023)
+
+- removed deprecated method in chassis-srv (collection.load)
+
 ## 1.3.3 (November 25th, 2023)
 
 - up deps
