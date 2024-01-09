@@ -22,6 +22,7 @@
         "tax_type",
         "timezone",
         "customer",
+        "shop",
         "unit_code"
       ],
       "customQueries": [
@@ -254,6 +255,7 @@
         "notification",
         "notification_channel",
         "organization",
+        "shop",
         "tax",
         "tax_type",
         "timezone"
@@ -436,6 +438,7 @@
           "tax_types",
           "timezones",
           "customers",
+          "shops",
           "unit_codes"
         ]
       }
