@@ -1,3 +1,7 @@
+### 1.4.0 (January 18th, 2024)
+
+- add shop entity
+
 ### 1.3.4 (November 26th, 2023)
 
 - removed deprecated method in chassis-srv (collection.load)
