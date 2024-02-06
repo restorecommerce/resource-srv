@@ -1,7 +1,13 @@
 {
   "logger": {
+    "console": {
+      "handleExceptions": false,
+      "level": "silly",
+      "colorize": true,
+      "prettyPrint": true
+    },
     "elasticsearch": {
-      "level": "error",
+      "level": "crit",
       "clientOpts": {
         "node": "http://elasticsearch:9200"
       },

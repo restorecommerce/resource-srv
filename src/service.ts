@@ -239,15 +239,17 @@ export class ResourceService extends ServiceBase<any, any> {
             } else {
               ownerAttributes = resource.meta.owners;
             }
-            ownerAttributes.push(
-              {
-                id: urns?.ownerIndicatoryEntity,
-                value: urns?.user,
-                attributes: [{
-                  id: urns?.ownerInstance,
-                  value: subject?.id
-                }]
-              });
+            if (subject?.id) {
+              ownerAttributes.push(
+                {
+                  id: urns?.ownerIndicatoryEntity,
+                  value: urns?.user,
+                  attributes: [{
+                    id: urns?.ownerInstance,
+                    value: subject?.id
+                  }]
+                });
+            }
             resource.meta.owners = ownerAttributes;
           }
         } else if (action === AuthZAction.CREATE) {

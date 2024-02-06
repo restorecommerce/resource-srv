@@ -10,7 +10,12 @@ import { createLogger } from '@restorecommerce/logger';
 import { Response_Decision } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control';
 import { Subject } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/auth';
 import { FilterOp } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base';
-import { GraphServiceClient as GraphClient, GraphServiceDefinition, Options_Direction as Direction } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph';
+import {
+  GraphServiceClient as GraphClient,
+  GraphServiceDefinition,
+  Options_Direction as Direction,
+  TraversalRequest
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph';
 
 // Create a ids client instance
 let idsClientInstance: UserClient;
@@ -172,25 +177,26 @@ const setNestedChildOrgs = (hrScope: any, targetOrgID, subOrgs) => {
   }
 };
 
-export const getSubTreeOrgs = async (orgID: string, role: string, cfg: any, graphClient, logger): Promise<HierarchicalScope> => {
+export const getSubTreeOrgs = async (
+  orgID: string,
+  role: string,
+  cfg: any,
+  graphClient: GraphClient,
+): Promise<HierarchicalScope> => {
   const hrScope: HierarchicalScope = { role, id: orgID, children: [] };
   let subOrgTreeList = new Set<string>();
   let traversalResponse: any = [];
   const hierarchicalResources = cfg.get('authorization:hierarchicalResources') || [];
-  let orgTechUser;
-  const techUsersCfg = cfg.get('techUsers');
-  if (techUsersCfg?.length > 0) {
-    orgTechUser = _.find(techUsersCfg, { id: 'upsert_user_tokens' });
-  }
+  const orgTechUser = cfg.get('techUser');
   for (let hierarchicalResource of hierarchicalResources) {
     const { collection, edge } = hierarchicalResource;
     // search in inbound - org has parent org
-    const traversalRequest = {
+    const traversalRequest: TraversalRequest = {
       subject: orgTechUser,
-      vertices: { collection_name: collection, start_vertex_id: [orgID] },
+      vertices: { collection_name: collection, start_vertex_ids: [orgID] },
       opts: {
-        direction: { direction: Direction.INBOUND },
-        include_edge: [edge]
+        direction: Direction.INBOUND,
+        include_edges: [edge]
       }
     };
     const result = await graphClient.traversal(traversalRequest);
@@ -227,7 +233,7 @@ export const getSubTreeOrgs = async (orgID: string, role: string, cfg: any, grap
   return hrScope;
 };
 
-export const createHRScope = async (user, token, graphClient, cache, cfg, logger): Promise<ResolvedSubject> => {
+export const createHRScope = async (user, token, graphClient: GraphClient, cache, cfg, logger): Promise<ResolvedSubject> => {
   let subject: ResolvedSubject;
   if (user && user.payload) {
     subject = user.payload;
@@ -281,7 +287,7 @@ export const createHRScope = async (user, token, graphClient, cache, cfg, logger
     let userScopesRoleArray = Array.from(assignedUserScopes);
     for (let obj of userScopesRoleArray) {
       try {
-        let hrScope = await getSubTreeOrgs(obj.userScope, obj.role, cfg, graphClient, logger);
+        let hrScope = await getSubTreeOrgs(obj.userScope, obj.role, cfg, graphClient);
         if (hrScope) {
           hrScopes.push(hrScope);
         }

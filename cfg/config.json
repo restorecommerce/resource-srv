@@ -37,7 +37,7 @@
   "logger": {
     "console": {
       "handleExceptions": false,
-      "level": "crit",
+      "level": "silly",
       "colorize": true,
       "prettyPrint": true
     },
@@ -377,6 +377,12 @@
       "delete": "urn:restorecommerce:acs:names:action:delete",
       "organization": "urn:restorecommerce:acs:model:organization.Organization"
     },
+    "hierarchicalResources": [
+      {
+        "collection": "organizations",
+        "edge": "org_has_parent_org"
+      }
+    ],
     "cache": {
       "url": "redis://localhost:6379",
       "db-index": 5,
@@ -500,10 +506,8 @@
       "message": "Action not allowed on this resource"
     }
   },
-  "techUsers": [
-    {
-      "id": "upsert_user_tokens",
-      "token": "change.this.token.number"
-    }
-  ]
+  "techUser": {
+    "id": "tech-user",
+    "token": "123099ffc93b44f6b4a81b1e5589b642"
+  }
 }
