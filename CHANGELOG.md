@@ -1,3 +1,7 @@
+### 1.4.1 (February 6th, 2024)
+
+- fix hierarical scope query
+
 ### 1.4.0 (January 18th, 2024)
 
 - add shop entity
