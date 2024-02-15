@@ -1,10 +1,18 @@
 import {
-  AuthZAction, accessRequest, DecisionResponse, Operation, PolicySetRQResponse,
-  ResolvedSubject, HierarchicalScope
+  AuthZAction,
+  accessRequest,
+  DecisionResponse,
+  Operation,
+  PolicySetRQResponse,
+  ResolvedSubject,
+  HierarchicalScope
 } from '@restorecommerce/acs-client';
-import * as _ from 'lodash';
 import { createServiceConfig } from '@restorecommerce/service-config';
-import { UserServiceClient as UserClient, UserServiceDefinition as UserServiceDefinition } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/user';
+import {
+  UserServiceClient as UserClient,
+  UserResponse,
+  UserServiceDefinition as UserServiceDefinition
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/user';
 import { createChannel, createClient } from '@restorecommerce/grpc-client';
 import { createLogger } from '@restorecommerce/logger';
 import { Response_Decision } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control';
@@ -142,36 +150,34 @@ export async function checkAccessRequest(ctx: GQLClientContext, resource: Resour
  * @param enitity enitity name
  */
 export const getACSFilters = (accessResponse: PolicySetRQResponse, resource: string): FilterOp[] => {
-  let acsFilters = [];
-  const resourceFilterMap = accessResponse?.filters;
-  const resourceFilter = resourceFilterMap?.filter((e) => e?.resource === resource);
-  // for a given entity there should be one filter map
-  if (resourceFilter?.length === 1 && resourceFilter[0].filters && resourceFilter[0].filters[0]?.filters.length > 0) {
-    acsFilters = resourceFilter[0].filters;
-  }
-  return acsFilters;
+  return accessResponse?.filters?.filter(
+    (e) => !e.resource || e.resource === resource
+  ).flatMap(
+    e => e.filters
+  ) ?? [];
 };
 
 const setNestedChildOrgs = (hrScope: any, targetOrgID, subOrgs) => {
-  if (!_.isArray(hrScope)) {
+  if (!hrScope?.length === undefined) {
     hrScope = [hrScope];
   }
-  if (_.isArray(hrScope)) {
-    for (let subHrScope of hrScope) {
-      if (subHrScope.id === targetOrgID) {
-        if (!subHrScope.children) {
-          subHrScope.children = [];
-        }
+
+  for (let subHrScope of hrScope) {
+    if (subHrScope.id === targetOrgID) {
+      if (subHrScope.children) {
         subHrScope.children.push(...subOrgs);
-        return;
       }
-      for (let item of subHrScope.children) {
-        if (item.id === targetOrgID) {
-          item.children.push(...subOrgs);
-          return hrScope;
-        } else {
-          setNestedChildOrgs(item.children, targetOrgID, subOrgs);
-        }
+      else {
+        subHrScope.children = [...subOrgs];
+      }
+      return;
+    }
+    for (let item of subHrScope.children) {
+      if (item.id === targetOrgID) {
+        item.children.push(...subOrgs);
+        return hrScope;
+      } else {
+        setNestedChildOrgs(item.children, targetOrgID, subOrgs);
       }
     }
   }
@@ -186,7 +192,7 @@ export const getSubTreeOrgs = async (
   const hrScope: HierarchicalScope = { role, id: orgID, children: [] };
   let subOrgTreeList = new Set<string>();
   let traversalResponse: any = [];
-  const hierarchicalResources = cfg.get('authorization:hierarchicalResources') || [];
+  const hierarchicalResources = cfg.get('authorization:hierarchicalResources') ?? [];
   const orgTechUser = cfg.get('techUser');
   for (let hierarchicalResource of hierarchicalResources) {
     const { collection, edge } = hierarchicalResource;
@@ -207,7 +213,7 @@ export const getSubTreeOrgs = async (
     }
 
     for (let org of traversalResponse) {
-      if (org?._id?.indexOf(collection) > -1) {
+      if (org?._id?.split('/')[0] === collection) {
         delete org._id;
         subOrgTreeList.add(org.id);
       }
@@ -233,14 +239,18 @@ export const getSubTreeOrgs = async (
   return hrScope;
 };
 
-export const createHRScope = async (user, token, graphClient: GraphClient, cache, cfg, logger): Promise<ResolvedSubject> => {
-  let subject: ResolvedSubject;
-  if (user && user.payload) {
-    subject = user.payload;
-  }
+export const createHRScope = async (
+  user: UserResponse,
+  token: string,
+  graphClient: GraphClient,
+  cache,
+  cfg,
+  logger
+): Promise<ResolvedSubject> => {
+  const subject = user?.payload as ResolvedSubject
   const roleScopingEntityURN = cfg.get('authorization:urns:roleScopingEntity');
   const roleScopingInstanceURN = cfg.get('authorization:urns:roleScopingInstance');
-  if (subject && subject.role_associations && _.isEmpty(subject.hierarchical_scopes)) {
+  if (subject?.role_associations && !subject?.hierarchical_scopes?.length) {
     // create HR scopes iterating through the user's assigned role scoping instances
     let userRoleAssocs = subject.role_associations;
     let assignedUserScopes = new Set<{ userScope: string; role: string }>();

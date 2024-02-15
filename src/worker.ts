@@ -1,6 +1,6 @@
 import { Events, Topic, registerProtoMeta } from '@restorecommerce/kafka-client';
 import { GraphResourcesServiceBase, ResourcesAPIBase, ServiceBase } from '@restorecommerce/resource-base-interface';
-import { ACSAuthZ, initAuthZ, initializeCache } from '@restorecommerce/acs-client';
+import { ACSAuthZ, ResolvedSubject, initAuthZ, initializeCache } from '@restorecommerce/acs-client';
 import { ResourceCommandInterface } from './commandInterface';
 import * as _ from 'lodash';
 import {
@@ -319,42 +319,38 @@ export class Worker {
     const hrTopic = await events.topic(hrTopicName);
     this.idsClient = await getUserServiceClient();
     this.graphClient = await getGraphServiceClient();
+    
     if (!resourcesServiceEventListener) {
-      resourcesServiceEventListener = async (msg: any,
-        context: any, config: any, eventName: string): Promise<any> => {
-        if (COMMANDEVENTS.indexOf(eventName) > -1) {
-          try {
-            await cis.command(msg, context);
-          } catch (err) {
-            logger.error('Error while executing command', err);
-          }
+      resourcesServiceEventListener = async (
+        msg: any,
+        context: any,
+        config: any,
+        eventName: string
+      ): Promise<any> => {
+        if (eventName in COMMANDEVENTS) {
+          await cis.command(msg, context).catch(
+            err => logger.error('Error while executing command', err)
+          );
         } else if (eventName === HIERARCHICAL_SCOPE_REQUEST_EVENT) {
-          const tokenDate = msg.token;
-          let user, token;
-          if (tokenDate && this.idsClient) {
-            token = tokenDate.split(':')[0];
-            user = await this.idsClient.findByToken({ token });
-          }
-          let subject;
-          if (!user || !user.payload || !user.payload.id) {
+          const token = msg.token?.split(':')?.[0] as string;
+          const user = token && await this.idsClient?.findByToken({ token });
+          if (!user?.payload?.id) {
             this.logger.debug('Subject could not be resolved for token');
-          } else {
-            subject = await createHRScope(user, token, this.graphClient, null, cfg, this.logger);
           }
-          if (!subject) {
-            subject = {};
-          }
+          const subject: ResolvedSubject = user && await createHRScope(user, token, this.graphClient, null, cfg, this.logger);
           if (hrTopic) {
             // emit response with same messag id on same topic
             this.logger.info(`Hierarchical scopes are created for subject ${user?.payload?.id}`);
             await hrTopic.emit('hierarchicalScopesResponse', {
               subject_id: user?.payload?.id,
-              token: msg.token, hierarchical_scopes: subject.hierarchical_scopes
+              token: msg.token,
+              hierarchical_scopes: subject?.hierarchical_scopes
             });
           }
         }
       };
     }
+
     const topicTypes = _.keys(kafkaCfg.topics);
     for (let topicType of topicTypes) {
       const topicName = kafkaCfg.topics[topicType].topic;

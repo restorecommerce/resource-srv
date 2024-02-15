@@ -29,7 +29,7 @@ export class ResourceService extends ServiceBase<any, any> {
     const acsResources = await this.createMetadata(data, AuthZAction.CREATE, subject);
     let acsResponse: DecisionResponse;
     try {
-      if (!ctx) { ctx = {}; };
+      ctx ??= {};
       ctx.subject = subject;
       ctx.resources = acsResources;
       acsResponse = await checkAccessRequest(ctx, [{ resource: this.resourceName, id: acsResources.map(item => item.id) }], AuthZAction.CREATE,
@@ -50,12 +50,7 @@ export class ResourceService extends ServiceBase<any, any> {
   }
 
   async read(request: ReadRequest, ctx: any): Promise<DeepPartial<any>> {
-    const readRequest = ReadRequest.fromPartial({
-      offset: request.offset, limit: request.limit,
-      sorts: request.sorts, filters: request.filters, fields: request.fields, locales_limiter: request.locales_limiter,
-      custom_arguments: request.custom_arguments, custom_queries: request.custom_queries, search: request.search
-    });
-    let subject = request.subject;
+    const subject = request.subject;
     let acsResponse: PolicySetRQResponse;
     try {
       if (!ctx) { ctx = {}; };
@@ -76,18 +71,16 @@ export class ResourceService extends ServiceBase<any, any> {
       return { operation_status: acsResponse.operation_status };
     }
     const acsFilters = getACSFilters(acsResponse, this.resourceName);
-    if (acsResponse && acsResponse.filters && acsFilters) {
-      if (!readRequest.filters) {
-        readRequest.filters = [];
-      }
-      readRequest.filters.push(...acsFilters);
+    if (request.filters) {
+      request.filters.push(...acsFilters);
+    }
+    else {
+      request.filters = acsFilters;
     }
 
-    if (acsResponse?.custom_query_args?.length > 0) {
-      readRequest.custom_queries = acsResponse.custom_query_args[0].custom_queries;
-      readRequest.custom_arguments = acsResponse.custom_query_args[0].custom_arguments;
-    }
-    return await super.read(ReadRequest.fromPartial(readRequest) as any, ctx);
+    request.custom_queries = acsResponse.custom_query_args?.flatMap(arg => arg.custom_queries);
+    request.custom_arguments = acsResponse.custom_query_args?.flatMap(arg => arg.custom_arguments)[0];
+    return await super.read(request, ctx);
   }
 
   async update(request, ctx) {
