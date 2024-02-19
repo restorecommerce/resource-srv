@@ -319,7 +319,7 @@ export class Worker {
     const hrTopic = await events.topic(hrTopicName);
     this.idsClient = await getUserServiceClient();
     this.graphClient = await getGraphServiceClient();
-    
+
     if (!resourcesServiceEventListener) {
       resourcesServiceEventListener = async (
         msg: any,

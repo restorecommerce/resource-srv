@@ -229,7 +229,7 @@ export const getSubTreeOrgs = async (
       filteredSubOrgFields.push({ id: org.id, role, children: [] });
     }
     // leaf node or no more children nodes
-    if (_.isEmpty(filteredSubOrgFields)) {
+    if (filteredSubOrgFields.length === 0) {
       filteredSubOrgFields.push({ id: targetID, role, children: [] });
       targetID = traversalResponse[i].parent_id;
     }
@@ -247,7 +247,7 @@ export const createHRScope = async (
   cfg,
   logger
 ): Promise<ResolvedSubject> => {
-  const subject = user?.payload as ResolvedSubject
+  const subject = user?.payload as ResolvedSubject;
   const roleScopingEntityURN = cfg.get('authorization:urns:roleScopingEntity');
   const roleScopingInstanceURN = cfg.get('authorization:urns:roleScopingInstance');
   if (subject?.role_associations && !subject?.hierarchical_scopes?.length) {
@@ -269,16 +269,13 @@ export const createHRScope = async (
         }
       }
     }
-    let reducedUserRoleAssocs = [];
-    if (tokenData && tokenData.scopes && tokenData.scopes.length > 0) {
-      for (let tokenScope of tokenData.scopes) {
-        if (_.find(userRoleAssocs, { id: tokenScope })) {
-          reducedUserRoleAssocs.push(_.find(userRoleAssocs, { id: tokenScope }));
-        }
-      }
-    } else {
-      reducedUserRoleAssocs = userRoleAssocs;
-    }
+
+    const reducedUserRoleAssocs = tokenData?.scopes?.flatMap(
+      (scope: string) => userRoleAssocs?.filter(
+        attr => attr.id === scope
+      )
+    ) ?? userRoleAssocs;
+
     for (let roleObj of reducedUserRoleAssocs) {
       if (roleObj?.attributes?.length > 0) {
         for (let roleAttribute of roleObj?.attributes) {
