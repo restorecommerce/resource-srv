@@ -113,7 +113,7 @@ export async function checkAccessRequest(ctx: GQLClientContext, resource: Resour
 /* eslint-disable prefer-arrow-functions/prefer-arrow-functions */
 export async function checkAccessRequest(ctx: GQLClientContext, resource: Resource[], action: AuthZAction,
   operation: Operation, useCache = true): Promise<DecisionResponse | PolicySetRQResponse> {
-  let subject = ctx.subject;
+  let subject = ctx.subject as Subject;
   let dbSubject;
   // resolve subject id using findByToken api and update subject with id
   if (subject && subject.token) {
@@ -128,7 +128,7 @@ export async function checkAccessRequest(ctx: GQLClientContext, resource: Resour
 
   let result: DecisionResponse | PolicySetRQResponse;
   try {
-    result = await accessRequest(subject, resource, action, ctx, operation, 'arangoDB', useCache);
+    result = await accessRequest(subject, resource, action, ctx, { operation });
   } catch (err) {
     return {
       decision: Response_Decision.DENY,

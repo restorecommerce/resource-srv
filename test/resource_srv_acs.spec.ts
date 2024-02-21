@@ -12,6 +12,7 @@ import { CommandServiceDefinition as command } from '@restorecommerce/rc-grpc-cl
 import { OrganizationServiceDefinition as organization } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization.js';
 import { ContactPointServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point.js';
 import { createClient as RedisCreateClient, RedisClientType } from 'redis';
+import { updateConfig } from '@restorecommerce/acs-client';
 
 const cfg = createServiceConfig(process.cwd() + '/test');
 const logger = createLogger(cfg.get('logger'));
@@ -303,6 +304,9 @@ describe('resource-srv testing with ACS enabled', () => {
 
   // start the server and get the clientService Obj based on resourceName
   before(async function startServer() {
+    // enable ACS check
+    cfg.set('authorization:enabled', true);
+    await updateConfig(cfg);
     worker = new Worker();
     await worker.start(cfg);
     // get the client object
