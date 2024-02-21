@@ -1,13 +1,13 @@
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 import { RedisClientType } from 'redis';
 import { ServiceBase } from '@restorecommerce/resource-base-interface';
 import { ACSAuthZ, DecisionResponse, Operation, PolicySetRQResponse, ResolvedSubject } from '@restorecommerce/acs-client';
 import { AuthZAction } from '@restorecommerce/acs-client';
-import { checkAccessRequest, getACSFilters } from './utils';
+import { checkAccessRequest, getACSFilters } from './utils.js';
 import * as uuid from 'uuid';
-import { Response_Decision } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control';
-import { ReadRequest, DeleteRequest, DeepPartial, DeleteResponse } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base';
-import { Filter_Operation } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/filter';
+import { Response_Decision } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control.js';
+import { ReadRequest, DeleteRequest, DeepPartial, DeleteResponse } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base.js';
+import { Filter_Operation } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/filter.js';
 
 export class ResourceService extends ServiceBase<any, any> {
   authZ: ACSAuthZ;

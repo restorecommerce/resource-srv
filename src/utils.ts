@@ -12,18 +12,18 @@ import {
   UserServiceClient as UserClient,
   UserResponse,
   UserServiceDefinition as UserServiceDefinition
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/user';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/user.js';
 import { createChannel, createClient } from '@restorecommerce/grpc-client';
 import { createLogger } from '@restorecommerce/logger';
-import { Response_Decision } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control';
-import { Subject } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/auth';
-import { FilterOp } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base';
+import { Response_Decision } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control.js';
+import { Subject } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/auth.js';
+import { FilterOp } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base.js';
 import {
   GraphServiceClient as GraphClient,
   GraphServiceDefinition,
   Options_Direction as Direction,
   TraversalRequest
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph.js';
 
 // Create a ids client instance
 let idsClientInstance: UserClient;

@@ -1,16 +1,16 @@
-import * as should from 'should';
+import should from 'should';
 import { createChannel, createClient } from '@restorecommerce/grpc-client';
 import { Events, Topic } from '@restorecommerce/kafka-client';
-import { Worker } from '../lib/worker';
+import { Worker } from '../src/worker.js';
 import { GrpcMockServer, ProtoUtils } from '@alenon/grpc-mock-server';
 import * as proto_loader from '@grpc/proto-loader';
 import * as grpc from '@grpc/grpc-js';
 import { createLogger } from '@restorecommerce/logger';
 import { createServiceConfig } from '@restorecommerce/service-config';
-import { CommandInterfaceServiceDefinition, CommandInterfaceServiceClient as cisClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
-import { CommandServiceDefinition as command } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command';
-import { OrganizationServiceDefinition as organization } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization';
-import { ContactPointServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point';
+import { CommandInterfaceServiceDefinition, CommandInterfaceServiceClient as cisClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface.js';
+import { CommandServiceDefinition as command } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command.js';
+import { OrganizationServiceDefinition as organization } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization.js';
+import { ContactPointServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point.js';
 import { createClient as RedisCreateClient, RedisClientType } from 'redis';
 
 const cfg = createServiceConfig(process.cwd() + '/test');
@@ -286,8 +286,8 @@ async function getClientResourceServices() {
 }
 
 describe('resource-srv testing with ACS enabled', () => {
-  let organizationService;
-  let contactPointsService;
+  let organizationService: any;
+  let contactPointsService: any;
   let commandService;
   let worker: Worker;
   let events: Events;

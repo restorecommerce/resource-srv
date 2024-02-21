@@ -1,8 +1,8 @@
 import { Events, Topic, registerProtoMeta } from '@restorecommerce/kafka-client';
-import { GraphResourcesServiceBase, ResourcesAPIBase, ServiceBase } from '@restorecommerce/resource-base-interface';
+import { GraphResourcesServiceBase, ResourcesAPIBase } from '@restorecommerce/resource-base-interface';
 import { ACSAuthZ, ResolvedSubject, initAuthZ, initializeCache } from '@restorecommerce/acs-client';
-import { ResourceCommandInterface } from './commandInterface';
-import * as _ from 'lodash';
+import { ResourceCommandInterface } from './commandInterface.js';
+import * as _ from 'lodash-es';
 import {
   database,
   GraphDatabaseProvider,
@@ -12,7 +12,7 @@ import {
   Server,
   Health
 } from '@restorecommerce/chassis-srv';
-import { ResourceService } from './service';
+import { ResourceService } from './service.js';
 import { Logger } from 'winston';
 import { createLogger } from '@restorecommerce/logger';
 import { createServiceConfig } from '@restorecommerce/service-config';
@@ -20,89 +20,89 @@ import { createClient, RedisClientType } from 'redis';
 import {
   protoMetadata as commandMeta,
   CommandServiceDefinition as command
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command.js';
 import {
   protoMetadata as addressMeta,
   AddressServiceDefinition as address
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/address';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/address.js';
 import {
   protoMetadata as contactPointTypeMeta,
   ContactPointTypeServiceDefinition as contact_point_type
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point_type';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point_type.js';
 import {
   protoMetadata as countryMeta,
   CountryServiceDefinition as country
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/country';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/country.js';
 import {
   protoMetadata as contactPointMeta,
   ContactPointServiceDefinition as contact_point
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point.js';
 import {
   protoMetadata as credentialMeta,
   CredentialServiceDefinition as credential
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/credential';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/credential.js';
 import {
   protoMetadata as localeMeta,
   LocaleServiceDefinition as locale
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/locale';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/locale.js';
 import {
   protoMetadata as locationMeta,
   LocationServiceDefinition as location
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/location';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/location.js';
 import {
   protoMetadata as organizationMeta,
   OrganizationServiceDefinition as organization
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization.js';
 import {
   protoMetadata as taxMeta,
   TaxServiceDefinition as tax
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/tax';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/tax.js';
 import {
   protoMetadata as taxTypeMeta,
   TaxTypeServiceDefinition as tax_type
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/tax_type';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/tax_type.js';
 import {
   protoMetadata as timezoneMeta,
   TimezoneServiceDefinition as timezone
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/timezone';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/timezone.js';
 import {
   protoMetadata as customerMeta,
   CustomerServiceDefinition as customer
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/customer';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/customer.js';
 import {
   protoMetadata as shopMeta,
   ShopServiceDefinition as shop
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/shop';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/shop.js';
 import {
   protoMetadata as unitCodeMeta,
   UnitCodeServiceDefinition as unit_code
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/unit_code';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/unit_code.js';
 import {
   protoMetadata as notificationMeta,
   NotificationServiceDefinition as notification
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/notification';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/notification.js';
 import {
   protoMetadata as notificationChannelMeta,
   NotificationChannelServiceDefinition as notification_channel
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/notification_channel';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/notification_channel.js';
 import {
   CommandInterfaceServiceDefinition as CommandInterfaceServiceDefinition,
   protoMetadata as commandInterfaceMeta
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface.js';
 import {
   protoMetadata as reflectionMeta
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/grpc/reflection/v1alpha/reflection';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/grpc/reflection/v1alpha/reflection.js';
 import { ServerReflectionService } from 'nice-grpc-server-reflection';
-import { HealthDefinition } from '@restorecommerce/rc-grpc-clients/dist/generated-server/grpc/health/v1/health';
+import { HealthDefinition } from '@restorecommerce/rc-grpc-clients/dist/generated-server/grpc/health/v1/health.js';
 import {
   GraphServiceDefinition as GraphServiceDefinition,
   protoMetadata as graphMeta,
   GraphServiceClient
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph';
-import { BindConfig } from '@restorecommerce/chassis-srv/lib/microservice/transport/provider/grpc';
-import { protoMetadata as hierarchicalScopesMeta } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/auth';
-import { UserServiceClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/user';
-import { getUserServiceClient, getGraphServiceClient, createHRScope } from './utils';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph.js';
+import { BindConfig } from '@restorecommerce/chassis-srv/lib/microservice/transport/provider/grpc/index.js';
+import { protoMetadata as hierarchicalScopesMeta } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/auth.js';
+import { UserServiceClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/user.js';
+import { getUserServiceClient, getGraphServiceClient, createHRScope } from './utils.js';
 
 const COMMANDEVENTS = ['restoreCommand', 'healthCheckCommand', 'resetCommand',
   'versionCommand', 'configUpdateCommand', 'setApiKeyCommand', 'flushCacheCommand'];
@@ -217,6 +217,7 @@ export class Worker {
       return msg;
     };
     const logger = createLogger(loggerCfg);
+    this.logger = logger;
     const server = new Server(cfg.get('server'), logger);
     const db = await database.get(cfg.get('database:arango'),
       logger, cfg.get('graph:graphName'), cfg.get('graph:edgeDefinitions')) as GraphDatabaseProvider;
@@ -423,18 +424,4 @@ export class Worker {
     await this.events.stop();
     await this.offsetStore.stop();
   }
-}
-
-if (require.main === module) {
-  const worker = new Worker();
-  worker.start().catch((err) => {
-    console.error('startup error', err);
-    process.exit(1);
-  });
-  process.on('SIGINT', () => {
-    worker.stop().catch((err) => {
-      console.error('shutdown error', err);
-      process.exit(1);
-    });
-  });
 }

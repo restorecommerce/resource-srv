@@ -1,16 +1,16 @@
-import * as should from 'should';
+import should from 'should';
 import { createChannel, createClient } from '@restorecommerce/grpc-client';
 import { Events, Topic, registerProtoMeta } from '@restorecommerce/kafka-client';
-import { Worker } from '../lib/worker';
+import { Worker } from '../src/worker.js';
 import { updateConfig } from '@restorecommerce/acs-client';
 import { createLogger } from '@restorecommerce/logger';
 import { createServiceConfig } from '@restorecommerce/service-config';
-import { CommandInterfaceServiceDefinition, CommandInterfaceServiceClient as cisClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
-import { CommandServiceDefinition as command } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command';
-import { OrganizationServiceDefinition as organization, protoMetadata as organizationMeta } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization';
-import { ContactPointServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point';
-import { ReadRequest, Sort_SortOrder } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base';
-import { Filter_Operation } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/filter';
+import { CommandInterfaceServiceDefinition, CommandInterfaceServiceClient as cisClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface.js';
+import { CommandServiceDefinition as command } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command.js';
+import { OrganizationServiceDefinition as organization, protoMetadata as organizationMeta } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization.js';
+import { ContactPointServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point.js';
+import { ReadRequest, Sort_SortOrder } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base.js';
+import { Filter_Operation } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/filter.js';
 
 const cfg = createServiceConfig(process.cwd() + '/test');
 const logger = createLogger(cfg.get('logger'));
@@ -131,7 +131,7 @@ describe('resource-srv testing', () => {
   let organizationTopic: Topic;
   let baseValidation = function (result: any, itemsShouldExist: boolean = true) {
     should.exist(result);
-    if(itemsShouldExist) {
+    if (itemsShouldExist) {
       should.exist(result.items);
     }
     should.exist(result.operation_status);
@@ -139,12 +139,9 @@ describe('resource-srv testing', () => {
 
   // start the server and get the clientService Obj based on resourceName
   before(async function startServer() {
-    // check acs enabled from env-var and update config
-    const disableACS = process.env.DISABLE_ACS;
-    if (disableACS && disableACS === 'false') {
-      cfg.set('authorization:enabled', false);
-      await updateConfig(cfg);
-    }
+    // disable ACS check
+    cfg.set('authorization:enabled', false);
+    await updateConfig(cfg);
     worker = new Worker();
     await worker.start(cfg);
     // get the client object
