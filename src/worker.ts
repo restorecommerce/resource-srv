@@ -338,7 +338,7 @@ export class Worker {
           if (!user?.payload?.id) {
             this.logger.debug('Subject could not be resolved for token');
           }
-          const subject: ResolvedSubject = user && await createHRScope(user, token, this.graphClient, null, cfg, this.logger);
+          const subject: ResolvedSubject = user?.payload?.id && await createHRScope(user, token, this.graphClient, null, cfg, this.logger);
           if (hrTopic) {
             // emit response with same messag id on same topic
             this.logger.info(`Hierarchical scopes are created for subject ${user?.payload?.id}`);
