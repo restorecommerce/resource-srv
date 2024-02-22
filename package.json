@@ -68,8 +68,7 @@
     "coveralls": "c8 report --reporter=text-lcov | coveralls",
     "build:tsc": "esbuild ./src/start.ts --bundle --platform=node --outfile=lib/start.js --minify --tree-shaking=true --sourcemap=inline",
     "build:clean": "rimraf lib",
-    "build": "npm-run-all lint build:clean build:tsc",
-    "postinstall": "npm run build:tsc"
+    "build": "npm-run-all lint build:clean build:tsc"
   },
   "engines": {
     "node": ">= 20.8.0"
