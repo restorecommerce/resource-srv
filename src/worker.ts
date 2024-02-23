@@ -333,11 +333,11 @@ export class Worker {
           );
         } else if (eventName === HIERARCHICAL_SCOPE_REQUEST_EVENT) {
           const token = msg.token?.split(':')?.[0] as string;
-          const user = token && await this.idsClient?.findByToken({ token });
+          const user = token ? await this.idsClient?.findByToken({ token }) : undefined;
           if (!user?.payload?.id) {
             this.logger.debug('Subject could not be resolved for token');
           }
-          const subject: ResolvedSubject = user?.payload?.id && await createHRScope(user, token, this.graphClient, null, cfg, this.logger);
+          const subject: ResolvedSubject = user?.payload?.id ? await createHRScope(user, token, this.graphClient, null, cfg, this.logger) : undefined;
           if (hrTopic) {
             // emit response with same messag id on same topic
             this.logger.info(`Hierarchical scopes are created for subject ${user?.payload?.id}`);
