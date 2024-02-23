@@ -151,7 +151,7 @@ export async function checkAccessRequest(ctx: GQLClientContext, resource: Resour
  */
 export const getACSFilters = (accessResponse: PolicySetRQResponse, resource: string): FilterOp[] => {
   return accessResponse?.filters?.filter(
-    (e) => !e.resource || e.resource === resource
+    (e) => !e.resource && e.resource === resource
   ).flatMap(
     e => e.filters
   ) ?? [];
@@ -256,13 +256,12 @@ export const createHRScope = async (
     let assignedUserScopes = new Set<{ userScope: string; role: string }>();
     let tokenData;
     // verify the validity of subject tokens
-    if (token && (subject as any).tokens && (subject as any).tokens.length > 0) {
-      for (let tokenInfo of (subject as any).tokens) {
+    if (token && user?.payload?.tokens?.length > 0) {
+      for (let tokenInfo of user.payload.tokens) {
         if (tokenInfo.token === token) {
           tokenData = tokenInfo;
-          const currentDate = Math.round(new Date().getTime() / 1000);
           const expiresIn = tokenInfo.expires_in;
-          if (expiresIn != 0 && expiresIn < currentDate) {
+          if (expiresIn && expiresIn != new Date(0) && expiresIn < new Date()) {
             logger.info(`Token name ${tokenInfo.name} has expired`);
             return;
           }

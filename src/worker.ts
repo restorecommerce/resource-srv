@@ -104,8 +104,15 @@ import { protoMetadata as hierarchicalScopesMeta } from '@restorecommerce/rc-grp
 import { UserServiceClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/user.js';
 import { getUserServiceClient, getGraphServiceClient, createHRScope } from './utils.js';
 
-const COMMANDEVENTS = ['restoreCommand', 'healthCheckCommand', 'resetCommand',
-  'versionCommand', 'configUpdateCommand', 'setApiKeyCommand', 'flushCacheCommand'];
+const COMMANDEVENTS = [
+  'restoreCommand',
+  'healthCheckCommand',
+  'resetCommand',
+  'versionCommand',
+  'configUpdateCommand',
+  'setApiKeyCommand',
+  'flushCacheCommand'
+];
 const HIERARCHICAL_SCOPE_REQUEST_EVENT = 'hierarchicalScopesRequest';
 
 registerProtoMeta(
@@ -328,17 +335,17 @@ export class Worker {
         config: any,
         eventName: string
       ): Promise<any> => {
-        if (eventName in COMMANDEVENTS) {
+        if (COMMANDEVENTS.indexOf(eventName) > -1) {
           await cis.command(msg, context).catch(
             err => logger.error('Error while executing command', err)
           );
         } else if (eventName === HIERARCHICAL_SCOPE_REQUEST_EVENT) {
           const token = msg.token?.split(':')?.[0] as string;
-          const user = token && await this.idsClient?.findByToken({ token });
+          const user = token ? await this.idsClient?.findByToken({ token }) : undefined;
           if (!user?.payload?.id) {
             this.logger.debug('Subject could not be resolved for token');
           }
-          const subject: ResolvedSubject = user?.payload?.id && await createHRScope(user, token, this.graphClient, null, cfg, this.logger);
+          const subject: ResolvedSubject = user?.payload?.id ? await createHRScope(user, token, this.graphClient, null, cfg, this.logger) : undefined;
           if (hrTopic) {
             // emit response with same messag id on same topic
             this.logger.info(`Hierarchical scopes are created for subject ${user?.payload?.id}`);
