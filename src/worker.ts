@@ -12,7 +12,6 @@ import {
   Server,
   Health
 } from '@restorecommerce/chassis-srv';
-import { ResourceService } from './service.js';
 import { Logger } from 'winston';
 import { createLogger } from '@restorecommerce/logger';
 import { createServiceConfig } from '@restorecommerce/service-config';
@@ -102,6 +101,7 @@ import {
 import { BindConfig } from '@restorecommerce/chassis-srv/lib/microservice/transport/provider/grpc/index.js';
 import { protoMetadata as hierarchicalScopesMeta } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/auth.js';
 import { UserServiceClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/user.js';
+import { ResourceService } from './service.js';
 import { getUserServiceClient, getGraphServiceClient, createHRScope } from './utils.js';
 
 const COMMANDEVENTS = [
@@ -160,15 +160,15 @@ const ServiceDefinitions: any = [
 ];
 
 export class Worker {
-  server: Server;
-  events: Events;
-  logger: Logger;
+  server: Server | undefined = undefined;
+  events: Events | undefined = undefined;
+  logger: Logger | undefined = undefined;
   redisClient: any;
-  offsetStore: OffsetStore;
-  cis: CommandInterface;
-  service: any[];
-  idsClient: UserServiceClient;
-  graphClient: GraphServiceClient;
+  offsetStore: OffsetStore | undefined = undefined;
+  cis: CommandInterface | undefined = undefined;
+  service: any[] | undefined = undefined;
+  idsClient: UserServiceClient | undefined = undefined;
+  graphClient: GraphServiceClient | undefined = undefined;
 
   async start(cfg?: any, resourcesServiceEventListener?: Function) {
     // Load config
@@ -219,7 +219,7 @@ export class Worker {
     cfg.set('events:kafka', kafkaCfg);
 
     const loggerCfg = cfg.get('logger');
-    loggerCfg.esTransformer = (msg) => {
+    loggerCfg.esTransformer = (msg: any) => {
       msg.fields = JSON.stringify(msg.fields);
       return msg;
     };
@@ -232,13 +232,16 @@ export class Worker {
 
     await events.start();
     this.offsetStore = new OffsetStore(events, cfg, logger);
-    let redisClient: RedisClientType<any, any>;
+    let redisClient: RedisClientType<any, any> | undefined;
     if (cfg.get('redis')) {
       const redisConfig = cfg.get('redis');
       redisConfig.database = cfg.get('redis:db-indexes:db-resourcesCounter');
       redisClient = createClient(redisConfig);
       redisClient.on('error', (err) => logger.error('Redis Client Error', err));
       await redisClient.connect();
+    }
+    else {
+      redisClient = undefined;
     }
     const fieldGeneratorConfig: any = cfg.get('fieldHandlers:fieldGenerators');
     const bufferHandlerConfig: any = cfg.get('fieldHandlers:bufferFields');
@@ -303,7 +306,7 @@ export class Worker {
         // TODO provide typing on ResourceService<T, M>
         this.service[resourceName] = new ResourceService(resourceName,
           resourceEvents, cfg, logger, resourceAPI, isEventsEnabled, authZ, redisClientSubject);
-        const resourceServiceDefinition = ServiceDefinitions.filter((obj) => obj.fullName.split('.')[2] === resourceName);
+        const resourceServiceDefinition = ServiceDefinitions.filter((obj: any) => obj.fullName.split('.')[2] === resourceName);
         // todo add bindConfig typing
         await server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, {
           service: resourceServiceDefinition[0],
@@ -343,12 +346,12 @@ export class Worker {
           const token = msg.token?.split(':')?.[0] as string;
           const user = token ? await this.idsClient?.findByToken({ token }) : undefined;
           if (!user?.payload?.id) {
-            this.logger.debug('Subject could not be resolved for token');
+            this.logger?.debug('Subject could not be resolved for token');
           }
-          const subject: ResolvedSubject = user?.payload?.id ? await createHRScope(user, token, this.graphClient, null, cfg, this.logger) : undefined;
+          const subject: ResolvedSubject = user?.payload?.id ? await createHRScope(user, token, this.graphClient!, null, cfg, this.logger) : undefined;
           if (hrTopic) {
             // emit response with same messag id on same topic
-            this.logger.info(`Hierarchical scopes are created for subject ${user?.payload?.id}`);
+            this.logger?.info(`Hierarchical scopes are created for subject ${user?.payload?.id}`);
             await hrTopic.emit('hierarchicalScopesResponse', {
               subject_id: user?.payload?.id,
               token: msg.token,
@@ -426,9 +429,9 @@ export class Worker {
   }
 
   async stop() {
-    this.logger.info('Shutting down');
-    await this.server.stop();
-    await this.events.stop();
-    await this.offsetStore.stop();
+    this.logger?.info('Shutting down');
+    await this.server?.stop();
+    await this.events?.stop();
+    await this.offsetStore?.stop();
   }
 }

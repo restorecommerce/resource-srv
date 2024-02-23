@@ -222,7 +222,7 @@ export const getSubTreeOrgs = async (
 
   for (let i = 0; i < traversalResponse.length; i++) {
     let targetID = traversalResponse[i].id;
-    const subOrgs = traversalResponse.filter(e => e.parent_id === targetID);
+    const subOrgs = traversalResponse.filter((e: any) => e.parent_id === targetID);
     // find hrScopes id and then get the childer object
     const filteredSubOrgFields = [];
     for (let org of subOrgs) {
@@ -243,27 +243,27 @@ export const createHRScope = async (
   user: UserResponse,
   token: string,
   graphClient: GraphClient,
-  cache,
-  cfg,
-  logger
-): Promise<ResolvedSubject> => {
+  cache: any,
+  cfg: any,
+  logger: any,
+): Promise<ResolvedSubject | undefined> => {
   const subject = user?.payload as ResolvedSubject;
   const roleScopingEntityURN = cfg.get('authorization:urns:roleScopingEntity');
   const roleScopingInstanceURN = cfg.get('authorization:urns:roleScopingInstance');
   if (subject?.role_associations && !subject?.hierarchical_scopes?.length) {
     // create HR scopes iterating through the user's assigned role scoping instances
     let userRoleAssocs = subject.role_associations;
-    let assignedUserScopes = new Set<{ userScope: string; role: string }>();
+    let assignedUserScopes = new Set<{ userScope: string | undefined; role: string | undefined }>();
     let tokenData;
     // verify the validity of subject tokens
-    if (token && user?.payload?.tokens?.length > 0) {
-      for (let tokenInfo of user.payload.tokens) {
+    if (token && user?.payload?.tokens?.length! > 0) {
+      for (let tokenInfo of user?.payload?.tokens ?? []) {
         if (tokenInfo.token === token) {
           tokenData = tokenInfo;
           const expiresIn = tokenInfo.expires_in;
           if (expiresIn && expiresIn != new Date(0) && expiresIn < new Date()) {
             logger.info(`Token name ${tokenInfo.name} has expired`);
-            return;
+            return undefined;
           }
         }
       }
@@ -276,10 +276,10 @@ export const createHRScope = async (
     ) ?? userRoleAssocs;
 
     for (let roleObj of reducedUserRoleAssocs) {
-      if (roleObj?.attributes?.length > 0) {
-        for (let roleAttribute of roleObj?.attributes) {
+      if (roleObj?.attributes?.length! > 0) {
+        for (let roleAttribute of roleObj?.attributes!) {
           if (roleAttribute.id === roleScopingEntityURN) {
-            for (let roleScopInstObj of roleAttribute.attributes) {
+            for (let roleScopInstObj of roleAttribute.attributes!) {
               if (roleScopInstObj.id === roleScopingInstanceURN) {
                 let obj = { userScope: roleScopInstObj.value, role: roleObj.role };
                 assignedUserScopes.add(obj);
