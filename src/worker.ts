@@ -104,8 +104,15 @@ import { protoMetadata as hierarchicalScopesMeta } from '@restorecommerce/rc-grp
 import { UserServiceClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/user';
 import { getUserServiceClient, getGraphServiceClient, createHRScope } from './utils';
 
-const COMMANDEVENTS = ['restoreCommand', 'healthCheckCommand', 'resetCommand',
-  'versionCommand', 'configUpdateCommand', 'setApiKeyCommand', 'flushCacheCommand'];
+const COMMANDEVENTS = [
+  'restoreCommand',
+  'healthCheckCommand',
+  'resetCommand',
+  'versionCommand',
+  'configUpdateCommand',
+  'setApiKeyCommand',
+  'flushCacheCommand'
+];
 const HIERARCHICAL_SCOPE_REQUEST_EVENT = 'hierarchicalScopesRequest';
 
 registerProtoMeta(
@@ -327,7 +334,7 @@ export class Worker {
         config: any,
         eventName: string
       ): Promise<any> => {
-        if (eventName in COMMANDEVENTS) {
+        if (COMMANDEVENTS.indexOf(eventName) > -1) {
           await cis.command(msg, context).catch(
             err => logger.error('Error while executing command', err)
           );
