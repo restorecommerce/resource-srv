@@ -158,11 +158,11 @@ export const getACSFilters = (accessResponse: PolicySetRQResponse, resource: str
 };
 
 const setNestedChildOrgs = (hrScope: any, targetOrgID, subOrgs) => {
-  if (!hrScope?.length === undefined) {
+  if (hrScope && !Array.isArray(hrScope)) {
     hrScope = [hrScope];
   }
 
-  for (let subHrScope of hrScope) {
+  for (let subHrScope of hrScope || []) {
     if (subHrScope.id === targetOrgID) {
       if (subHrScope.children) {
         subHrScope.children.push(...subOrgs);
