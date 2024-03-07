@@ -45,12 +45,12 @@ export class ResourceCommandInterface extends CommandInterface {
             if (from_id && to_id) {
               if (_.isArray(to_id)) {
                 for (let toID of to_id) {
-                  await db.createEdge(eachEdgeCfg.edgeName, null,
+                  await db.createEdge(eachEdgeCfg.edgeName, undefined as any,
                     `${fromVerticeName}/${from_id}`, `${toVerticeName}/${toID}`);
                 }
                 continue;
               }
-              await db.createEdge(eachEdgeCfg.edgeName, null,
+              await db.createEdge(eachEdgeCfg.edgeName, undefined as any,
                 `${fromVerticeName}/${from_id}`, `${toVerticeName}/${to_id}`);
             }
           }
@@ -92,12 +92,12 @@ export class ResourceCommandInterface extends CommandInterface {
               if (from_id && modified_to_idValues) {
                 if (_.isArray(modified_to_idValues)) {
                   for (let toID of modified_to_idValues) {
-                    await db.createEdge(eachEdgeCfg?.edgeName, null,
+                    await db.createEdge(eachEdgeCfg?.edgeName, undefined as any,
                       `${fromVerticeName}/${from_id}`, `${toVerticeName}/${toID}`);
                   }
                   continue;
                 }
-                await db.createEdge(edgeCollectionName, null,
+                await db.createEdge(edgeCollectionName, undefined as any,
                   `${fromVerticeName}/${from_id}`, `${toVerticeName}/${modified_to_idValues}`);
               }
             }

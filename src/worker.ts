@@ -1,8 +1,7 @@
 import { Events, Topic, registerProtoMeta } from '@restorecommerce/kafka-client';
 import { GraphResourcesServiceBase, ResourcesAPIBase } from '@restorecommerce/resource-base-interface';
-import { ACSAuthZ, ResolvedSubject, initAuthZ, initializeCache } from '@restorecommerce/acs-client';
+import { ACSAuthZ, initAuthZ, initializeCache } from '@restorecommerce/acs-client';
 import { ResourceCommandInterface } from './commandInterface.js';
-import * as _ from 'lodash-es';
 import {
   database,
   GraphDatabaseProvider,
@@ -17,6 +16,7 @@ import { createLogger } from '@restorecommerce/logger';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import { createClient, RedisClientType } from 'redis';
 import {
+  DeepPartial,
   protoMetadata as commandMeta,
   CommandServiceDefinition as command
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command.js';
@@ -160,15 +160,15 @@ const ServiceDefinitions: any = [
 ];
 
 export class Worker {
-  server: Server | undefined = undefined;
-  events: Events | undefined = undefined;
-  logger: Logger | undefined = undefined;
+  server?: Server;
+  events?: Events;
+  logger?: Logger;
   redisClient: any;
-  offsetStore: OffsetStore | undefined = undefined;
-  cis: CommandInterface | undefined = undefined;
-  service: any[] | undefined = undefined;
-  idsClient: UserServiceClient | undefined = undefined;
-  graphClient: GraphServiceClient | undefined = undefined;
+  offsetStore?: OffsetStore;
+  cis?: CommandInterface;
+  services?: any[];
+  idsClient?: UserServiceClient;
+  graphClient?: GraphServiceClient;
 
   async start(cfg?: any, resourcesServiceEventListener?: Function) {
     // Load config
@@ -251,12 +251,12 @@ export class Worker {
     const isEventsEnabled = (cfg.get('events:enableCRUDEvents') == 'true');
     const graphCfg = cfg.get('graph');
 
-    this.service = [];
+    this.services = [];
     const authZ = await initAuthZ(cfg) as ACSAuthZ;
     // init Redis Client for subject index
     const redisConfig = cfg.get('redis');
     redisConfig.database = cfg.get('redis:db-indexes:db-subject');
-    const redisClientSubject: RedisClientType<any, any> = createClient(redisConfig);
+    const redisClientSubject: RedisClientType = createClient(redisConfig);
     await redisClientSubject.on('error', (err) => logger.error('Redis Client Error', err));
     await redisClientSubject.connect();
     for (let resourceType in resources) {
@@ -304,13 +304,13 @@ export class Worker {
           resourceFieldConfig, edgeCfg, graphName);
         const resourceEvents = await events.topic(`${resourcesServiceNamePrefix}${resourceName}s.resource`);
         // TODO provide typing on ResourceService<T, M>
-        this.service[resourceName] = new ResourceService(resourceName,
+        this.services[resourceName] = new ResourceService(resourceName,
           resourceEvents, cfg, logger, resourceAPI, isEventsEnabled, authZ, redisClientSubject);
         const resourceServiceDefinition = ServiceDefinitions.filter((obj: any) => obj.fullName.split('.')[2] === resourceName);
         // todo add bindConfig typing
         await server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, {
           service: resourceServiceDefinition[0],
-          implementation: this.service[resourceName]
+          implementation: this.services[resourceName]
         } as BindConfig<any>);
       }
     }
@@ -348,7 +348,7 @@ export class Worker {
           if (!user?.payload?.id) {
             this.logger?.debug('Subject could not be resolved for token');
           }
-          const subject: ResolvedSubject = user?.payload?.id ? await createHRScope(user, token, this.graphClient!, null, cfg, this.logger) : undefined;
+          const subject = user?.payload?.id ? await createHRScope(user, token, this.graphClient!, null, cfg, this.logger) : undefined;
           if (hrTopic) {
             // emit response with same messag id on same topic
             this.logger?.info(`Hierarchical scopes are created for subject ${user?.payload?.id}`);
@@ -362,7 +362,7 @@ export class Worker {
       };
     }
 
-    const topicTypes = _.keys(kafkaCfg.topics);
+    const topicTypes = Object.keys(kafkaCfg.topics);
     for (let topicType of topicTypes) {
       const topicName = kafkaCfg.topics[topicType].topic;
       const topic: Topic = await events.topic(topicName);
@@ -378,7 +378,7 @@ export class Worker {
 
     // Add reflection service
     const reflectionService = buildReflectionService([
-      { descriptor: commandMeta.fileDescriptor },
+      { descriptor: commandMeta.fileDescriptor as any },
       { descriptor: addressMeta.fileDescriptor },
       { descriptor: contactPointTypeMeta.fileDescriptor },
       { descriptor: countryMeta.fileDescriptor },
