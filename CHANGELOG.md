@@ -1,3 +1,11 @@
+### 1.5.1 (March 7th, 2024)
+
+- up deps
+
+### 1.5.0 (March 1st, 2024)
+
+- support esbuild
+
 ### 1.4.1 (February 6th, 2024)
 
 - fix hierarical scope query
