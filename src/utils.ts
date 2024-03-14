@@ -33,7 +33,7 @@ export const getUserServiceClient = async () => {
     // identity-srv client to resolve subject ID by token
     const grpcIDSConfig = cfg.get('client:user');
     const loggerCfg = cfg.get('logger');
-    loggerCfg.esTransformer = (msg) => {
+    loggerCfg.esTransformer = (msg: any) => {
       msg.fields = JSON.stringify(msg.fields);
       return msg;
     };
@@ -55,7 +55,7 @@ export const getGraphServiceClient = async () => {
     const cfg = createServiceConfig(process.cwd());
     const grpcGraphConfig = cfg.get('client:graph-srv');
     const loggerCfg = cfg.get('logger');
-    loggerCfg.esTransformer = (msg) => {
+    loggerCfg.esTransformer = (msg: any) => {
       msg.fields = JSON.stringify(msg.fields);
       return msg;
     };
@@ -128,13 +128,21 @@ export async function checkAccessRequest(ctx: GQLClientContext, resource: Resour
 
   let result: DecisionResponse | PolicySetRQResponse;
   try {
-    result = await accessRequest(subject, resource, action, ctx, { operation, roleScopingEntityURN: cfg?.get('authorization:urns:roleScopingEntityURN') });
-  } catch (err) {
+    result = await accessRequest(
+      subject,
+      resource,
+      action,
+      ctx,
+      {
+        operation,
+        roleScopingEntityURN: cfg?.get('authorization:urns:roleScopingEntityURN')
+      });
+  } catch (err: any) {
     return {
       decision: Response_Decision.DENY,
       operation_status: {
-        code: err.code || 500,
-        message: err.details || err.message,
+        code: err.code ?? 500,
+        message: err.details ?? err.message ?? 'Unknown Error!',
       }
     };
   }
@@ -157,12 +165,16 @@ export const getACSFilters = (accessResponse: PolicySetRQResponse, resource: str
   ) ?? [];
 };
 
-const setNestedChildOrgs = (hrScope: any, targetOrgID, subOrgs) => {
-  if (hrScope && !Array.isArray(hrScope)) {
+const setNestedChildOrgs = (hrScope: any, targetOrgID: string, subOrgs: any[]) => {
+  if (!hrScope) {
+    return;
+  }
+
+  if (!Array.isArray(hrScope)) {
     hrScope = [hrScope];
   }
 
-  for (let subHrScope of hrScope || []) {
+  for (let subHrScope of hrScope) {
     if (subHrScope.id === targetOrgID) {
       if (subHrScope.children) {
         subHrScope.children.push(...subOrgs);
@@ -175,7 +187,7 @@ const setNestedChildOrgs = (hrScope: any, targetOrgID, subOrgs) => {
     for (let item of subHrScope.children) {
       if (item.id === targetOrgID) {
         item.children.push(...subOrgs);
-        return hrScope;
+        return;
       } else {
         setNestedChildOrgs(item.children, targetOrgID, subOrgs);
       }
@@ -190,7 +202,6 @@ export const getSubTreeOrgs = async (
   graphClient: GraphClient,
 ): Promise<HierarchicalScope> => {
   const hrScope: HierarchicalScope = { role, id: orgID, children: [] };
-  let subOrgTreeList = new Set<string>();
   let traversalResponse: any = [];
   const hierarchicalResources = cfg.get('authorization:hierarchicalResources') ?? [];
   const orgTechUser = cfg.get('techUser');
@@ -211,17 +222,12 @@ export const getSubTreeOrgs = async (
         traversalResponse.push(...JSON.parse(partResp.data.value.toString()));
       }
     }
-
-    for (let org of traversalResponse) {
-      if (org?._id?.split('/')[0] === collection) {
-        delete org._id;
-        subOrgTreeList.add(org.id);
-      }
-    }
   }
 
-  for (let i = 0; i < traversalResponse.length; i++) {
-    let targetID = traversalResponse[i].id;
+  console.log(JSON.stringify(traversalResponse, undefined, 2));
+
+  for (let item of traversalResponse) {
+    let targetID = item.id;
     const subOrgs = traversalResponse.filter((e: any) => e.parent_id === targetID);
     // find hrScopes id and then get the childer object
     const filteredSubOrgFields = [];
@@ -231,10 +237,12 @@ export const getSubTreeOrgs = async (
     // leaf node or no more children nodes
     if (filteredSubOrgFields.length === 0) {
       filteredSubOrgFields.push({ id: targetID, role, children: [] });
-      targetID = traversalResponse[i].parent_id;
+      targetID = item.parent_id;
     }
-    // set sub orgs on target org
-    setNestedChildOrgs(hrScope, targetID, filteredSubOrgFields);
+    else {
+      // set sub orgs on target org
+      setNestedChildOrgs(hrScope, targetID, filteredSubOrgFields);
+    }
   }
   return hrScope;
 };
