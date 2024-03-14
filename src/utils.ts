@@ -27,9 +27,9 @@ import {
 
 // Create a ids client instance
 let idsClientInstance: UserClient;
+const cfg = createServiceConfig(process.cwd());
 export const getUserServiceClient = async () => {
   if (!idsClientInstance) {
-    const cfg = createServiceConfig(process.cwd());
     // identity-srv client to resolve subject ID by token
     const grpcIDSConfig = cfg.get('client:user');
     const loggerCfg = cfg.get('logger');
@@ -128,7 +128,7 @@ export async function checkAccessRequest(ctx: GQLClientContext, resource: Resour
 
   let result: DecisionResponse | PolicySetRQResponse;
   try {
-    result = await accessRequest(subject, resource, action, ctx, { operation });
+    result = await accessRequest(subject, resource, action, ctx, { operation, roleScopingEntityURN: cfg?.get('authorization:urns:organization') });
   } catch (err) {
     return {
       decision: Response_Decision.DENY,
