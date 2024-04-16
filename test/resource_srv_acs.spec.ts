@@ -170,7 +170,7 @@ const startGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
       // Delete request with invalid scope - DENY
       if (call?.request?.target?.subjects?.length === 2) {
         let reqSubject = call.request.target.subjects;
-        if (reqSubject[1]?.attributes[0]?.id === 'urn:restorecommerce:acs:names:roleScopingInstance' && reqSubject[1]?.attributes[0]?.value === 'orgD') {
+        if (reqSubject[1]?.id === 'urn:restorecommerce:acs:names:roleScopingInstance' && reqSubject[1]?.value === 'orgD') {
           response = { decision: 'DENY' };
         }
       }
