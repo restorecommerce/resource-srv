@@ -77,6 +77,10 @@ import {
   UnitCodeServiceDefinition as unit_code
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/unit_code.js';
 import {
+  protoMetadata as templateMeta,
+  TemplateServiceDefinition as template
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/template.js';
+import {
   protoMetadata as notificationMeta,
   NotificationServiceDefinition as notification
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/notification.js';
@@ -130,6 +134,7 @@ registerProtoMeta(
   timezoneMeta,
   customerMeta,
   shopMeta,
+  templateMeta,
   commandInterfaceMeta,
   reflectionMeta,
   graphMeta,
@@ -155,6 +160,7 @@ const ServiceDefinitions: any = [
   customer,
   shop,
   unit_code,
+  template,
   notification,
   notification_channel,
 ];

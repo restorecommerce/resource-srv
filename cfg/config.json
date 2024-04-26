@@ -23,7 +23,8 @@
         "timezone",
         "customer",
         "shop",
-        "unit_code"
+        "unit_code",
+        "template"
       ],
       "customQueries": [
         {
@@ -258,7 +259,8 @@
         "shop",
         "tax",
         "tax_type",
-        "timezone"
+        "timezone",
+        "template"
       ]
     }
   },
@@ -446,7 +448,8 @@
           "timezones",
           "customers",
           "shops",
-          "unit_codes"
+          "unit_codes",
+          "templates"
         ]
       }
     ],
