@@ -225,10 +225,6 @@ export class Worker {
     cfg.set('events:kafka', kafkaCfg);
 
     const loggerCfg = cfg.get('logger');
-    loggerCfg.esTransformer = (msg: any) => {
-      msg.fields = JSON.stringify(msg.fields);
-      return msg;
-    };
     const logger = createLogger(loggerCfg);
     this.logger = logger;
     const server = new Server(cfg.get('server'), logger);

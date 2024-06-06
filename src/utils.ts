@@ -33,10 +33,6 @@ export const getUserServiceClient = async () => {
     // identity-srv client to resolve subject ID by token
     const grpcIDSConfig = cfg.get('client:user');
     const loggerCfg = cfg.get('logger');
-    loggerCfg.esTransformer = (msg: any) => {
-      msg.fields = JSON.stringify(msg.fields);
-      return msg;
-    };
     const logger = createLogger(loggerCfg);
     if (grpcIDSConfig) {
       idsClientInstance = createClient({
@@ -55,10 +51,6 @@ export const getGraphServiceClient = async () => {
     const cfg = createServiceConfig(process.cwd());
     const grpcGraphConfig = cfg.get('client:graph-srv');
     const loggerCfg = cfg.get('logger');
-    loggerCfg.esTransformer = (msg: any) => {
-      msg.fields = JSON.stringify(msg.fields);
-      return msg;
-    };
     const logger = createLogger(loggerCfg);
     if (grpcGraphConfig) {
       graphClientInstance = createClient({
