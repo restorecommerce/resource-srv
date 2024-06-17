@@ -1,3 +1,4 @@
+import {} from 'mocha';
 import should from 'should';
 import { createChannel, createClient } from '@restorecommerce/grpc-client';
 import { Events, Topic } from '@restorecommerce/kafka-client';
@@ -14,7 +15,7 @@ import { ContactPointServiceDefinition as contact_point } from '@restorecommerce
 import { createClient as RedisCreateClient, RedisClientType } from 'redis';
 import { updateConfig } from '@restorecommerce/acs-client';
 
-const cfg = createServiceConfig(process.cwd() + '/test');
+const cfg = createServiceConfig(process.cwd());
 const logger = createLogger(cfg.get('logger'));
 const ServiceDefinitionList = [command, organization, contact_point];
 let redisClient: RedisClientType;
@@ -24,28 +25,15 @@ let tokenRedisClient: RedisClientType;
  * Note: To run below tests a running Kafka, Redis and ArangoDB instance is required.
  * Kafka can be disabled if the config 'enableEvents' is set to false.
  */
-const meta = {
-  modified_by: 'AdminID',
-  owners: [{
-    "id": "urn:restorecommerce:acs:names:ownerIndicatoryEntity",
-    "value": "urn:restorecommerce:acs:model:organization.Organization",
-    "attributes": [{
-      "id": "urn:restorecommerce:acs:names:ownerInstance",
-      "value": "orgC"
-    }]
-  }]
-};
 
 const listOfContactPoints = [
   {
     id: 'contact_point_1',
-    website: 'http://TestOrg1.de',
-    meta
+    website: 'http://TestOrg1.de'
   },
   {
     id: 'contact_point_2',
-    website: 'http://TestOrg2.de',
-    meta
+    website: 'http://TestOrg2.de'
   },
 ];
 
@@ -129,12 +117,6 @@ let subject = {
   ]
 };
 
-interface serverRule {
-  method: string,
-  input: any,
-  output: any
-}
-
 interface MethodWithOutput {
   method: string,
   output: any
@@ -145,7 +127,7 @@ const PKG_NAME: string = 'io.restorecommerce.access_control';
 const SERVICE_NAME: string = 'AccessControlService';
 const pkgDef: grpc.GrpcObject = grpc.loadPackageDefinition(
   proto_loader.loadSync(PROTO_PATH, {
-    includeDirs: ['test/protos'],
+    includeDirs: ['node_modules/@restorecommerce/protos'],
     keepCase: true,
     longs: String,
     enums: String,
@@ -185,7 +167,7 @@ const startGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
   };
   try {
     mockServer.addService(PROTO_PATH, PKG_NAME, SERVICE_NAME, implementations, {
-      includeDirs: ['test/protos/'],
+      includeDirs: ['node_modules/@restorecommerce/protos'],
       keepCase: true,
       longs: String,
       enums: String,
@@ -199,7 +181,7 @@ const startGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
   }
 };
 
-const IDS_PROTO_PATH = 'test/protos/io/restorecommerce/user.proto';
+const IDS_PROTO_PATH = 'io/restorecommerce/user.proto';
 const IDS_PKG_NAME = 'io.restorecommerce.user';
 const IDS_SERVICE_NAME = 'UserService';
 
@@ -218,7 +200,7 @@ const startIDSGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
   };
   try {
     mockServerIDS.addService(IDS_PROTO_PATH, IDS_PKG_NAME, IDS_SERVICE_NAME, implementations, {
-      includeDirs: ['test/protos/'],
+      includeDirs: ['node_modules/@restorecommerce/protos'],
       keepCase: true,
       longs: String,
       enums: String,
@@ -414,8 +396,7 @@ describe('resource-srv testing with ACS enabled', () => {
   it('should throw error when trying to update contact point not existing with valid subject scope', async function deleteContactPoint() {
     const contactPoint = [{
       id: 'contact_point_3',
-      website: 'http://TestOrg3.de',
-      meta
+      website: 'http://TestOrg3.de'
     }];
     const updateResult = await contactPointsService.update({ items: contactPoint, subject });
     should.exist(updateResult.operation_status);
@@ -430,8 +411,7 @@ describe('resource-srv testing with ACS enabled', () => {
   it('should upsert contact point with valid subject scope', async function deleteContactPoint() {
     const contactPoint = [{
       id: 'contact_point_3',
-      website: 'http://TestOrg3.de',
-      meta
+      website: 'http://TestOrg3.de'
     }];
     const upsertResult = await contactPointsService.upsert({ items: contactPoint, subject });
     baseValidation(upsertResult);

@@ -1,3 +1,4 @@
+import {} from 'mocha';
 import should from 'should';
 import { createChannel, createClient } from '@restorecommerce/grpc-client';
 import { Events, Topic, registerProtoMeta } from '@restorecommerce/kafka-client';
@@ -12,7 +13,7 @@ import { ContactPointServiceDefinition as contact_point } from '@restorecommerce
 import { ReadRequest, Sort_SortOrder } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base.js';
 import { Filter_Operation } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/filter.js';
 
-const cfg = createServiceConfig(process.cwd() + '/test');
+const cfg = createServiceConfig(process.cwd());
 const logger = createLogger(cfg.get('logger'));
 const ServiceDefinitionList = [command, organization, contact_point];
 

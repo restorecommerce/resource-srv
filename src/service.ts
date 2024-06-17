@@ -4,47 +4,48 @@ import { RedisClientType } from 'redis';
 import { ResourcesAPIBase, ServiceBase } from '@restorecommerce/resource-base-interface';
 import { ACSAuthZ, DecisionResponse, Operation, PolicySetRQResponse, ResolvedSubject } from '@restorecommerce/acs-client';
 import { AuthZAction } from '@restorecommerce/acs-client';
-import { checkAccessRequest, getACSFilters } from './utils.js';
+import { checkAccessRequest, getACSFilters, resolveSubject } from './utils.js';
 import * as uuid from 'uuid';
 import { Response_Decision } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control.js';
-import { ReadRequest, DeleteRequest, DeepPartial, DeleteResponse } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base.js';
-import { Filter_Operation } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/filter.js';
+import {
+  ReadRequest,
+  DeleteRequest,
+  DeepPartial,
+  DeleteResponse,
+  Resource,
+  ResourceListResponse,
+  ResourceList
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base.js';
+import { Filter_Operation, Filter_ValueType } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/filter.js';
+import { Subject } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/auth.js';
 
-export class ResourceService extends ServiceBase<any, any> {
-  authZ: ACSAuthZ;
-  redisClient: RedisClientType;
-  cfg: any;
-  resourceName: string;
+export class ResourceService extends ServiceBase<ResourceListResponse, ResourceList> {
+  private readonly urns: any;
+
   constructor(
-    resourceName: string,
+    private readonly resourceName: string,
     resourceEvents: any,
     cfg: any,
     logger: Logger,
     resourceAPI: ResourcesAPIBase,
     isEventsEnabled: boolean,
-    authZ: ACSAuthZ,
-    redisClientSubject: RedisClientType,
   ) {
     super(resourceName, resourceEvents, logger, resourceAPI, isEventsEnabled);
-    this.authZ = authZ;
-    this.cfg = cfg;
-    this.resourceName = resourceName;
-    this.redisClient = redisClientSubject;
+    this.urns = cfg.get('authorization:urns');
   }
 
   async create(request: any, ctx: any) {
-    let data = request.items;
-    let subject = request.subject;
+    const subject = await resolveSubject(request.subject);
     // update meta data for owners information
-    const acsResources = await this.createMetadata(data, AuthZAction.CREATE, subject);
+    request.items = await this.createMetadata(request.items, AuthZAction.CREATE, subject);
     let acsResponse: DecisionResponse;
     try {
       ctx ??= {};
       ctx.subject = subject;
-      ctx.resources = acsResources;
+      ctx.resources = request.items;
       acsResponse = await checkAccessRequest(
         ctx,
-        [{ resource: this.resourceName, id: acsResources.map((item: any) => item.id) }],
+        [{ resource: this.resourceName, id: request.items.map((item: any) => item.id) }],
         AuthZAction.CREATE,
         Operation.isAllowed
       );
@@ -64,7 +65,7 @@ export class ResourceService extends ServiceBase<any, any> {
   }
 
   async read(request: ReadRequest, ctx: any): Promise<DeepPartial<any>> {
-    const subject = request.subject;
+    const subject = await resolveSubject(request.subject);
     let acsResponse: PolicySetRQResponse;
     try {
       if (!ctx) { ctx = {}; };
@@ -102,7 +103,7 @@ export class ResourceService extends ServiceBase<any, any> {
   }
 
   async update(request: any, ctx: any) {
-    let subject = request.subject;
+    const subject = await resolveSubject(request.subject);
     // update meta data for owner information
     const acsResources = await this.createMetadata(request.items, AuthZAction.MODIFY, subject);
     let acsResponse: DecisionResponse;
@@ -132,7 +133,7 @@ export class ResourceService extends ServiceBase<any, any> {
   }
 
   async upsert(request: any, ctx: any) {
-    let subject = request.subject;
+    const subject = await resolveSubject(request.subject);
     const acsResources = await this.createMetadata(request.items, AuthZAction.MODIFY, subject);
     let acsResponse: DecisionResponse;
     try {
@@ -163,8 +164,8 @@ export class ResourceService extends ServiceBase<any, any> {
   async delete(request: DeleteRequest, ctx: any): Promise<DeepPartial<DeleteResponse>> {
     let resourceIDs = request.ids;
     let resources = [];
-    let acsResources = [];
-    let subject = request.subject;
+    let acsResources = new Array<any>();
+    const subject = await resolveSubject(request.subject);
     let action = AuthZAction.DELETE;
     if (resourceIDs) {
       if (Array.isArray(resourceIDs)) {
@@ -175,7 +176,7 @@ export class ResourceService extends ServiceBase<any, any> {
         resources = [{ id: resourceIDs }];
       }
       Object.assign(resources, { id: resourceIDs });
-      acsResources = await this.createMetadata(resources, action, subject as ResolvedSubject);
+      acsResources = await this.createMetadata<any>(resources, action, subject as ResolvedSubject);
     }
     if (request.collection) {
       action = AuthZAction.DROP;
@@ -208,97 +209,107 @@ export class ResourceService extends ServiceBase<any, any> {
   }
 
   /**
- * reads meta data from DB and updates owner information in resource if action is UPDATE / DELETE
- * @param reaources list of resources
- * @param entity entity name
- * @param action resource action
- */
-  async createMetadata(resources: any, action: string, subject?: ResolvedSubject): Promise<any> {
-    let orgOwnerAttributes = [];
-    if (resources && !Array.isArray(resources)) {
+   * reads meta data from DB and updates owners information in resource if action is UPDATE / DELETE
+   * @param reaources list of resources
+   * @param entity entity name
+   * @param action resource action
+   */
+  async createMetadata<T extends Resource>(
+    resources: T | T[],
+    action: string,
+    subject?: Subject
+  ): Promise<T[]> {
+
+    if (!Array.isArray(resources)) {
       resources = [resources];
     }
-    const urns = this.cfg.get('authorization:urns');
-    if (subject && subject.scope && (action === AuthZAction.CREATE || action === AuthZAction.MODIFY)) {
-      // add user and subject scope as default owner
-      orgOwnerAttributes.push(
-        {
-          id: urns?.ownerIndicatoryEntity,
-          value: urns?.organization,
-          attributes: [{
-            id: urns?.ownerInstance,
-            value: subject?.scope
-          }]
-        });
-    }
 
-    if (resources?.length > 0) {
-      for (let resource of resources) {
-        if (!resource.meta) {
-          resource.meta = {};
-        }
-        if (action === AuthZAction.MODIFY || action === AuthZAction.DELETE) {
-          let result = await super.read(ReadRequest.fromPartial({
-            filters: [{
-              filters: [{
-                field: 'id',
-                operation: Filter_Operation.eq,
-                value: resource?.id
+    const setDefaultMeta = (resource: T) => {
+      if (!resource.id?.length) {
+        resource.id = uuid.v4().replace(/-/g, '');
+      }
+
+      if (!resource.meta) {
+        resource.meta = {};
+        resource.meta.owners = [];
+
+        if (subject?.scope) {
+          resource.meta.owners.push(
+            {
+              id: this.urns.ownerIndicatoryEntity,
+              value: this.urns.organization,
+              attributes: [{
+                id: this.urns.ownerInstance,
+                value: subject.scope
               }]
-            }]
-          }) as any, {});
-          // update owner info
-          if (result?.items?.length === 1) {
-            let item = result.items[0].payload;
-            resource.meta.owners = item?.meta?.owners;
-          } else if (result?.items?.length === 0) {
-            if (!resource?.id?.length) {
-              resource.id = uuid.v4().replace(/-/g, '');
             }
-            let ownerAttributes;
-            if (!resource?.meta?.owners) {
-              ownerAttributes = _.cloneDeep(orgOwnerAttributes);
-            } else {
-              ownerAttributes = resource.meta.owners;
+          );
+        }
+
+        if (subject?.id) {
+          resource.meta.owners.push(
+            {
+              id: this.urns.ownerIndicatoryEntity,
+              value: this.urns.user,
+              attributes: [{
+                id: this.urns.ownerInstance,
+                value: subject.id
+              }]
             }
-            if (subject?.id) {
-              ownerAttributes.push(
-                {
-                  id: urns?.ownerIndicatoryEntity,
-                  value: urns?.user,
-                  attributes: [{
-                    id: urns?.ownerInstance,
-                    value: subject?.id
-                  }]
-                });
-            }
-            resource.meta.owners = ownerAttributes;
-          }
-        } else if (action === AuthZAction.CREATE) {
-          if (!resource?.id?.length) {
-            resource.id = uuid.v4().replace(/-/g, '');
-          }
-          let ownerAttributes;
-          if (!resource?.meta?.owners) {
-            ownerAttributes = _.cloneDeep(orgOwnerAttributes);
-          } else {
-            ownerAttributes = resource.meta.owners;
-          }
-          if (subject?.id) {
-            ownerAttributes.push(
+          );
+        }
+      }
+    };
+
+    if (action === AuthZAction.MODIFY || action === AuthZAction.DELETE) {
+      const ids = [
+        ...new Set(
+          resources.map(
+            r => r.id
+          ).filter(
+            id => id
+          )
+        ).values()
+      ];
+      const filters = ReadRequest.fromPartial({
+        filters: [
+          {
+            filters: [
               {
-                id: urns?.ownerIndicatoryEntity,
-                value: urns?.user,
-                attributes: [{
-                  id: urns?.ownerInstance,
-                  value: subject?.id
-                }]
-              });
+                field: 'id',
+                operation: Filter_Operation.in,
+                value: JSON.stringify(ids),
+                type: Filter_ValueType.ARRAY
+              }
+            ]
           }
-          resource.meta.owners = ownerAttributes;
+        ],
+        limit: ids.length
+      });
+
+      const result_map = await super.read(filters, {}).then(
+        resp => new Map(
+          resp.items?.map(
+            item => [item.payload?.id, item?.payload]
+          )
+        )
+      );
+
+      for (let resource of resources) {
+        if (!resource.meta && result_map.has(resource?.id)) {
+          resource.meta = result_map.get(resource?.id).meta;
+        }
+        else {
+          setDefaultMeta(resource);
         }
       }
     }
+    else if (action === AuthZAction.CREATE) {
+      for (let resource of resources) {
+        setDefaultMeta(resource);
+      }
+    }
+
     return resources;
   }
 }

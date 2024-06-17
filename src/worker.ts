@@ -306,8 +306,14 @@ export class Worker {
           resourceFieldConfig, edgeCfg, graphName);
         const resourceEvents = await events.topic(`${resourcesServiceNamePrefix}${resourceName}s.resource`);
         // TODO provide typing on ResourceService<T, M>
-        this.services[resourceName] = new ResourceService(resourceName,
-          resourceEvents, cfg, logger, resourceAPI, isEventsEnabled, authZ, redisClientSubject);
+        this.services[resourceName] = new ResourceService(
+          resourceName,
+          resourceEvents,
+          cfg,
+          logger,
+          resourceAPI,
+          isEventsEnabled,
+        );
         const resourceServiceDefinition = ServiceDefinitions.filter((obj: any) => obj.fullName.split('.')[2] === resourceName);
         // todo add bindConfig typing
         await server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, {

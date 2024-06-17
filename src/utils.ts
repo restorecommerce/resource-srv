@@ -5,7 +5,8 @@ import {
   Operation,
   PolicySetRQResponse,
   ResolvedSubject,
-  HierarchicalScope
+  HierarchicalScope,
+  ACSClientOptions
 } from '@restorecommerce/acs-client';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import {
@@ -28,7 +29,7 @@ import {
 // Create a ids client instance
 let idsClientInstance: UserClient;
 const cfg = createServiceConfig(process.cwd());
-export const getUserServiceClient = async () => {
+export const getUserServiceClient = () => {
   if (!idsClientInstance) {
     // identity-srv client to resolve subject ID by token
     const grpcIDSConfig = cfg.get('client:user');
@@ -91,6 +92,18 @@ export interface GQLClientContext {
   resources?: CtxResource[];
 }
 
+/* eslint-disable prefer-arrow-functions/prefer-arrow-functions */
+export async function resolveSubject(subject: Subject) {
+  if (subject) {
+    const idsClient = getUserServiceClient();
+    const resp = await idsClient?.findByToken({ token: subject.token });
+    if (resp?.payload?.id) {
+      subject.id = resp.payload.id;
+    }
+  }
+  return subject;
+}
+
 export async function checkAccessRequest(ctx: GQLClientContext, resource: Resource[], action: AuthZAction, operation: Operation.isAllowed, useCache?: boolean): Promise<DecisionResponse>;
 export async function checkAccessRequest(ctx: GQLClientContext, resource: Resource[], action: AuthZAction, operation: Operation.whatIsAllowed, useCache?: boolean): Promise<PolicySetRQResponse>;
 
@@ -103,19 +116,16 @@ export async function checkAccessRequest(ctx: GQLClientContext, resource: Resour
  * @param entity The entity type to check access against
  */
 /* eslint-disable prefer-arrow-functions/prefer-arrow-functions */
-export async function checkAccessRequest(ctx: GQLClientContext, resource: Resource[], action: AuthZAction,
-  operation: Operation, useCache = true): Promise<DecisionResponse | PolicySetRQResponse> {
-  let subject = ctx.subject as Subject;
-  let dbSubject;
+export async function checkAccessRequest(
+  ctx: GQLClientContext,
+  resource: Resource[],
+  action: AuthZAction,
+  operation: Operation,
+): Promise<DecisionResponse | PolicySetRQResponse> {
+  const subject = ctx.subject as Subject;
   // resolve subject id using findByToken api and update subject with id
-  if (subject && subject.token) {
-    const idsClient = await getUserServiceClient();
-    if (idsClient) {
-      dbSubject = await idsClient.findByToken({ token: subject.token });
-      if (dbSubject && dbSubject.payload && dbSubject.payload.id) {
-        subject.id = dbSubject.payload.id;
-      }
-    }
+  if (!subject?.id && subject?.token) {
+    await resolveSubject(subject);
   }
 
   let result: DecisionResponse | PolicySetRQResponse;
@@ -128,7 +138,7 @@ export async function checkAccessRequest(ctx: GQLClientContext, resource: Resour
       {
         operation,
         roleScopingEntityURN: cfg?.get('authorization:urns:roleScopingEntityURN')
-      });
+      } as ACSClientOptions);
   } catch (err: any) {
     return {
       decision: Response_Decision.DENY,
@@ -149,13 +159,13 @@ export async function checkAccessRequest(ctx: GQLClientContext, resource: Resour
  * @param accessResponse ACS response
  * @param enitity enitity name
  */
-export const getACSFilters = (accessResponse: PolicySetRQResponse, resource: string): FilterOp[] => {
-  return accessResponse?.filters?.filter(
-    (e) => !e.resource && e.resource === resource
-  ).flatMap(
-    e => e.filters
-  ) ?? [];
-};
+export const getACSFilters = (
+  accessResponse: PolicySetRQResponse,
+  resource: string
+): FilterOp[] => accessResponse?.filters?.find(
+  (e) => e?.resource === resource
+    && e?.filters[0]?.filters?.length
+)?.filters ?? [];
 
 const setNestedChildOrgs = (hrScope: any, targetOrgID: string, subOrgs: any[]) => {
   if (!hrScope) {
@@ -215,8 +225,6 @@ export const getSubTreeOrgs = async (
       }
     }
   }
-
-  console.log(JSON.stringify(traversalResponse, undefined, 2));
 
   for (let item of traversalResponse) {
     let targetID = item.id;
