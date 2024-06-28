@@ -114,7 +114,6 @@ const COMMANDEVENTS = [
   'resetCommand',
   'versionCommand',
   'configUpdateCommand',
-  'setApiKeyCommand',
   'flushCacheCommand'
 ];
 const HIERARCHICAL_SCOPE_REQUEST_EVENT = 'hierarchicalScopesRequest';
