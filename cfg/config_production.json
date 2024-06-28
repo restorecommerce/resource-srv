@@ -7,7 +7,7 @@
       "prettyPrint": true
     },
     "elasticsearch": {
-      "level": "crit",
+      "level": "info",
       "clientOpts": {
         "node": "http://elasticsearch:9200"
       },
