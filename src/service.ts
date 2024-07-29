@@ -1,8 +1,7 @@
 import * as _ from 'lodash-es';
 import { Logger } from 'winston';
-import { RedisClientType } from 'redis';
 import { ResourcesAPIBase, ServiceBase } from '@restorecommerce/resource-base-interface';
-import { ACSAuthZ, DecisionResponse, Operation, PolicySetRQResponse, ResolvedSubject } from '@restorecommerce/acs-client';
+import { DecisionResponse, Operation, PolicySetRQResponse, ResolvedSubject } from '@restorecommerce/acs-client';
 import { AuthZAction } from '@restorecommerce/acs-client';
 import { checkAccessRequest, getACSFilters, resolveSubject } from './utils.js';
 import * as uuid from 'uuid';
