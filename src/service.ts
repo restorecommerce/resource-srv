@@ -34,20 +34,23 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
   }
 
   async create(request: any, ctx: any) {
-    const subject = await resolveSubject(request.subject);
-    // update meta data for owners information
-    request.items = await this.createMetadata(request.items, AuthZAction.CREATE, subject);
-    let acsResponse: DecisionResponse;
     try {
+      const subject = await resolveSubject(request.subject);
+      // update meta data for owners information
+      request.items = await this.createMetadata(request.items, AuthZAction.CREATE, subject);
       ctx ??= {};
       ctx.subject = subject;
       ctx.resources = request.items;
-      acsResponse = await checkAccessRequest(
+      const acsResponse = await checkAccessRequest(
         ctx,
         [{ resource: this.resourceName, id: request.items.map((item: any) => item.id) }],
         AuthZAction.CREATE,
         Operation.isAllowed
       );
+      if (acsResponse.decision != Response_Decision.PERMIT) {
+        return { operation_status: acsResponse.operation_status };
+      }
+      return await super.create(request, ctx);
     } catch (err: any) {
       this.logger.error('Error occurred requesting access-control-srv', err);
       return {
@@ -57,25 +60,35 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
         }
       };
     }
-    if (acsResponse.decision != Response_Decision.PERMIT) {
-      return { operation_status: acsResponse.operation_status };
-    }
-    return await super.create(request, ctx);
   }
 
   async read(request: ReadRequest, ctx: any): Promise<DeepPartial<any>> {
-    const subject = await resolveSubject(request.subject);
-    let acsResponse: PolicySetRQResponse;
     try {
-      if (!ctx) { ctx = {}; };
+      const subject = await resolveSubject(request.subject);
+      ctx ??= {};
       ctx.subject = subject;
       ctx.resources = [];
-      acsResponse = await checkAccessRequest(
+      const acsResponse = await checkAccessRequest(
         ctx,
         [{ resource: this.resourceName }],
         AuthZAction.READ,
         Operation.whatIsAllowed
       ) as PolicySetRQResponse;
+
+      if (acsResponse.decision != Response_Decision.PERMIT) {
+        return { operation_status: acsResponse.operation_status };
+      }
+      const acsFilters = getACSFilters(acsResponse, this.resourceName);
+      if (request.filters) {
+        request.filters.push(...acsFilters);
+      }
+      else {
+        request.filters = acsFilters;
+      }
+
+      request.custom_queries = acsResponse.custom_query_args?.flatMap(arg => arg.custom_queries);
+      request.custom_arguments = acsResponse.custom_query_args?.flatMap(arg => arg.custom_arguments)[0];
+      return await super.read(request, ctx);
     } catch (err: any) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
       return {
@@ -85,37 +98,26 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
         }
       };
     }
-    if (acsResponse.decision != Response_Decision.PERMIT) {
-      return { operation_status: acsResponse.operation_status };
-    }
-    const acsFilters = getACSFilters(acsResponse, this.resourceName);
-    if (request.filters) {
-      request.filters.push(...acsFilters);
-    }
-    else {
-      request.filters = acsFilters;
-    }
-
-    request.custom_queries = acsResponse.custom_query_args?.flatMap(arg => arg.custom_queries);
-    request.custom_arguments = acsResponse.custom_query_args?.flatMap(arg => arg.custom_arguments)[0];
-    return await super.read(request, ctx);
   }
 
   async update(request: any, ctx: any) {
-    const subject = await resolveSubject(request.subject);
-    // update meta data for owner information
-    const acsResources = await this.createMetadata(request.items, AuthZAction.MODIFY, subject);
-    let acsResponse: DecisionResponse;
     try {
-      if (!ctx) { ctx = {}; };
+      const subject = await resolveSubject(request.subject);
+      // update meta data for owner information
+      const acsResources = await this.createMetadata(request.items, AuthZAction.MODIFY, subject);
+      ctx ??= {};
       ctx.subject = subject;
       ctx.resources = acsResources;
-      acsResponse = await checkAccessRequest(
+      const acsResponse = await checkAccessRequest(
         ctx,
         [{ resource: this.resourceName, id: acsResources.map((e: any) => e.id) }],
         AuthZAction.MODIFY,
         Operation.isAllowed
       );
+      if (acsResponse.decision != Response_Decision.PERMIT) {
+        return { operation_status: acsResponse.operation_status };
+      }
+      return await super.update(request, ctx);
     } catch (err: any) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
       return {
@@ -125,26 +127,25 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
         }
       };
     }
-    if (acsResponse.decision != Response_Decision.PERMIT) {
-      return { operation_status: acsResponse.operation_status };
-    }
-    return await super.update(request, ctx);
   }
 
   async upsert(request: any, ctx: any) {
-    const subject = await resolveSubject(request.subject);
-    const acsResources = await this.createMetadata(request.items, AuthZAction.MODIFY, subject);
-    let acsResponse: DecisionResponse;
     try {
-      if (!ctx) { ctx = {}; };
+      const subject = await resolveSubject(request.subject);
+      const acsResources = await this.createMetadata(request.items, AuthZAction.MODIFY, subject);
+      ctx ??= {};
       ctx.subject = subject;
       ctx.resources = acsResources;
-      acsResponse = await checkAccessRequest(
+      const acsResponse = await checkAccessRequest(
         ctx,
         [{ resource: this.resourceName, id: acsResources.map((e: any) => e.id) }],
         AuthZAction.MODIFY,
         Operation.isAllowed
       );
+      if (acsResponse.decision != Response_Decision.PERMIT) {
+        return { operation_status: acsResponse.operation_status };
+      }
+      return await super.upsert(request, ctx);
     } catch (err: any) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
       return {
@@ -154,44 +155,44 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
         }
       };
     }
-    if (acsResponse.decision != Response_Decision.PERMIT) {
-      return { operation_status: acsResponse.operation_status };
-    }
-    return await super.upsert(request, ctx);
   }
 
   async delete(request: DeleteRequest, ctx: any): Promise<DeepPartial<DeleteResponse>> {
-    let resourceIDs = request.ids;
-    let resources = [];
-    let acsResources = new Array<any>();
-    const subject = await resolveSubject(request.subject);
-    let action = AuthZAction.DELETE;
-    if (resourceIDs) {
-      if (Array.isArray(resourceIDs)) {
-        for (let id of resourceIDs) {
-          resources.push({ id });
-        }
-      } else {
-        resources = [{ id: resourceIDs }];
-      }
-      Object.assign(resources, { id: resourceIDs });
-      acsResources = await this.createMetadata<any>(resources, action, subject as ResolvedSubject);
-    }
-    if (request.collection) {
-      action = AuthZAction.DROP;
-      acsResources = [{ collection: request.collection }];
-    }
-    let acsResponse: DecisionResponse;
     try {
-      if (!ctx) { ctx = {}; };
+      const resourceIDs = request.ids;
+      const resources = [];
+      let acsResources = [];
+      const subject = await resolveSubject(request.subject);
+      let action;
+      if (resourceIDs) {
+        action = AuthZAction.DELETE;
+        if (Array.isArray(resourceIDs)) {
+          for (let id of resourceIDs) {
+            resources.push({ id });
+          }
+        } else {
+          resources.push([{ id: resourceIDs }]);
+        }
+        Object.assign(resources, { id: resourceIDs });
+        acsResources = await this.createMetadata<any>(resources, action, subject as ResolvedSubject);
+      }
+      if (request.collection) {
+        action = AuthZAction.DROP;
+        acsResources = [{ collection: request.collection }];
+      }
+      ctx ??= {};
       ctx.subject = subject;
       ctx.resources = acsResources;
-      acsResponse = await checkAccessRequest(
+      const acsResponse = await checkAccessRequest(
         ctx,
         [{ resource: this.resourceName, id: acsResources.map((e: any) => e.id) }],
         action,
         Operation.isAllowed
       );
+      if (acsResponse.decision != Response_Decision.PERMIT) {
+        return { operation_status: acsResponse.operation_status };
+      }
+      return await super.delete(request as any, ctx);
     } catch (err: any) {
       this.logger.error('Error occurred requesting access-control-srv:', err);
       return {
@@ -201,10 +202,6 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
         }
       };
     }
-    if (acsResponse.decision != Response_Decision.PERMIT) {
-      return { operation_status: acsResponse.operation_status };
-    }
-    return await super.delete(request as any, ctx);
   }
 
   /**

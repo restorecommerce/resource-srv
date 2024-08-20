@@ -6,7 +6,9 @@ import {
   PolicySetRQResponse,
   ResolvedSubject,
   HierarchicalScope,
-  ACSClientOptions
+  ACSClientOptions,
+  ACSClientContext,
+  type Resource,
 } from '@restorecommerce/acs-client';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import {
@@ -16,15 +18,22 @@ import {
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/user.js';
 import { createChannel, createClient } from '@restorecommerce/grpc-client';
 import { createLogger } from '@restorecommerce/logger';
-import { Response_Decision } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control.js';
-import { Subject } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/auth.js';
-import { FilterOp } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base.js';
+import {
+  Response_Decision
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control.js';
+import {
+  Subject,
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/auth.js';
+import {
+  FilterOp
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base.js';
 import {
   GraphServiceClient as GraphClient,
   GraphServiceDefinition,
   Options_Direction as Direction,
   TraversalRequest
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph.js';
+export { Resource as ACSResource };
 
 // Create a ids client instance
 let idsClientInstance: UserClient;
@@ -63,35 +72,6 @@ export const getGraphServiceClient = async () => {
   return graphClientInstance;
 };
 
-export interface Resource {
-  resource: string;
-  id?: string | string[]; // for what is allowed operation id is not mandatory
-  property?: string[];
-}
-
-export interface Attribute {
-  id: string;
-  value: string;
-  attributes: Attribute[];
-}
-
-export interface CtxResource {
-  id: string;
-  meta: {
-    created?: Date;
-    modified?: Date;
-    modified_by?: string;
-    owners: Attribute[]; // id and owner is mandatory in ctx resource other attributes are optional
-  };
-  [key: string]: any;
-}
-
-export interface GQLClientContext {
-  // if subject is missing by default it will be treated as unauthenticated subject
-  subject?: Subject;
-  resources?: CtxResource[];
-}
-
 /* eslint-disable prefer-arrow-functions/prefer-arrow-functions */
 export async function resolveSubject(subject: Subject) {
   if (subject) {
@@ -104,8 +84,21 @@ export async function resolveSubject(subject: Subject) {
   return subject;
 }
 
-export async function checkAccessRequest(ctx: GQLClientContext, resource: Resource[], action: AuthZAction, operation: Operation.isAllowed, useCache?: boolean): Promise<DecisionResponse>;
-export async function checkAccessRequest(ctx: GQLClientContext, resource: Resource[], action: AuthZAction, operation: Operation.whatIsAllowed, useCache?: boolean): Promise<PolicySetRQResponse>;
+export async function checkAccessRequest(
+  ctx: ACSClientContext,
+  resource: Resource[],
+  action: AuthZAction,
+  operation: Operation.isAllowed,
+  useCache?: boolean
+): Promise<DecisionResponse>;
+
+export async function checkAccessRequest(
+  ctx: ACSClientContext,
+  resource: Resource[],
+  action: AuthZAction,
+  operation: Operation.whatIsAllowed,
+  useCache?: boolean
+): Promise<PolicySetRQResponse>;
 
 /**
  * Perform an access request using inputs from a GQL request
@@ -115,22 +108,18 @@ export async function checkAccessRequest(ctx: GQLClientContext, resource: Resour
  * @param action The action to perform
  * @param entity The entity type to check access against
  */
-/* eslint-disable prefer-arrow-functions/prefer-arrow-functions */
 export async function checkAccessRequest(
-  ctx: GQLClientContext,
+  ctx: ACSClientContext,
   resource: Resource[],
   action: AuthZAction,
   operation: Operation,
 ): Promise<DecisionResponse | PolicySetRQResponse> {
-  const subject = ctx.subject as Subject;
-  // resolve subject id using findByToken api and update subject with id
-  if (!subject?.id && subject?.token) {
-    await resolveSubject(subject);
-  }
-
-  let result: DecisionResponse | PolicySetRQResponse;
   try {
-    result = await accessRequest(
+    const subject = ctx.subject as Subject;
+    if (!subject?.id && subject?.token) {
+      await resolveSubject(subject);
+    }
+    return await accessRequest(
       subject,
       resource,
       action,
@@ -138,7 +127,8 @@ export async function checkAccessRequest(
       {
         operation,
         roleScopingEntityURN: cfg?.get('authorization:urns:roleScopingEntityURN')
-      } as ACSClientOptions);
+      } as ACSClientOptions
+    );
   } catch (err: any) {
     return {
       decision: Response_Decision.DENY,
@@ -148,7 +138,7 @@ export async function checkAccessRequest(
       }
     };
   }
-  return result;
+
 }
 
 /**
@@ -204,43 +194,41 @@ export const getSubTreeOrgs = async (
   graphClient: GraphClient,
 ): Promise<HierarchicalScope> => {
   const hrScope: HierarchicalScope = { role, id: orgID, children: [] };
-  let traversalResponse: any = [];
+  const traversalResponse: any = [];
   const hierarchicalResources = cfg.get('authorization:hierarchicalResources') ?? [];
-  const orgTechUser = cfg.get('techUser');
   for (let hierarchicalResource of hierarchicalResources) {
     const { collection, edge } = hierarchicalResource;
     // search in inbound - org has parent org
     const traversalRequest: TraversalRequest = {
-      subject: orgTechUser,
       vertices: { collection_name: collection, start_vertex_ids: [orgID] },
       opts: {
         direction: Direction.INBOUND,
         include_edges: [edge]
       }
     };
-    const result = await graphClient.traversal(traversalRequest);
+    const result = graphClient.traversal(traversalRequest);
     for await (const partResp of result) {
-      if ((partResp && partResp.data && partResp.data.value)) {
+      if ((partResp?.data?.value)) {
         traversalResponse.push(...JSON.parse(partResp.data.value.toString()));
       }
     }
   }
 
   for (let item of traversalResponse) {
-    let targetID = item.id;
+    const targetID = item.id;
     const subOrgs = traversalResponse.filter((e: any) => e.parent_id === targetID);
+
     // find hrScopes id and then get the childer object
-    const filteredSubOrgFields = [];
-    for (let org of subOrgs) {
-      filteredSubOrgFields.push({ id: org.id, role, children: [] });
-    }
-    // leaf node or no more children nodes
+    const filteredSubOrgFields = subOrgs.map(
+      (org: any) => ({ id: org.id, role, children: new Array() })
+    );
+
     if (filteredSubOrgFields.length === 0) {
-      filteredSubOrgFields.push({ id: targetID, role, children: [] });
-      targetID = item.parent_id;
+      // set as root node
+      hrScope.children.push({ id: targetID, role, children: new Array() });
     }
     else {
-      // set sub orgs on target org
+      // nest filtered orgs as tree forest
       setNestedChildOrgs(hrScope, targetID, filteredSubOrgFields);
     }
   }
@@ -285,11 +273,11 @@ export const createHRScope = async (
 
     for (let roleObj of reducedUserRoleAssocs) {
       if (roleObj?.attributes?.length! > 0) {
-        for (let roleAttribute of roleObj?.attributes!) {
+        for (const roleAttribute of roleObj?.attributes!) {
           if (roleAttribute.id === roleScopingEntityURN) {
-            for (let roleScopInstObj of roleAttribute.attributes!) {
+            for (const roleScopInstObj of roleAttribute.attributes!) {
               if (roleScopInstObj.id === roleScopingInstanceURN) {
-                let obj = { userScope: roleScopInstObj.value, role: roleObj.role };
+                const obj = { userScope: roleScopInstObj.value, role: roleObj.role };
                 assignedUserScopes.add(obj);
               }
             }
@@ -297,11 +285,11 @@ export const createHRScope = async (
         }
       }
     }
-    let hrScopes: HierarchicalScope[] = [];
-    let userScopesRoleArray = Array.from(assignedUserScopes);
+    const hrScopes: HierarchicalScope[] = [];
+    const userScopesRoleArray = Array.from(assignedUserScopes);
     for (let obj of userScopesRoleArray) {
       try {
-        let hrScope = await getSubTreeOrgs(obj.userScope, obj.role, cfg, graphClient);
+        const hrScope = await getSubTreeOrgs(obj.userScope, obj.role, cfg, graphClient);
         if (hrScope) {
           hrScopes.push(hrScope);
         }

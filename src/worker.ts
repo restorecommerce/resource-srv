@@ -1,6 +1,6 @@
 import { Events, Topic, registerProtoMeta } from '@restorecommerce/kafka-client';
 import { GraphResourcesServiceBase, ResourcesAPIBase } from '@restorecommerce/resource-base-interface';
-import { ACSAuthZ, initAuthZ, initializeCache } from '@restorecommerce/acs-client';
+import { initAuthZ, initializeCache } from '@restorecommerce/acs-client';
 import { ResourceCommandInterface } from './commandInterface.js';
 import {
   database,
@@ -16,7 +16,6 @@ import { createLogger } from '@restorecommerce/logger';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import { createClient, RedisClientType } from 'redis';
 import {
-  DeepPartial,
   protoMetadata as commandMeta,
   CommandServiceDefinition as command
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command.js';
@@ -187,25 +186,15 @@ export class Worker {
 
     // Generate a config for each resource
     const kafkaCfg = cfg.get('events:kafka');
-    const grpcConfig = cfg.get('server:transports:0');
-
-    const validResourceTopicNames: string[] = [];
+    // const grpcConfig = cfg.get('server:transports:0');
 
     const eventTypes = ['Created', 'Read', 'Modified', 'Deleted'];
-    for (let resourceType in resources) {
-      const resourceCfg = resources[resourceType];
+    for (let resourceCfg of Object.values<any>(resources)) {
       const resourcesServiceNamePrefix = resourceCfg.resourcesServiceNamePrefix;
       for (let resource of resourceCfg.resources) {
-        let resourceObjectName = resource.charAt(0).toUpperCase() + resource.substr(1);
-
-        if (resource.indexOf('_') != -1) {
-          const names = resourceObjectName.split('_');
-          resourceObjectName = '';
-
-          for (let name of names) {
-            resourceObjectName += name.charAt(0).toUpperCase() + name.substr(1);
-          }
-        }
+        const resourceObjectName = resource.split('_').map(
+          (name: string) => name.charAt(0).toUpperCase() + name.slice(1)
+        ).join('');
 
         for (let event of eventTypes) {
           kafkaCfg[`${resource}${event}`] = {
@@ -217,7 +206,6 @@ export class Worker {
           kafkaCfg.topics[topicLabel] = {
             topic: topicName,
           };
-          validResourceTopicNames.push(topicName);
         }
       }
     }
@@ -249,11 +237,11 @@ export class Worker {
     const requiredFieldsConfig: any = cfg.get('fieldHandlers:requiredFields');
 
     // Enable events firing for resource api using config
-    const isEventsEnabled = (cfg.get('events:enableCRUDEvents') == 'true');
+    const isEventsEnabled = cfg.get('events:enableCRUDEvents')?.toString() === 'true';
     const graphCfg = cfg.get('graph');
 
     this.services = [];
-    const authZ = await initAuthZ(cfg) as ACSAuthZ;
+    await initAuthZ(cfg);
     // init Redis Client for subject index
     const redisConfig = cfg.get('redis');
     redisConfig.database = cfg.get('redis:db-indexes:db-subject');
@@ -313,10 +301,13 @@ export class Worker {
           resourceAPI,
           isEventsEnabled,
         );
-        const resourceServiceDefinition = ServiceDefinitions.filter((obj: any) => obj.fullName.split('.')[2] === resourceName);
+
+        const resourceServiceDefinition = ServiceDefinitions.find(
+          (obj: any) => obj.fullName.split('.')[2] === resourceName
+        );
         // todo add bindConfig typing
         await server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, {
-          service: resourceServiceDefinition[0],
+          service: resourceServiceDefinition,
           implementation: this.services[resourceName]
         } as BindConfig<any>);
       }
@@ -335,7 +326,7 @@ export class Worker {
 
     const hrTopicName = kafkaCfg?.topics?.user?.topic;
     const hrTopic = await events.topic(hrTopicName);
-    this.idsClient = await getUserServiceClient();
+    this.idsClient = getUserServiceClient();
     this.graphClient = await getGraphServiceClient();
 
     if (!resourcesServiceEventListener) {

@@ -64,14 +64,6 @@ const listOfOrganizations = [
   },
 ];
 
-function encodeMsg(data: any): any {
-  const encoded = Buffer.from(JSON.stringify(data));
-  return {
-    type_url: 'payload',
-    value: encoded
-  };
-}
-
 // get client connection object
 async function getClientResourceServices() {
   const options: any = { microservice: {} };
@@ -94,10 +86,11 @@ async function getClientResourceServices() {
         // if resource is command create a commandInterface client
         const serviceName = 'io.restorecommerce.commandinterface.Service';
         const cisConfig = cfg.get('client:commandinterface');
-        let client: cisClient;
-        if (cisConfig) {
-          client = createClient({ ...cisConfig, logger }, CommandInterfaceServiceDefinition, createChannel(cisConfig.address));
-        }
+        const client = cisConfig && createClient(
+          { ...cisConfig, logger },
+          CommandInterfaceServiceDefinition,
+          createChannel(cisConfig.address)
+        );
         // const client = new GrpcClient(cfg.get('client:commandinterface'), logger);
         options.microservice.service[serviceName] = client;
         options.microservice.mapClients.set(resource, serviceName);

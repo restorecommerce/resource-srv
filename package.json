@@ -68,7 +68,7 @@
     "dev": "cross-env NODE_ENV=development nodemon --watch './src/**/*.ts' --exec node --loader ts-node/esm ./src/start.ts",
     "tsctests": "tsc -d -p tsconfig.test.json",
     "test": "npm run lint && c8 --reporter=text npm run mocha",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src --ext .ts --fix",
     "mocha": "cross-env NODE_ENV=test mocha --full-trace --exit --timeout 30000",
     "mochadebug": "cross-env NODE_ENV=test; mocha -R spec ./test/*.js --full-trace --inspect-brk",
     "lcov-report": "c8 report --reporter=lcov",
