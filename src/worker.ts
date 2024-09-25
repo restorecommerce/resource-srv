@@ -40,6 +40,10 @@ import {
   CredentialServiceDefinition as credential
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/credential.js';
 import {
+  protoMetadata as currencyMeta,
+  CurrencyServiceDefinition as currency
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/currency.js';
+import {
   protoMetadata as localeMeta,
   LocaleServiceDefinition as locale
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/locale.js';
@@ -124,6 +128,7 @@ registerProtoMeta(
   countryMeta,
   contactPointMeta,
   credentialMeta,
+  currencyMeta,
   localeMeta,
   locationMeta,
   organizationMeta,
@@ -149,6 +154,7 @@ const ServiceDefinitions: any = [
   country,
   contact_point,
   credential,
+  currency,
   locale,
   location,
   organization,
