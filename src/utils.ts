@@ -8,7 +8,7 @@ import {
   HierarchicalScope,
   ACSClientOptions,
   ACSClientContext,
-  type Resource,
+  type ACSResource,
 } from '@restorecommerce/acs-client';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import {
@@ -33,7 +33,6 @@ import {
   Options_Direction as Direction,
   TraversalRequest
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph.js';
-export { Resource as ACSResource };
 
 // Create a ids client instance
 let idsClientInstance: UserClient;
@@ -86,7 +85,7 @@ export async function resolveSubject(subject: Subject) {
 
 export async function checkAccessRequest(
   ctx: ACSClientContext,
-  resource: Resource[],
+  resource: ACSResource[],
   action: AuthZAction,
   operation: Operation.isAllowed,
   useCache?: boolean
@@ -94,7 +93,7 @@ export async function checkAccessRequest(
 
 export async function checkAccessRequest(
   ctx: ACSClientContext,
-  resource: Resource[],
+  resource: ACSResource[],
   action: AuthZAction,
   operation: Operation.whatIsAllowed,
   useCache?: boolean
@@ -110,7 +109,7 @@ export async function checkAccessRequest(
  */
 export async function checkAccessRequest(
   ctx: ACSClientContext,
-  resource: Resource[],
+  resource: ACSResource[],
   action: AuthZAction,
   operation: Operation,
 ): Promise<DecisionResponse | PolicySetRQResponse> {
