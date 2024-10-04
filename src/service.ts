@@ -1,7 +1,7 @@
 import * as _ from 'lodash-es';
 import { Logger } from 'winston';
 import { ResourcesAPIBase, ServiceBase } from '@restorecommerce/resource-base-interface';
-import { DecisionResponse, Operation, PolicySetRQResponse, ResolvedSubject } from '@restorecommerce/acs-client';
+import { Operation, PolicySetRQResponse, ResolvedSubject } from '@restorecommerce/acs-client';
 import { AuthZAction } from '@restorecommerce/acs-client';
 import { checkAccessRequest, getACSFilters, resolveSubject } from './utils.js';
 import * as uuid from 'uuid';
