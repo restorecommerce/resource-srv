@@ -272,9 +272,9 @@ export const createHRScope = async (
 
     for (let roleObj of reducedUserRoleAssocs) {
       if (roleObj?.attributes?.length! > 0) {
-        for (const roleAttribute of roleObj?.attributes!) {
+        for (let roleAttribute of roleObj?.attributes!) {
           if (roleAttribute.id === roleScopingEntityURN) {
-            for (const roleScopInstObj of roleAttribute.attributes!) {
+            for (let roleScopInstObj of roleAttribute.attributes!) {
               if (roleScopInstObj.id === roleScopingInstanceURN) {
                 const obj = { userScope: roleScopInstObj.value, role: roleObj.role };
                 assignedUserScopes.add(obj);

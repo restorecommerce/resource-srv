@@ -1,5 +1,6 @@
 import * as _ from 'lodash-es';
-import { Logger } from 'winston';
+import { RawServiceImplementation } from 'nice-grpc';
+import { Logger } from '@restorecommerce/logger';
 import { ResourcesAPIBase, ServiceBase } from '@restorecommerce/resource-base-interface';
 import { Operation, PolicySetRQResponse, ResolvedSubject } from '@restorecommerce/acs-client';
 import { AuthZAction } from '@restorecommerce/acs-client';
@@ -13,7 +14,7 @@ import {
   DeleteResponse,
   Resource,
   ResourceListResponse,
-  ResourceList
+  ResourceList,
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base.js';
 import { Filter_Operation, Filter_ValueType } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/filter.js';
 import { Subject } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/auth.js';

@@ -84,6 +84,13 @@ import {
   TemplateServiceDefinition as template
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/template.js';
 import {
+  protoMetadata as settingMeta,
+  SettingServiceDefinition as setting
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/setting.js';
+import {
+  protoMetadata as resourceMeta,
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base.js';
+import {
   protoMetadata as notificationMeta,
   NotificationServiceDefinition as notification
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/notification.js';
@@ -121,7 +128,8 @@ const COMMANDEVENTS = [
 ];
 const HIERARCHICAL_SCOPE_REQUEST_EVENT = 'hierarchicalScopesRequest';
 
-registerProtoMeta(
+const metas = [
+  resourceMeta,
   commandMeta,
   addressMeta,
   contactPointTypeMeta,
@@ -144,10 +152,15 @@ registerProtoMeta(
   unitCodeMeta,
   notificationMeta,
   notificationChannelMeta,
-  hierarchicalScopesMeta
+  hierarchicalScopesMeta,
+  settingMeta,
+];
+
+registerProtoMeta(
+  ...metas
 );
 
-const ServiceDefinitions: any = [
+const ServiceDefinitions = [
   command,
   address,
   contact_point_type,
@@ -167,16 +180,18 @@ const ServiceDefinitions: any = [
   template,
   notification,
   notification_channel,
+  setting,
 ];
 
 export class Worker {
+  readonly services = new Map<string, ResourceService>();
+
   server?: Server;
   events?: Events;
   logger?: Logger;
   redisClient: any;
   offsetStore?: OffsetStore;
   cis?: CommandInterface;
-  services?: any[];
   idsClient?: UserServiceClient;
   graphClient?: GraphServiceClient;
 
@@ -189,25 +204,32 @@ export class Worker {
     if (!resources) {
       throw new Error('config field resources does not exist');
     }
-
+    
     // Generate a config for each resource
     const kafkaCfg = cfg.get('events:kafka');
     // const grpcConfig = cfg.get('server:transports:0');
-
     const eventTypes = ['Created', 'Read', 'Modified', 'Deleted'];
     for (let resourceCfg of Object.values<any>(resources)) {
+      const resourcesDeletedMessage = resourceCfg.resourcesDeletedMessage;
       const resourcesServiceNamePrefix = resourceCfg.resourcesServiceNamePrefix;
-      for (let resource of resourceCfg.resources) {
+      for (let [resource, collection] of Object.entries<string>(resourceCfg.resources)) {
         const resourceObjectName = resource.split('_').map(
           (name: string) => name.charAt(0).toUpperCase() + name.slice(1)
         ).join('');
 
         for (let event of eventTypes) {
-          kafkaCfg[`${resource}${event}`] = {
-            messageObject: `${resourcesServiceNamePrefix}${resource}.${resourceObjectName}`
-          };
+          if (event?.toLocaleLowerCase() === 'deleted') {
+            kafkaCfg[`${resource}${event}`] = {
+              messageObject: resourcesDeletedMessage
+            };
+          }
+          else {
+            kafkaCfg[`${resource}${event}`] = {
+              messageObject: `${resourcesServiceNamePrefix}${resource}.${resourceObjectName}`
+            };
+          }
 
-          const topicName = `${resourcesServiceNamePrefix}${resource}s.resource`;
+          const topicName = `${resourcesServiceNamePrefix}${collection}.resource`;
           const topicLabel = `${resource}.resource`;
           kafkaCfg.topics[topicLabel] = {
             topic: topicName,
@@ -221,8 +243,12 @@ export class Worker {
     const logger = createLogger(loggerCfg);
     this.logger = logger;
     const server = new Server(cfg.get('server'), logger);
-    const db = await database.get(cfg.get('database:arango'),
-      logger, cfg.get('graph:graphName'), cfg.get('graph:edgeDefinitions')) as GraphDatabaseProvider;
+    const db = await database.get(
+      cfg.get('database:arango'),
+      logger,
+      cfg.get('graph:graphName'),
+      cfg.get('graph:edgeDefinitions')
+    ) as GraphDatabaseProvider;
     const events = new Events(cfg.get('events:kafka'), logger);
 
     await events.start();
@@ -246,7 +272,6 @@ export class Worker {
     const isEventsEnabled = cfg.get('events:enableCRUDEvents')?.toString() === 'true';
     const graphCfg = cfg.get('graph');
 
-    this.services = [];
     await initAuthZ(cfg);
     // init Redis Client for subject index
     const redisConfig = cfg.get('redis');
@@ -254,19 +279,17 @@ export class Worker {
     const redisClientSubject: RedisClientType = createClient(redisConfig);
     await redisClientSubject.on('error', (err) => logger.error('Redis Client Error', err));
     await redisClientSubject.connect();
-    for (let resourceType in resources) {
-      const resourceCfg = resources[resourceType];
+    for (let resourceCfg of Object.values<any>(resources)) {
       const resourcesServiceConfigPrefix = resourceCfg.resourcesServiceConfigPrefix;
       const resourcesServiceNamePrefix = resourceCfg.resourcesServiceNamePrefix;
 
-      for (let resourceName of resourceCfg.resources) {
+      for (let [resourceName, collectionName] of Object.entries<string>(resourceCfg.resources)) {
         let resourceFieldConfig: any = {};
         if (fieldGeneratorConfig && (resourceName in fieldGeneratorConfig)) {
           resourceFieldConfig['strategies'] = fieldGeneratorConfig[resourceName];
           logger.info('Setting up field generators on Redis...');
           resourceFieldConfig['redisClient'] = redisClient;
         }
-        const collectionName = `${resourceName}s`;
         // bufferFields handler
         if (bufferHandlerConfig && (collectionName in bufferHandlerConfig)) {
           resourceFieldConfig['bufferFields'] = bufferHandlerConfig[collectionName];
@@ -289,33 +312,45 @@ export class Worker {
         let edgeCfg;
         let graphName;
         if (graphCfg && graphCfg.vertices) {
-          const collectionName = `${resourceName}s`;
           edgeCfg = graphCfg.vertices[collectionName];
         }
         if (graphCfg) {
           graphName = graphCfg.graphName;
         }
-        const resourceAPI = new ResourcesAPIBase(db, `${resourceName}s`,
-          resourceFieldConfig, edgeCfg, graphName);
-        const resourceEvents = await events.topic(`${resourcesServiceNamePrefix}${resourceName}s.resource`);
+        const resourceAPI = new ResourcesAPIBase(
+          db,
+          collectionName,
+          resourceFieldConfig,
+          edgeCfg,
+          graphName,
+          logger,
+          resourceName,
+        );
+        const resourceEvents = await events.topic(`${resourcesServiceNamePrefix}${collectionName}.resource`);
         // TODO provide typing on ResourceService<T, M>
-        this.services[resourceName] = new ResourceService(
+        this.services.set(resourceName, new ResourceService(
           resourceName,
           resourceEvents,
           cfg,
           logger,
           resourceAPI,
           isEventsEnabled,
-        );
+        ));
 
         const resourceServiceDefinition = ServiceDefinitions.find(
           (obj: any) => obj.fullName.split('.')[2] === resourceName
         );
-        // todo add bindConfig typing
-        await server.bind(`${resourcesServiceConfigPrefix}${resourceName}-srv`, {
-          service: resourceServiceDefinition,
-          implementation: this.services[resourceName]
-        } as BindConfig<any>);
+        const serviceName = `${resourcesServiceConfigPrefix}${resourceName}-srv`;
+        logger?.debug(`Bind ${resourceName} to ${serviceName} with ${resourceServiceDefinition?.fullName}`);
+        if (resourceServiceDefinition) {
+          await server.bind(serviceName, {
+            service: resourceServiceDefinition,
+            implementation: this.services.get(resourceName)
+          } as BindConfig<typeof resourceServiceDefinition>);
+        }
+        else {
+          logger?.error(`Implementation for ${resourceName} not found!`);
+        }
       }
     }
 
@@ -350,12 +385,12 @@ export class Worker {
           const token = msg.token?.split(':')?.[0] as string;
           const user = token ? await this.idsClient?.findByToken({ token }) : undefined;
           if (!user?.payload?.id) {
-            this.logger?.debug('Subject could not be resolved for token');
+            logger?.debug('Subject could not be resolved for token');
           }
           const subject = user?.payload?.id ? await createHRScope(user, token, this.graphClient!, null, cfg, this.logger) : undefined;
           if (hrTopic) {
             // emit response with same messag id on same topic
-            this.logger?.info(`Hierarchical scopes are created for subject ${user?.payload?.id}`);
+            logger?.info(`Hierarchical scopes are created for subject ${user?.payload?.id}`);
             await hrTopic.emit('hierarchicalScopesResponse', {
               subject_id: user?.payload?.id,
               token: msg.token,
@@ -381,23 +416,9 @@ export class Worker {
     }
 
     // Add reflection service
-    const reflectionService = buildReflectionService([
-      { descriptor: commandMeta.fileDescriptor as any },
-      { descriptor: addressMeta.fileDescriptor },
-      { descriptor: contactPointTypeMeta.fileDescriptor },
-      { descriptor: countryMeta.fileDescriptor },
-      { descriptor: credentialMeta.fileDescriptor },
-      { descriptor: localeMeta.fileDescriptor },
-      { descriptor: locationMeta.fileDescriptor },
-      { descriptor: organizationMeta.fileDescriptor },
-      { descriptor: taxMeta.fileDescriptor },
-      { descriptor: taxTypeMeta.fileDescriptor },
-      { descriptor: timezoneMeta.fileDescriptor },
-      { descriptor: customerMeta.fileDescriptor },
-      { descriptor: shopMeta.fileDescriptor },
-      { descriptor: commandInterfaceMeta.fileDescriptor },
-      { descriptor: unitCodeMeta.fileDescriptor }
-    ]);
+    const reflectionService = buildReflectionService(
+      metas.map(meta => ({descriptor: meta.fileDescriptor}))
+    );
     await server.bind('reflection', {
       service: ServerReflectionService,
       implementation: reflectionService
@@ -420,11 +441,11 @@ export class Worker {
     } as BindConfig<HealthDefinition>);
 
     // Start server
+    logger.debug('Start server...');
     await server.start();
-    logger.info('Server Started Successfully');
+    logger.info('Server started and ready to use.');
     this.events = events;
     this.server = server;
-    this.logger = logger;
     this.cis = cis;
 
     if (redisClient) {

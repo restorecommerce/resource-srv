@@ -7,25 +7,26 @@
       "database": "restore-resource-srv",
       "autoCreate": true,
       "collections": [
-        "command",
-        "address",
-        "contact_point_type",
-        "country",
-        "contact_point",
-        "credential",
-        "currency",
-        "locale",
-        "location",
-        "notification",
-        "notification_channel",
-        "organization",
-        "tax",
-        "tax_type",
-        "timezone",
-        "customer",
-        "shop",
-        "unit_code",
-        "template"
+        "commands",
+        "addresss",
+        "contact_point_types",
+        "countrys",
+        "contact_points",
+        "credentials",
+        "locales",
+        "locations",
+        "notifications",
+        "notification_channels",
+        "organizations",
+        "taxs",
+        "tax_types",
+        "timezones",
+        "customers",
+        "shops",
+        "unit_codes",
+        "templates",
+        "settings",
+        "currencys"
       ],
       "customQueries": [
         {
@@ -169,6 +170,45 @@
           "direction": "outbound",
           "toVerticeName": "countrys"
         }
+      ],
+      "shop": [
+        {
+          "edgeName": "shop_has_organization",
+          "from": "id",
+          "to": "organization_id",
+          "direction": "outbound",
+          "toVerticeName": "organizations"
+        },
+        {
+          "edgeName": "shop_has_setting",
+          "from": "id",
+          "to": "setting_id",
+          "direction": "outbound",
+          "toVerticeName": "settings"
+        },
+        {
+          "edgeName": "shop_has_templates",
+          "from": "id",
+          "to": "template_ids",
+          "direction": "outbound",
+          "toVerticeName": "templates"
+        }
+      ],
+      "customer": [
+        {
+          "edgeName": "customer_has_organization",
+          "from": "id",
+          "to": "organization_id",
+          "direction": "outbound",
+          "toVerticeName": "organizations"
+        },
+        {
+          "edgeName": "customer_has_templates",
+          "from": "id",
+          "to": "template_ids",
+          "direction": "outbound",
+          "toVerticeName": "templates"
+        }
       ]
     },
     "edgeDefinitions": [
@@ -226,6 +266,31 @@
         "collection": "tax_associated_to_country",
         "from": "taxs",
         "to": "countrys"
+      },
+      {
+        "collection": "shop_has_organization",
+        "from": "shops",
+        "to": "organizations"
+      },
+      {
+        "collection": "shop_has_templates",
+        "from": "shops",
+        "to": "templates"
+      },
+      {
+        "collection": "shop_has_setting",
+        "from": "shops",
+        "to": "settings"
+      },
+      {
+        "collection": "customer_has_organization",
+        "from": "customer",
+        "to": "organizations"
+      },
+      {
+        "collection": "customer_has_templates",
+        "from": "customers",
+        "to": "templates"
       }
     ]
   },
@@ -243,27 +308,29 @@
       "resourcesProtoPathPrefix": "io/restorecommerce/",
       "resourcesServiceNamePrefix": "io.restorecommerce.",
       "resourcesServiceConfigPrefix": "restore-",
-      "resources": [
-        "unit_code",
-        "command",
-        "customer",
-        "address",
-        "contact_point_type",
-        "country",
-        "contact_point",
-        "credential",
-        "currency",
-        "locale",
-        "location",
-        "notification",
-        "notification_channel",
-        "organization",
-        "shop",
-        "tax",
-        "tax_type",
-        "timezone",
-        "template"
-      ]
+      "resourcesDeletedMessage": "io.restorecommerce.resourcebase.Deleted",
+      "resources": {
+        "unit_code": "unit_codes",
+        "command": "commands",
+        "customer": "customers",
+        "address": "addresss",
+        "contact_point_type": "contact_point_types",
+        "country": "countrys",
+        "contact_point": "contact_points",
+        "credential": "credentials",
+        "locale": "locales",
+        "location": "locations",
+        "notification": "notifications",
+        "notification_channel": "notification_channels",
+        "organization": "organizations",
+        "shop": "shops",
+        "tax": "taxs",
+        "tax_type": "tax_types",
+        "timezone": "timezones",
+        "template": "templates",
+        "setting": "settings",
+        "currency": "currencys"
+      }
     }
   },
   "command-interface": {
@@ -433,7 +500,6 @@
           "countrys",
           "contact_points",
           "credentials",
-          "currencys",
           "locales",
           "locations",
           "notifications",
@@ -445,7 +511,9 @@
           "customers",
           "shops",
           "unit_codes",
-          "templates"
+          "templates",
+          "settings",
+          "currencys"
         ]
       }
     ],
@@ -453,39 +521,45 @@
       "organizations": [
         "name"
       ],
-      "contact_point_type": [
+      "contact_point_types": [
         "type"
       ],
-      "credential": [
+      "credentials": [
         "name"
       ],
-      "address": [
+      "addresss": [
         "postcode",
         "country_id",
         "locality",
         "street",
         "region"
       ],
-      "country": [
+      "countrys": [
         "name",
         "country_code"
       ],
-      "contact_point": [
+      "contact_points": [
         "physical_address_id",
         "contact_point_type_id",
         "email",
         "telephone"
       ],
-      "location": [
+      "locations": [
         "name"
       ],
-      "tax": [
+      "taxs": [
         "country_id",
         "rate"
       ],
-      "tax_type": [
+      "tax_types": [
         "type",
         "description"
+      ],
+      "templates": [
+        "name"
+      ],
+      "settings": [
+        "name"
       ]
     }
   },
