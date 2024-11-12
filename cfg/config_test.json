@@ -2,7 +2,7 @@
   "logger": {
     "console": {
       "handleExceptions": false,
-      "level": "crit",
+      "level": "error",
       "colorize": true,
       "prettyPrint": true
     }
@@ -15,9 +15,9 @@
       "database": "restore-resource-srv-test",
       "autoCreate": true,
       "collections": [
-        "command",
-        "organization",
-        "contact_point"
+        "commands",
+        "organizations",
+        "contact_points"
       ],
       "customQueries": [
         {
@@ -47,9 +47,18 @@
       "resourcesServiceNamePrefix": "io.restorecommerce.",
       "resourcesServiceConfigPrefix": "restore-",
       "resources": [
-        "command",
-        "organization",
-        "contact_point"
+        {
+          "resourceName": "command",
+          "collectionName": "commands"
+        },
+        {
+          "resourceName": "contact_point",
+          "collectionName": "contact_points"
+        },
+        {
+          "resourceName": "organization",
+          "collectionName": "organizations"
+        }
       ]
     }
   },

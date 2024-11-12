@@ -66,23 +66,22 @@ const listOfOrganizations = [
 
 // get client connection object
 async function getClientResourceServices() {
-  const options: any = { microservice: {} };
-  options.microservice = {
-    service: {},
-    mapClients: new Map()
+  const options: any = {
+    microservice: {
+      service: {},
+      mapClients: new Map()
+    }
   };
   const resources = cfg.get('resources');
   const clientConfig = cfg.get('client');
-  for (let resource in resources) {
-    const resourceCfg = resources[resource];
-    const resourceNames = resourceCfg.resources;
+  for (const resourceCfg of Object.values<any>(resources)) {
     // const protosPrefix = resourceCfg.resourcesProtoPathPrefix;
     const servicePrefix = resourceCfg.resourcesServiceNamePrefix;
 
-    logger.silly('microservice clients', resourceNames);
+    logger.silly('microservice clients', resourceCfg.resources);
 
-    for (let resource of resourceNames) {
-      if (resource === 'command') {
+    for (const { resourceName, collectionName } of resourceCfg.resources) {
+      if (resourceName === 'command') {
         // if resource is command create a commandInterface client
         const serviceName = 'io.restorecommerce.commandinterface.Service';
         const cisConfig = cfg.get('client:commandinterface');
@@ -93,20 +92,27 @@ async function getClientResourceServices() {
         );
         // const client = new GrpcClient(cfg.get('client:commandinterface'), logger);
         options.microservice.service[serviceName] = client;
-        options.microservice.mapClients.set(resource, serviceName);
+        options.microservice.mapClients.set(resourceName, serviceName);
         continue;
       }
-      const serviceName = `${servicePrefix}${resource}.Service`;
+      const serviceName = `${servicePrefix}${resourceName}-srv`;
       const defaultConfig = clientConfig['default-resource-srv'];
       try {
-        let serviceDefinition = ServiceDefinitionList.filter((obj) => obj.fullName.split('.')[2] === resource)[0];
-        const client = createClient({ ...defaultConfig, logger }, serviceDefinition, createChannel(defaultConfig.address));
+        let serviceDefinition = ServiceDefinitionList.filter((obj) => obj.fullName.split('.')[2] === resourceName)[0];
+        const client = createClient(
+          { ...defaultConfig, logger },
+          serviceDefinition,
+          createChannel(defaultConfig.address)
+        );
         options.microservice.service[serviceName] = client;
-        options.microservice.mapClients.set(resource, serviceName);
+        options.microservice.mapClients.set(resourceName, serviceName);
         logger.verbose('connected to microservice', serviceName);
       } catch (err) {
-        logger.error('microservice connecting to service',
-          serviceName, err);
+        logger.error(
+          'microservice connecting to service',
+          serviceName,
+          err
+        );
       }
     }
   }
@@ -142,10 +148,10 @@ describe('resource-srv testing', () => {
     // List of serviceMappedValues
     const serviceMapping = await getClientResourceServices();
     // get the Organization service
-    let orgMapValue = serviceMapping.microservice.mapClients.get('organization');
+    const orgMapValue = serviceMapping.microservice.mapClients.get('organization');
     organizationService = serviceMapping.microservice.service[orgMapValue];
     // get contact_point service
-    let contacPointMapValue = serviceMapping.microservice.mapClients.get('contact_point');
+    const contacPointMapValue = serviceMapping.microservice.mapClients.get('contact_point');
     contactPointsService = serviceMapping.microservice.service[contacPointMapValue];
 
     // create events for restoring

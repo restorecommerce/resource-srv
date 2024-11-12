@@ -26,7 +26,7 @@
         "unit_codes",
         "templates",
         "settings",
-        "currencys"
+        "currencies"
       ],
       "customQueries": [
         {
@@ -309,28 +309,92 @@
       "resourcesServiceNamePrefix": "io.restorecommerce.",
       "resourcesServiceConfigPrefix": "restore-",
       "resourcesDeletedMessage": "io.restorecommerce.resourcebase.Deleted",
-      "resources": {
-        "unit_code": "unit_codes",
-        "command": "commands",
-        "customer": "customers",
-        "address": "addresss",
-        "contact_point_type": "contact_point_types",
-        "country": "countrys",
-        "contact_point": "contact_points",
-        "credential": "credentials",
-        "locale": "locales",
-        "location": "locations",
-        "notification": "notifications",
-        "notification_channel": "notification_channels",
-        "organization": "organizations",
-        "shop": "shops",
-        "tax": "taxs",
-        "tax_type": "tax_types",
-        "timezone": "timezones",
-        "template": "templates",
-        "setting": "settings",
-        "currency": "currencys"
-      }
+      "resources": [
+        {
+          "resourceName": "address",
+          "collectionName": "addresss"
+        },
+        {
+          "resourceName": "command",
+          "collectionName": "commands"
+        },
+        {
+          "resourceName": "contact_point",
+          "collectionName": "contact_points"
+        },
+        {
+          "resourceName": "contact_point_type",
+          "collectionName": "contact_point_types"
+        },
+        {
+          "resourceName": "country",
+          "collectionName": "countrys"
+        },
+        {
+          "resourceName": "credential",
+          "collectionName": "credentials"
+        },
+        {
+          "resourceName": "currency",
+          "collectionName": "currencies"
+        },
+        {
+          "resourceName": "customer",
+          "collectionName": "customers"
+        },
+        {
+          "resourceName": "local",
+          "collectionName": "locals"
+        },
+        {
+          "resourceName": "location",
+          "collectionName": "locations"
+        },
+        {
+          "resourceName": "notification",
+          "collectionName": "notifications"
+        },
+        {
+          "resourceName": "notification_channel",
+          "collectionName": "notification_channels"
+        },
+        {
+          "resourceName": "organization",
+          "collectionName": "organizations"
+        },
+        {
+          "resourceName": "shop",
+          "collectionName": "shops"
+        },
+        {
+          "resourceName": "tax",
+          "collectionName": "taxs"
+        },
+        {
+          "resourceName": "tax_type",
+          "collectionName": "tax_types"
+        },
+        {
+          "resourceName": "tax_type",
+          "collectionName": "tax_types"
+        },
+        {
+          "resourceName": "template",
+          "collectionName": "templates"
+        },
+        {
+          "resourceName": "timezone",
+          "collectionName": "timezones"
+        },
+        {
+          "resourceName": "setting",
+          "collectionName": "settings"
+        },
+        {
+          "resourceName": "unit_code",
+          "collectionName": "unit_codes"
+        }
+      ]
     }
   },
   "command-interface": {

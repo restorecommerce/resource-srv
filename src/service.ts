@@ -1,5 +1,4 @@
 import * as _ from 'lodash-es';
-import { RawServiceImplementation } from 'nice-grpc';
 import { Logger } from '@restorecommerce/logger';
 import { ResourcesAPIBase, ServiceBase } from '@restorecommerce/resource-base-interface';
 import { Operation, PolicySetRQResponse, ResolvedSubject } from '@restorecommerce/acs-client';

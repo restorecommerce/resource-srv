@@ -204,33 +204,33 @@ export class Worker {
     if (!resources) {
       throw new Error('config field resources does not exist');
     }
-    
+
     // Generate a config for each resource
     const kafkaCfg = cfg.get('events:kafka');
     // const grpcConfig = cfg.get('server:transports:0');
     const eventTypes = ['Created', 'Read', 'Modified', 'Deleted'];
-    for (let resourceCfg of Object.values<any>(resources)) {
+    for (const resourceCfg of Object.values<any>(resources)) {
       const resourcesDeletedMessage = resourceCfg.resourcesDeletedMessage;
       const resourcesServiceNamePrefix = resourceCfg.resourcesServiceNamePrefix;
-      for (let [resource, collection] of Object.entries<string>(resourceCfg.resources)) {
-        const resourceObjectName = resource.split('_').map(
+      for (const { resourceName, collectionName } of resourceCfg.resources) {
+        const resourceObjectName = resourceName.split('_').map(
           (name: string) => name.charAt(0).toUpperCase() + name.slice(1)
         ).join('');
 
         for (let event of eventTypes) {
           if (event?.toLocaleLowerCase() === 'deleted') {
-            kafkaCfg[`${resource}${event}`] = {
+            kafkaCfg[`${resourceName}${event}`] = {
               messageObject: resourcesDeletedMessage
             };
           }
           else {
-            kafkaCfg[`${resource}${event}`] = {
-              messageObject: `${resourcesServiceNamePrefix}${resource}.${resourceObjectName}`
+            kafkaCfg[`${resourceName}${event}`] = {
+              messageObject: `${resourcesServiceNamePrefix}${resourceName}.${resourceObjectName}`
             };
           }
 
-          const topicName = `${resourcesServiceNamePrefix}${collection}.resource`;
-          const topicLabel = `${resource}.resource`;
+          const topicName = `${resourcesServiceNamePrefix}${collectionName}.resource`;
+          const topicLabel = `${resourceName}.resource`;
           kafkaCfg.topics[topicLabel] = {
             topic: topicName,
           };
@@ -279,33 +279,37 @@ export class Worker {
     const redisClientSubject: RedisClientType = createClient(redisConfig);
     await redisClientSubject.on('error', (err) => logger.error('Redis Client Error', err));
     await redisClientSubject.connect();
-    for (let resourceCfg of Object.values<any>(resources)) {
+    for (const resourceCfg of Object.values<any>(resources)) {
       const resourcesServiceConfigPrefix = resourceCfg.resourcesServiceConfigPrefix;
       const resourcesServiceNamePrefix = resourceCfg.resourcesServiceNamePrefix;
+      const collectionNames = cfg.get('database:arango:collections') as string[];
 
-      for (let [resourceName, collectionName] of Object.entries<string>(resourceCfg.resources)) {
-        let resourceFieldConfig: any = {};
+      for (const { resourceName, collectionName } of resourceCfg.resources) {
+        if (!collectionNames?.includes(collectionName)) {
+          logger.warn('No collection initialized for resourse', { resourceName, collectionName });
+        }
+        const resourceFieldConfig: any = {};
         if (fieldGeneratorConfig && (resourceName in fieldGeneratorConfig)) {
-          resourceFieldConfig['strategies'] = fieldGeneratorConfig[resourceName];
+          resourceFieldConfig.strategies = fieldGeneratorConfig[resourceName];
           logger.info('Setting up field generators on Redis...');
-          resourceFieldConfig['redisClient'] = redisClient;
+          resourceFieldConfig.redisClient = redisClient;
         }
         // bufferFields handler
         if (bufferHandlerConfig && (collectionName in bufferHandlerConfig)) {
-          resourceFieldConfig['bufferFields'] = bufferHandlerConfig[collectionName];
+          resourceFieldConfig.bufferFields = bufferHandlerConfig[collectionName];
         }
         // dateTimeStampFields handler
         if (cfg.get('fieldHandlers:timeStampFields')) {
-          resourceFieldConfig['timeStampFields'] = [];
+          resourceFieldConfig.timeStampFields = [];
           for (let timeStampFiledConfig of cfg.get('fieldHandlers:timeStampFields')) {
             if (timeStampFiledConfig.entities.includes(collectionName)) {
-              resourceFieldConfig['timeStampFields'].push(...timeStampFiledConfig.fields);
+              resourceFieldConfig.timeStampFields.push(...timeStampFiledConfig.fields);
             }
           }
         }
         // requiredFields handler
         if (requiredFieldsConfig && (collectionName in requiredFieldsConfig)) {
-          resourceFieldConfig['requiredFields'] = requiredFieldsConfig;
+          resourceFieldConfig.requiredFields = requiredFieldsConfig;
         }
         logger.info(`Setting up ${resourceName} resource service`);
 
