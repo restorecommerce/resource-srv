@@ -167,7 +167,7 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
       if (resourceIDs) {
         action = AuthZAction.DELETE;
         if (Array.isArray(resourceIDs)) {
-          for (let id of resourceIDs) {
+          for (const id of resourceIDs) {
             resources.push({ id });
           }
         } else {
@@ -291,7 +291,7 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
         )
       );
 
-      for (let resource of resources) {
+      for (const resource of resources) {
         if (!resource.meta && result_map.has(resource?.id)) {
           resource.meta = result_map.get(resource?.id).meta;
         }
@@ -301,7 +301,7 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
       }
     }
     else if (action === AuthZAction.CREATE) {
-      for (let resource of resources) {
+      for (const resource of resources) {
         setDefaultMeta(resource);
       }
     }

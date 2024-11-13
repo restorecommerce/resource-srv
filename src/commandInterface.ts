@@ -10,7 +10,7 @@ export class ResourceCommandInterface extends CommandInterface {
   // graphName: any;
   constructor(server: Server, cfg: any, logger: any, events: Events, redisClient: RedisClientType<any, any>) {
     super(server, cfg, logger, events, redisClient);
-    let graphCfg = cfg.get('graph');
+    const graphCfg = cfg.get('graph');
     if (graphCfg && graphCfg.vertices) {
       this.edgeCfg = graphCfg.vertices;
       // this.graphName = cfg.graph.graphName;
@@ -18,20 +18,21 @@ export class ResourceCommandInterface extends CommandInterface {
   }
 
   makeResourcesRestoreSetup(db: GraphDatabaseProvider, resource: string): any {
-    const that = this;
+    const decodeBufferField = this.decodeBufferField;
+    const edgeCfg = this.edgeCfg;
     const collectionName = `${resource}s`;
     return {
       [`${resource}Created`]: async function restoreCreated(message: any, context: any,
         config: any, eventName: string): Promise<any> {
-        that.decodeBufferField(message, resource);
-        if (that.edgeCfg[collectionName]) {
+        decodeBufferField(message, resource);
+        if (edgeCfg[collectionName]) {
           const result = await db.findByID(collectionName, message.id);
           if (result?.length > 0) {
             return {};
           }
           await db.createVertex(collectionName, message);
           // Based on graphCfg create the necessary edges
-          for (let eachEdgeCfg of that.edgeCfg[collectionName]) {
+          for (const eachEdgeCfg of edgeCfg[collectionName]) {
             const fromIDkey = eachEdgeCfg?.from;
             const from_id = message[fromIDkey];
             const toIDkey = eachEdgeCfg?.to;
@@ -44,7 +45,7 @@ export class ResourceCommandInterface extends CommandInterface {
             }
             if (from_id && to_id) {
               if (_.isArray(to_id)) {
-                for (let toID of to_id) {
+                for (const toID of to_id) {
                   await db.createEdge(eachEdgeCfg.edgeName, undefined as any,
                     `${fromVerticeName}/${from_id}`, `${toVerticeName}/${toID}`);
                 }
@@ -61,12 +62,12 @@ export class ResourceCommandInterface extends CommandInterface {
       },
       [`${resource}Modified`]: async function restoreModified(message: any, context: any, config: any,
         eventName: string): Promise<any> {
-        that.decodeBufferField(message, resource);
+        decodeBufferField(message, resource);
         // Based on graphcfg update necessary edges
-        if (that.edgeCfg[collectionName]) {
+        if (edgeCfg[collectionName]) {
           const foundDocs = await db.find(collectionName, { id: message.id });
           const dbDoc = foundDocs[0];
-          for (let eachEdgeCfg of that.edgeCfg[collectionName]) {
+          for (const eachEdgeCfg of edgeCfg[collectionName]) {
             const toIDkey = eachEdgeCfg?.to;
             let modified_to_idValues = message[toIDkey];
             let db_to_idValues = dbDoc[toIDkey];
@@ -84,14 +85,14 @@ export class ResourceCommandInterface extends CommandInterface {
               const toVerticeName = eachEdgeCfg?.toVerticeName;
 
               const edgeCollectionName = eachEdgeCfg?.edgeName;
-              let outgoingEdges: any = await db.getOutEdges(edgeCollectionName, `${collectionName}/${dbDoc.id}`);
-              for (let outgoingEdge of outgoingEdges) {
+              const outgoingEdges: any = await db.getOutEdges(edgeCollectionName, `${collectionName}/${dbDoc.id}`);
+              for (const outgoingEdge of outgoingEdges) {
                 const removedEdge = await db.removeEdge(edgeCollectionName, outgoingEdge._id);
               }
               // Create new edges
               if (from_id && modified_to_idValues) {
                 if (_.isArray(modified_to_idValues)) {
-                  for (let toID of modified_to_idValues) {
+                  for (const toID of modified_to_idValues) {
                     await db.createEdge(eachEdgeCfg?.edgeName, undefined as any,
                       `${fromVerticeName}/${from_id}`, `${toVerticeName}/${toID}`);
                   }
@@ -109,7 +110,7 @@ export class ResourceCommandInterface extends CommandInterface {
       },
       [`${resource}Deleted`]: async function restoreDeleted(message: any, context: any, config: any,
         eventName: string): Promise<any> {
-        if (that.edgeCfg[collectionName]) {
+        if (edgeCfg[collectionName]) {
           // Modify the Ids to include documentHandle
           await db.removeVertex(collectionName, `${collectionName}/${message.id}`);
         } else {

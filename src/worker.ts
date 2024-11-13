@@ -195,7 +195,7 @@ export class Worker {
   idsClient?: UserServiceClient;
   graphClient?: GraphServiceClient;
 
-  async start(cfg?: any, resourcesServiceEventListener?: Function) {
+  async start(cfg?: any, resourcesServiceEventListener?: object) {
     // Load config
     if (!cfg) {
       cfg = createServiceConfig(process.cwd());
@@ -217,7 +217,7 @@ export class Worker {
           (name: string) => name.charAt(0).toUpperCase() + name.slice(1)
         ).join('');
 
-        for (let event of eventTypes) {
+        for (const event of eventTypes) {
           if (event?.toLocaleLowerCase() === 'deleted') {
             kafkaCfg[`${resourceName}${event}`] = {
               messageObject: resourcesDeletedMessage
@@ -301,7 +301,7 @@ export class Worker {
         // dateTimeStampFields handler
         if (cfg.get('fieldHandlers:timeStampFields')) {
           resourceFieldConfig.timeStampFields = [];
-          for (let timeStampFiledConfig of cfg.get('fieldHandlers:timeStampFields')) {
+          for (const timeStampFiledConfig of cfg.get('fieldHandlers:timeStampFields')) {
             if (timeStampFiledConfig.entities.includes(collectionName)) {
               resourceFieldConfig.timeStampFields.push(...timeStampFiledConfig.fields);
             }
@@ -406,14 +406,14 @@ export class Worker {
     }
 
     const topicTypes = Object.keys(kafkaCfg.topics);
-    for (let topicType of topicTypes) {
+    for (const topicType of topicTypes) {
       const topicName = kafkaCfg.topics[topicType].topic;
       const topic: Topic = await events.topic(topicName);
       const offSetValue = await this.offsetStore.getOffset(topicName);
       logger.info('subscribing to topic with offset value', topicName, offSetValue);
       if (kafkaCfg.topics[topicType].events) {
         const eventNames = kafkaCfg.topics[topicType].events;
-        for (let eventName of eventNames) {
+        for (const eventName of eventNames) {
           await topic.on(eventName, resourcesServiceEventListener, { startingOffset: offSetValue });
         }
       }

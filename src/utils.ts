@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
+/* eslint-disable no-unsafe-optional-chaining */
 import {
   AuthZAction,
   accessRequest,
@@ -71,7 +73,6 @@ export const getGraphServiceClient = async () => {
   return graphClientInstance;
 };
 
-/* eslint-disable prefer-arrow-functions/prefer-arrow-functions */
 export async function resolveSubject(subject: Subject) {
   if (subject) {
     const idsClient = getUserServiceClient();
@@ -165,7 +166,7 @@ const setNestedChildOrgs = (hrScope: any, targetOrgID: string, subOrgs: any[]) =
     hrScope = [hrScope];
   }
 
-  for (let subHrScope of hrScope) {
+  for (const subHrScope of hrScope) {
     if (subHrScope.id === targetOrgID) {
       if (subHrScope.children) {
         subHrScope.children.push(...subOrgs);
@@ -175,7 +176,7 @@ const setNestedChildOrgs = (hrScope: any, targetOrgID: string, subOrgs: any[]) =
       }
       return;
     }
-    for (let item of subHrScope.children) {
+    for (const item of subHrScope.children) {
       if (item.id === targetOrgID) {
         item.children.push(...subOrgs);
         return;
@@ -195,7 +196,7 @@ export const getSubTreeOrgs = async (
   const hrScope: HierarchicalScope = { role, id: orgID, children: [] };
   const traversalResponse: any = [];
   const hierarchicalResources = cfg.get('authorization:hierarchicalResources') ?? [];
-  for (let hierarchicalResource of hierarchicalResources) {
+  for (const hierarchicalResource of hierarchicalResources) {
     const { collection, edge } = hierarchicalResource;
     // search in inbound - org has parent org
     const traversalRequest: TraversalRequest = {
@@ -213,18 +214,18 @@ export const getSubTreeOrgs = async (
     }
   }
 
-  for (let item of traversalResponse) {
+  for (const item of traversalResponse) {
     const targetID = item.id;
     const subOrgs = traversalResponse.filter((e: any) => e.parent_id === targetID);
 
     // find hrScopes id and then get the childer object
     const filteredSubOrgFields = subOrgs.map(
-      (org: any) => ({ id: org.id, role, children: new Array() })
+      (org: any) => ({ id: org.id, role, children: [] })
     );
 
     if (filteredSubOrgFields.length === 0) {
       // set as root node
-      hrScope.children.push({ id: targetID, role, children: new Array() });
+      hrScope.children.push({ id: targetID, role, children: [] });
     }
     else {
       // nest filtered orgs as tree forest
@@ -247,12 +248,12 @@ export const createHRScope = async (
   const roleScopingInstanceURN = cfg.get('authorization:urns:roleScopingInstance');
   if (subject?.role_associations && !subject?.hierarchical_scopes?.length) {
     // create HR scopes iterating through the user's assigned role scoping instances
-    let userRoleAssocs = subject.role_associations;
-    let assignedUserScopes = new Set<{ userScope: string | undefined; role: string | undefined }>();
+    const userRoleAssocs = subject.role_associations;
+    const assignedUserScopes = new Set<{ userScope: string | undefined; role: string | undefined }>();
     let tokenData;
     // verify the validity of subject tokens
     if (token && user?.payload?.tokens?.length! > 0) {
-      for (let tokenInfo of user?.payload?.tokens ?? []) {
+      for (const tokenInfo of user?.payload?.tokens ?? []) {
         if (tokenInfo.token === token) {
           tokenData = tokenInfo;
           const expiresIn = tokenInfo.expires_in;
@@ -270,11 +271,11 @@ export const createHRScope = async (
       )
     ) ?? userRoleAssocs;
 
-    for (let roleObj of reducedUserRoleAssocs) {
+    for (const roleObj of reducedUserRoleAssocs) {
       if (roleObj?.attributes?.length! > 0) {
-        for (let roleAttribute of roleObj?.attributes!) {
+        for (const roleAttribute of roleObj?.attributes!) {
           if (roleAttribute.id === roleScopingEntityURN) {
-            for (let roleScopInstObj of roleAttribute.attributes!) {
+            for (const roleScopInstObj of roleAttribute.attributes!) {
               if (roleScopInstObj.id === roleScopingInstanceURN) {
                 const obj = { userScope: roleScopInstObj.value, role: roleObj.role };
                 assignedUserScopes.add(obj);
@@ -286,7 +287,7 @@ export const createHRScope = async (
     }
     const hrScopes: HierarchicalScope[] = [];
     const userScopesRoleArray = Array.from(assignedUserScopes);
-    for (let obj of userScopesRoleArray) {
+    for (const obj of userScopesRoleArray) {
       try {
         const hrScope = await getSubTreeOrgs(obj.userScope, obj.role, cfg, graphClient);
         if (hrScope) {
