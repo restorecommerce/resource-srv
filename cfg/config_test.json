@@ -228,6 +228,9 @@
     },
     "graph-srv": {
       "address": "localhost:50153"
+    },
+    "user": {
+      "address": "localhost:50151"
     }
   },
   "errors": {
