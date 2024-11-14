@@ -6,10 +6,19 @@ import { Worker } from '../src/worker.js';
 import { updateConfig } from '@restorecommerce/acs-client';
 import { createLogger } from '@restorecommerce/logger';
 import { createServiceConfig } from '@restorecommerce/service-config';
-import { CommandInterfaceServiceDefinition, CommandInterfaceServiceClient as cisClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface.js';
-import { CommandServiceDefinition as command } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command.js';
-import { OrganizationServiceDefinition as organization, protoMetadata as organizationMeta } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization.js';
-import { ContactPointServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point.js';
+import { CommandInterfaceServiceDefinition } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface.js';
+import {
+  CommandServiceDefinition as command,
+  protoMetadata as commandPointMeta
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command.js';
+import {
+  OrganizationServiceDefinition as organization,
+  protoMetadata as organizationMeta
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization.js';
+import {
+  ContactPointServiceDefinition as contact_point,
+  protoMetadata as contactPointMeta
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point.js';
 import { ReadRequest, Sort_SortOrder } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base.js';
 import { Filter_Operation } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/filter.js';
 
@@ -18,7 +27,11 @@ const logger = createLogger(cfg.get('logger'));
 const ServiceDefinitionList = [command, organization, contact_point];
 
 // for test `should re read messages for organization resource` (since a local listener for Organization events is created in unit test below)
-registerProtoMeta(organizationMeta);
+registerProtoMeta(
+  organizationMeta,
+  contactPointMeta,
+  commandPointMeta
+);
 
 /**
  * Note: To run below tests a running Kafka, Redis and ArangoDB instance is required.

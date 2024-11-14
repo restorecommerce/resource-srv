@@ -1,19 +1,33 @@
 import {} from 'mocha';
 import should from 'should';
 import { createChannel, createClient } from '@restorecommerce/grpc-client';
-import { Events, Topic } from '@restorecommerce/kafka-client';
+import { Events, Topic, registerProtoMeta } from '@restorecommerce/kafka-client';
 import { Worker } from '../src/worker.js';
 import { GrpcMockServer, ProtoUtils } from '@alenon/grpc-mock-server';
 import * as proto_loader from '@grpc/proto-loader';
 import * as grpc from '@grpc/grpc-js';
 import { createLogger } from '@restorecommerce/logger';
 import { createServiceConfig } from '@restorecommerce/service-config';
-import { CommandInterfaceServiceDefinition, CommandInterfaceServiceClient as cisClient } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface.js';
-import { CommandServiceDefinition as command } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command.js';
-import { OrganizationServiceDefinition as organization } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization.js';
-import { ContactPointServiceDefinition as contact_point } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point.js';
-import { createClient as RedisCreateClient, RedisClientType } from 'redis';
+import { CommandInterfaceServiceDefinition } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface.js';
+import {
+  CommandServiceDefinition as command,
+  protoMetadata as commandPointMeta
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/command.js';
+import {
+  OrganizationServiceDefinition as organization,
+  protoMetadata as organizationMeta
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/organization.js';
+import {
+  ContactPointServiceDefinition as contact_point,
+  protoMetadata as contactPointMeta
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point.js';import { createClient as RedisCreateClient, RedisClientType } from 'redis';
 import { updateConfig } from '@restorecommerce/acs-client';
+
+registerProtoMeta(
+  organizationMeta,
+  contactPointMeta,
+  commandPointMeta
+);
 
 const cfg = createServiceConfig(process.cwd());
 const logger = createLogger(cfg.get('logger'));
@@ -307,10 +321,10 @@ describe('resource-srv testing with ACS enabled', () => {
     // List of serviceMappedValues
     const serviceMapping = await getClientResourceServices();
     // get the Organization service
-    let orgMapValue = serviceMapping.microservice.mapClients.get('organization');
+    const orgMapValue = serviceMapping.microservice.mapClients.get('organization');
     organizationService = serviceMapping.microservice.service[orgMapValue];
     // get contact_point service
-    let contacPointMapValue = serviceMapping.microservice.mapClients.get('contact_point');
+    const contacPointMapValue = serviceMapping.microservice.mapClients.get('contact_point');
     contactPointsService = serviceMapping.microservice.service[contacPointMapValue];
 
     // create events for restoring
@@ -320,7 +334,7 @@ describe('resource-srv testing with ACS enabled', () => {
     commandTopic = await events.topic(cfg.get('events:kafka:topics:command:topic'));
 
     // create command service
-    let commandMapValue = serviceMapping.microservice.mapClients.get('command');
+    const commandMapValue = serviceMapping.microservice.mapClients.get('command');
     commandService = serviceMapping.microservice.service[commandMapValue];
   });
 

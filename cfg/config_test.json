@@ -46,6 +46,7 @@
       "resourcesProtoPathPrefix": "io/restorecommerce/",
       "resourcesServiceNamePrefix": "io.restorecommerce.",
       "resourcesServiceConfigPrefix": "restore-",
+      "resourcesDeletedMessage": "io.restorecommerce.resourcebase.Deleted",
       "resources": [
         {
           "resourceName": "command",
@@ -63,7 +64,7 @@
     }
   },
   "graph": {
-    "graphName": "resource-srv-graph",
+    "graphName": "resource-srv-graph-test",
     "vertices": {
       "organizations": [
         {
@@ -195,13 +196,11 @@
     ]
   },
   "fieldHandlers": {
-    "fieldGenerators": {},
     "bufferFields": {
-      "organizations": ["data"],
-      "locations": ["data"],
-      "credentials": ["credentials"]
+      "organization": ["data"],
+      "location": ["data"],
+      "credential": ["credentials"]
     },
-    "requiredFields": {},
     "timeStampFields": [
       {
         "fields": [
@@ -209,12 +208,13 @@
           "meta.modified"
         ],
         "entities": [
-          "commands",
-          "organizations",
-          "contact_points"
+          "command",
+          "organization",
+          "contact_point"
         ]
       }
-    ]
+    ],
+    "requiredFields": null
   },
   "client": {
     "default-resource-srv": {
@@ -243,11 +243,5 @@
       "code": "403",
       "message": "Action not allowed on this resource"
     }
-  },
-  "techUsers": [
-    {
-      "id": "upsert_user_tokens",
-      "token": "change.this.token.number"
-    }
-  ]
+  }
 }
