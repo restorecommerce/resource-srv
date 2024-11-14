@@ -302,13 +302,13 @@ export class Worker {
         if (cfg.get('fieldHandlers:timeStampFields')) {
           resourceFieldConfig.timeStampFields = [];
           for (const timeStampFiledConfig of cfg.get('fieldHandlers:timeStampFields')) {
-            if (timeStampFiledConfig.entities.includes(collectionName)) {
+            if (timeStampFiledConfig.entities.includes(resourceName)) {
               resourceFieldConfig.timeStampFields.push(...timeStampFiledConfig.fields);
             }
           }
         }
         // requiredFields handler
-        if (requiredFieldsConfig && (collectionName in requiredFieldsConfig)) {
+        if (requiredFieldsConfig && (resourceName in requiredFieldsConfig)) {
           resourceFieldConfig.requiredFields = requiredFieldsConfig;
         }
         logger.info(`Setting up ${resourceName} resource service`);

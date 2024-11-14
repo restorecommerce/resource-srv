@@ -209,15 +209,6 @@
           "direction": "outbound",
           "toVerticeName": "templates"
         }
-      ],
-      "currency": [
-        {
-          "edgeName": "currency_has_countries",
-          "from": "id",
-          "to": "country_ids",
-          "direction": "outbound",
-          "toVerticeName": "countries"
-        }
       ]
     },
     "edgeDefinitions": [
@@ -300,11 +291,6 @@
         "collection": "customer_has_templates",
         "from": "customers",
         "to": "templates"
-      },
-      {
-        "collection": "currency_has_countries",
-        "from": "currencies",
-        "to": "countrys"
       }
     ]
   },
@@ -383,10 +369,6 @@
         {
           "resourceName": "tax",
           "collectionName": "taxs"
-        },
-        {
-          "resourceName": "tax_type",
-          "collectionName": "tax_types"
         },
         {
           "resourceName": "tax_type",
@@ -555,14 +537,14 @@
   },
   "fieldHandlers": {
     "bufferFields": {
-      "organizations": [
+      "organization": [
         "data"
       ],
-      "locations": [
+      "location": [
         "data"
       ],
-      "credentials": [
-        "credentials"
+      "credential": [
+        "credential"
       ]
     },
     "timeStampFields": [
@@ -572,72 +554,72 @@
           "meta.modified"
         ],
         "entities": [
-          "commands",
-          "addresss",
-          "contact_point_types",
-          "countrys",
-          "contact_points",
-          "credentials",
-          "locales",
-          "locations",
-          "notifications",
-          "notification_channels",
-          "organizations",
-          "taxs",
-          "tax_types",
-          "timezones",
-          "customers",
-          "shops",
-          "unit_codes",
-          "templates",
-          "settings",
-          "currencies"
+          "command",
+          "address",
+          "contact_point_type",
+          "country",
+          "contact_point",
+          "credential",
+          "locale",
+          "location",
+          "notification",
+          "notification_channel",
+          "organization",
+          "tax",
+          "tax_type",
+          "timezone",
+          "customer",
+          "shop",
+          "unit_code",
+          "template",
+          "setting",
+          "currency"
         ]
       }
     ],
     "requiredFields": {
-      "organizations": [
+      "organization": [
         "name"
       ],
-      "contact_point_types": [
+      "contact_point_type": [
         "type"
       ],
-      "credentials": [
+      "credential": [
         "name"
       ],
-      "addresss": [
+      "address": [
         "postcode",
         "country_id",
         "locality",
         "street",
         "region"
       ],
-      "countrys": [
-        "name",
-        "country_code"
-      ],
-      "contact_points": [
+      "contact_point": [
         "physical_address_id",
         "contact_point_type_id",
         "email",
         "telephone"
       ],
-      "locations": [
+      "location": [
         "name"
       ],
-      "taxs": [
+      "tax": [
         "country_id",
         "rate"
       ],
-      "tax_types": [
+      "tax_type": [
         "type",
         "description"
       ],
-      "templates": [
+      "template": [
         "name"
       ],
-      "settings": [
+      "setting": [
         "name"
+      ],
+      "currency": [
+        "name",
+        "symbol"
       ]
     }
   },
