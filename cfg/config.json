@@ -209,6 +209,15 @@
           "direction": "outbound",
           "toVerticeName": "templates"
         }
+      ],
+      "currency": [
+        {
+          "edgeName": "currency_has_countries",
+          "from": "id",
+          "to": "country_ids",
+          "direction": "outbound",
+          "toVerticeName": "countries"
+        }
       ]
     },
     "edgeDefinitions": [
@@ -291,6 +300,11 @@
         "collection": "customer_has_templates",
         "from": "customers",
         "to": "templates"
+      },
+      {
+        "collection": "currency_has_countries",
+        "from": "currencies",
+        "to": "countrys"
       }
     ]
   },
