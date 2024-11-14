@@ -141,7 +141,7 @@ const proto: any = ProtoUtils.getProtoFromPkgDefinition(
   pkgDef
 );
 
-const mockServer = new GrpcMockServer('localhost:50061');
+const mockServer = new GrpcMockServer('localhost:50161');
 
 const startGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
   // create mock implementation based on the method name and output
@@ -175,7 +175,7 @@ const startGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
       oneofs: true
     });
     await mockServer.start();
-    logger.info('Mock ACS Server started on port 50061');
+    logger.info('Mock ACS Server started on port 50161');
   } catch (err) {
     logger.error('Error starting mock ACS server', err);
   }
@@ -185,7 +185,7 @@ const IDS_PROTO_PATH = 'io/restorecommerce/user.proto';
 const IDS_PKG_NAME = 'io.restorecommerce.user';
 const IDS_SERVICE_NAME = 'UserService';
 
-const mockServerIDS = new GrpcMockServer('localhost:50051');
+const mockServerIDS = new GrpcMockServer('localhost:50151');
 
 // Mock server for ids - findByToken
 const startIDSGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
@@ -208,7 +208,7 @@ const startIDSGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
       oneofs: true
     });
     await mockServerIDS.start();
-    logger.info('Mock IDS Server started on port 50051');
+    logger.info('Mock IDS Server started on port 50151');
   } catch (err) {
     logger.error('Error starting mock IDS server', err);
   }

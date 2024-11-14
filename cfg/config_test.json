@@ -190,7 +190,7 @@
       {
         "name": "grpc",
         "provider": "grpc",
-        "addr": "localhost:50053"
+        "addr": "localhost:50153"
       }
     ]
   },
@@ -218,16 +218,16 @@
   },
   "client": {
     "default-resource-srv": {
-      "address": "localhost:50053"
+      "address": "localhost:50153"
     },
     "commandinterface": {
-      "address": "localhost:50053"
+      "address": "localhost:50153"
     },
     "acs-srv": {
-      "address": "localhost:50061"
+      "address": "localhost:50161"
     },
     "graph-srv": {
-      "address": "localhost:50053"
+      "address": "localhost:50153"
     }
   },
   "errors": {
