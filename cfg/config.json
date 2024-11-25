@@ -343,8 +343,8 @@
           "collectionName": "customers"
         },
         {
-          "resourceName": "local",
-          "collectionName": "locals"
+          "resourceName": "locale",
+          "collectionName": "locales"
         },
         {
           "resourceName": "location",
