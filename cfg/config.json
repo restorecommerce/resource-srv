@@ -596,7 +596,7 @@
       ],
       "contact_point": [
         "physical_address_id",
-        "contact_point_type_id",
+        "contact_point_type_ids",
         "email",
         "telephone"
       ],
