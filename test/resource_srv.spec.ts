@@ -53,12 +53,12 @@ const listOfContactPoints = [
   {
     id: 'contact_point_1',
     website: 'http://TestOrg1.de',
-    meta
+    meta,
   },
   {
     id: 'contact_point_2',
     website: 'http://TestOrg2.de',
-    meta
+    meta,
   },
 ];
 
@@ -67,13 +67,13 @@ const listOfOrganizations = [
     name: 'TestOrg1',
     address_id: '123',
     contact_point_ids: ['contact_point_1', 'contact_point_2'],
-    meta
+    meta,
   },
   {
     name: 'TestOrg2',
     address_id: '456',
     contact_point_ids: ['contact_point_1', 'contact_point_2'],
-    meta
+    meta,
   },
 ];
 
@@ -142,7 +142,7 @@ describe('resource-srv testing', () => {
   let events: Events;
   let commandTopic: Topic;
   let organizationTopic: Topic;
-  let baseValidation = function (result: any, itemsShouldExist: boolean = true) {
+  const baseValidation = function (result: any, itemsShouldExist: boolean = true) {
     should.exist(result);
     if (itemsShouldExist) {
       should.exist(result.items);
@@ -154,7 +154,7 @@ describe('resource-srv testing', () => {
   before(async function startServer() {
     // disable ACS check
     cfg.set('authorization:enabled', false);
-    await updateConfig(cfg);
+    updateConfig(cfg);
     worker = new Worker();
     await worker.start(cfg);
     // get the client object

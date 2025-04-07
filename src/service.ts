@@ -1,10 +1,7 @@
-import * as _ from 'lodash-es';
 import { Logger } from '@restorecommerce/logger';
 import { ResourcesAPIBase, ServiceBase } from '@restorecommerce/resource-base-interface';
 import { Operation, PolicySetRQResponse, ResolvedSubject } from '@restorecommerce/acs-client';
 import { AuthZAction } from '@restorecommerce/acs-client';
-import { checkAccessRequest, getACSFilters, resolveSubject } from './utils.js';
-import * as uuid from 'uuid';
 import { Response_Decision } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/access_control.js';
 import {
   ReadRequest,
@@ -17,6 +14,7 @@ import {
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/resource_base.js';
 import { Filter_Operation, Filter_ValueType } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/filter.js';
 import { Subject } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/auth.js';
+import { checkAccessRequest, getACSFilters, resolveSubject } from './utils.js';
 
 export class ResourceService extends ServiceBase<ResourceListResponse, ResourceList> {
   private readonly urns: any;
@@ -222,7 +220,7 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
 
     const setDefaultMeta = (resource: T) => {
       if (!resource.id?.length) {
-        resource.id = uuid.v4().replace(/-/g, '');
+        resource.id = crypto.randomUUID().replace(/-/g, '');
       }
 
       if (!resource.meta) {

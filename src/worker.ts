@@ -11,9 +11,14 @@ import {
   Server,
   Health
 } from '@restorecommerce/chassis-srv';
-import { Logger } from 'winston';
-import { createLogger } from '@restorecommerce/logger';
-import { createServiceConfig } from '@restorecommerce/service-config';
+import {
+  createLogger,
+  Logger
+} from '@restorecommerce/logger';
+import {
+  createServiceConfig,
+  ServiceConfig
+} from '@restorecommerce/service-config';
 import { createClient, RedisClientType } from 'redis';
 import {
   protoMetadata as commandMeta,
@@ -195,11 +200,12 @@ export class Worker {
   idsClient?: UserServiceClient;
   graphClient?: GraphServiceClient;
 
-  async start(cfg?: any, resourcesServiceEventListener?: object) {
+  async start(
+    cfg?: ServiceConfig,
+    resourcesServiceEventListener?: object
+  ) {
     // Load config
-    if (!cfg) {
-      cfg = createServiceConfig(process.cwd());
-    }
+    cfg ??= createServiceConfig(process.cwd());
     const resources = cfg.get('resources');
     if (!resources) {
       throw new Error('config field resources does not exist');
@@ -459,8 +465,12 @@ export class Worker {
 
   async stop() {
     this.logger?.info('Shutting down');
-    await this.server?.stop();
-    await this.events?.stop();
-    await this.offsetStore?.stop();
+    await Promise.allSettled(
+      [
+        this.server?.stop(),
+        this.events?.stop(),
+        this.offsetStore?.stop(),
+      ]
+    );
   }
 }

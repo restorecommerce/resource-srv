@@ -1,7 +1,7 @@
 import {} from 'mocha';
 import should from 'should';
 import { createChannel, createClient } from '@restorecommerce/grpc-client';
-import { Events, Topic, registerProtoMeta } from '@restorecommerce/kafka-client';
+import { Events, registerProtoMeta } from '@restorecommerce/kafka-client';
 import { Worker } from '../src/worker.js';
 import { GrpcMockServer, ProtoUtils } from '@alenon/grpc-mock-server';
 import * as proto_loader from '@grpc/proto-loader';
@@ -20,7 +20,8 @@ import {
 import {
   ContactPointServiceDefinition as contact_point,
   protoMetadata as contactPointMeta
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point.js';import { createClient as RedisCreateClient, RedisClientType } from 'redis';
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/contact_point.js';
+import { createClient as RedisCreateClient, RedisClientType } from 'redis';
 import { updateConfig } from '@restorecommerce/acs-client';
 
 registerProtoMeta(
@@ -43,11 +44,11 @@ let tokenRedisClient: RedisClientType;
 const listOfContactPoints = [
   {
     id: 'contact_point_1',
-    website: 'http://TestOrg1.de'
+    website: 'http://TestOrg1.de',
   },
   {
     id: 'contact_point_2',
-    website: 'http://TestOrg2.de'
+    website: 'http://TestOrg2.de',
   },
 ];
 
@@ -295,14 +296,10 @@ async function getClientResourceServices() {
 }
 
 describe('resource-srv testing with ACS enabled', () => {
-  let organizationService: any;
   let contactPointsService: any;
-  let commandService;
   let worker: Worker;
   let events: Events;
-  let commandTopic: Topic;
-  let organizationTopic: Topic;
-  let baseValidation = function (result: any, itemsShouldExist: boolean = true) {
+  const baseValidation = function (result: any, itemsShouldExist: boolean = true) {
     should.exist(result);
     if (itemsShouldExist) {
       should.exist(result.items);
@@ -314,15 +311,12 @@ describe('resource-srv testing with ACS enabled', () => {
   before(async function startServer() {
     // enable ACS check
     cfg.set('authorization:enabled', true);
-    await updateConfig(cfg);
+    updateConfig(cfg);
     worker = new Worker();
     await worker.start(cfg);
     // get the client object
     // List of serviceMappedValues
     const serviceMapping = await getClientResourceServices();
-    // get the Organization service
-    const orgMapValue = serviceMapping.microservice.mapClients.get('organization');
-    organizationService = serviceMapping.microservice.service[orgMapValue];
     // get contact_point service
     const contacPointMapValue = serviceMapping.microservice.mapClients.get('contact_point');
     contactPointsService = serviceMapping.microservice.service[contacPointMapValue];
@@ -330,12 +324,6 @@ describe('resource-srv testing with ACS enabled', () => {
     // create events for restoring
     events = new Events(cfg.get('events:kafka'), logger);
     await events.start();
-    organizationTopic = await events.topic(cfg.get('events:kafka:topics:organizations:topic'));
-    commandTopic = await events.topic(cfg.get('events:kafka:topics:command:topic'));
-
-    // create command service
-    const commandMapValue = serviceMapping.microservice.mapClients.get('command');
-    commandService = serviceMapping.microservice.service[commandMapValue];
   });
 
   // stop the server

@@ -30,7 +30,7 @@
       ],
       "customQueries": [
         {
-          "path": "filter_ownership.aql",
+          "path": "./queries/filter_ownership.aql",
           "name": "filterByOwnership",
           "type": "filter"
         }
@@ -529,7 +529,7 @@
   "server": {
     "transports": [
       {
-        "name": "grpc",
+        "name": "grpcResource",
         "provider": "grpc",
         "addr": "0.0.0.0:50053"
       }
@@ -594,12 +594,6 @@
         "street",
         "region"
       ],
-      "contact_point": [
-        "physical_address_id",
-        "contact_point_type_ids",
-        "email",
-        "telephone"
-      ],
       "location": [
         "name"
       ],
@@ -639,9 +633,5 @@
       "code": "403",
       "message": "Action not allowed on this resource"
     }
-  },
-  "techUser": {
-    "id": "tech-user",
-    "token": "123099ffc93b44f6b4a81b1e5589b642"
   }
 }
