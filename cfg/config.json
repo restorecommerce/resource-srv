@@ -119,7 +119,7 @@
         {
           "edgeName": "cp_has_cpt",
           "from": "id",
-          "to": "contact_point_type_id",
+          "to": "contact_point_type_ids",
           "direction": "outbound",
           "toVerticeName": "contact_point_types"
         },
