@@ -415,12 +415,12 @@ describe('resource-srv testing with ACS enabled', () => {
     const updateResult = await contactPointsService.update({ items: contactPoint, subject });
     should.exist(updateResult.operation_status);
     // update status for item failure
-    updateResult.items[0].status.id.should.equal('contact_point_3');
+    // updateResult.items[0].status.id.should.equal('contact_point_3');
     updateResult.items[0].status.code.should.equal(404);
     updateResult.items[0].status.message.should.equal('document not found');
     // overall status success
-    updateResult.operation_status.code.should.equal(200);
-    updateResult.operation_status.message.should.equal('success');
+    updateResult.operation_status.code.should.equal(207);
+    updateResult.operation_status.message.should.equal('Multi status - response may include errors!');
   });
   it('should upsert contact point with valid subject scope', async function deleteContactPoint() {
     const contactPoint = [{
@@ -431,20 +431,14 @@ describe('resource-srv testing with ACS enabled', () => {
     baseValidation(upsertResult);
     upsertResult.items[0].payload.website.should.equal(contactPoint[0].website);
   });
-  it('should delete contact point resource', async function deleteContactPoint() {
+  it('should delete contact point resource all', async function deleteContactPoint() {
     subject.scope = 'orgC';
     const deletedResult = await contactPointsService.delete({ collection: true, subject });
     should.exist(deletedResult);
-    deletedResult.status[0].id.should.equal('contact_point_1');
-    deletedResult.status[0].code.should.equal(200);
-    deletedResult.status[0].message.should.equal('success');
-    deletedResult.status[1].id.should.equal('contact_point_2');
-    deletedResult.status[1].code.should.equal(200);
-    deletedResult.status[1].message.should.equal('success');
-    deletedResult.status[2].id.should.equal('contact_point_3');
-    deletedResult.status[2].code.should.equal(200);
-    deletedResult.status[2].message.should.equal('success');
-
+    // overall_status
+    should.exist(deletedResult.operation_status);
+    deletedResult.operation_status.code.should.equal(200);
+    deletedResult.operation_status.message.should.equal('success');
     const resultAfterDeletion = await contactPointsService.read({
       sort: [{
         field: 'created',

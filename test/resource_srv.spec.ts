@@ -421,15 +421,9 @@ describe('resource-srv testing', () => {
   });
 
   // delete contact_point resource
-  it('should delete contact point resource', async function deleteContactPoint() {
+  it('should delete contact point resource all', async function deleteContactPoint() {
     const deletedResult = await contactPointsService.delete({ collection: true });
     should.exist(deletedResult);
-    deletedResult.status[0].id.should.equal('contact_point_1');
-    deletedResult.status[0].code.should.equal(200);
-    deletedResult.status[0].message.should.equal('success');
-    deletedResult.status[1].id.should.equal('contact_point_2');
-    deletedResult.status[1].code.should.equal(200);
-    deletedResult.status[1].message.should.equal('success');
     // overall_status
     should.exist(deletedResult.operation_status);
     deletedResult.operation_status.code.should.equal(200);

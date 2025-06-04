@@ -17,7 +17,7 @@ import {
 } from '@restorecommerce/logger';
 import {
   createServiceConfig,
-  ServiceConfig
+  type ServiceConfig
 } from '@restorecommerce/service-config';
 import { createClient, RedisClientType } from 'redis';
 import {
@@ -214,7 +214,7 @@ export class Worker {
     // Generate a config for each resource
     const kafkaCfg = cfg.get('events:kafka');
     // const grpcConfig = cfg.get('server:transports:0');
-    const eventTypes = ['Created', 'Read', 'Modified', 'Deleted'];
+    const eventTypes = ['Created', 'Read', 'Modified'];
     for (const resourceCfg of Object.values<any>(resources)) {
       const resourcesDeletedMessage = resourceCfg.resourcesDeletedMessage;
       const resourcesServiceNamePrefix = resourceCfg.resourcesServiceNamePrefix;
@@ -223,22 +223,20 @@ export class Worker {
           (name: string) => name.charAt(0).toUpperCase() + name.slice(1)
         ).join('');
 
+        const topicName = `${resourcesServiceNamePrefix}${collectionName}.resource`;
+        const topicLabel = `${resourceName}.resource`;
+        kafkaCfg.topics[topicLabel] = {
+          topic: topicName,
+        };
+        kafkaCfg[`${resourceName}Deleted`] = {
+          messageObject: resourcesDeletedMessage
+        };
+        kafkaCfg[`${resourceName}DeletedAll`] = {
+          messageObject: resourcesDeletedMessage
+        };
         for (const event of eventTypes) {
-          if (event?.toLocaleLowerCase() === 'deleted') {
-            kafkaCfg[`${resourceName}${event}`] = {
-              messageObject: resourcesDeletedMessage
-            };
-          }
-          else {
-            kafkaCfg[`${resourceName}${event}`] = {
-              messageObject: `${resourcesServiceNamePrefix}${resourceName}.${resourceObjectName}`
-            };
-          }
-
-          const topicName = `${resourcesServiceNamePrefix}${collectionName}.resource`;
-          const topicLabel = `${resourceName}.resource`;
-          kafkaCfg.topics[topicLabel] = {
-            topic: topicName,
+          kafkaCfg[`${resourceName}${event}`] = {
+            messageObject: `${resourcesServiceNamePrefix}${resourceName}.${resourceObjectName}`
           };
         }
       }
@@ -258,7 +256,7 @@ export class Worker {
     const events = new Events(cfg.get('events:kafka'), logger);
 
     await events.start();
-    this.offsetStore = new OffsetStore(events, cfg, logger);
+    this.offsetStore = new OffsetStore(events as any, cfg, logger);
     let redisClient: RedisClientType<any, any> | undefined;
     if (cfg.get('redis')) {
       const redisConfig = cfg.get('redis');
