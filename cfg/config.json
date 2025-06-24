@@ -144,7 +144,13 @@
         }
       ],
       "countrys": [
-        {}
+        {
+          "edgeName": "country_has_timezones",
+          "from": "id",
+          "to": "timezone_ids",
+          "direction": "outbound",
+          "toVerticeName": "timezones"
+        }
       ],
       "tax_types": [
         {}
@@ -209,6 +215,15 @@
           "direction": "outbound",
           "toVerticeName": "templates"
         }
+      ],
+      "currencies": [
+        {
+          "edgeName": "currency_has_countries",
+          "from": "id",
+          "to": "country_ids",
+          "direction": "outbound",
+          "toVerticeName": "countries"
+        }
       ]
     },
     "edgeDefinitions": [
@@ -258,6 +273,11 @@
         "to": "countrys"
       },
       {
+        "collection": "country_has_timezones",
+        "from": "countrys",
+        "to": "timezones"
+      },
+      {
         "collection": "tax_taxtype",
         "from": "taxs",
         "to": "tax_types"
@@ -291,6 +311,11 @@
         "collection": "customer_has_templates",
         "from": "customers",
         "to": "templates"
+      },
+      {
+        "collection": "currency_has_countries",
+        "from": "currencies",
+        "to": "countrys"
       }
     ]
   },

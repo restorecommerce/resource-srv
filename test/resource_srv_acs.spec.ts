@@ -313,7 +313,7 @@ describe('resource-srv testing with ACS enabled', () => {
     cfg.set('authorization:enabled', true);
     updateConfig(cfg);
     worker = new Worker();
-    await worker.start(cfg);
+    await worker.start(cfg, logger);
     // get the client object
     // List of serviceMappedValues
     const serviceMapping = await getClientResourceServices();

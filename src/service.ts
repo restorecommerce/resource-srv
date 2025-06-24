@@ -31,6 +31,21 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
     this.urns = cfg.get('authorization:urns');
   }
 
+  protected catchAsOperationStatus(err: any, logmsg?: string): ResourceListResponse {
+    const { code, message, details, stack } = err;
+    this.logger.error(logmsg, { code, message, details, stack });
+    return {
+      operation_status: {
+        code: Number.isInteger(code) ? code : 500,
+        message: [
+          // logmsg,
+          message,
+          details,
+        ].filter(s => s).join(' ')
+      }
+    };
+  }
+
   async create(request: any, ctx: any) {
     try {
       const subject = await resolveSubject(request.subject);
@@ -50,13 +65,7 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
       }
       return await super.create(request, ctx);
     } catch (err: any) {
-      this.logger.error('Error occurred requesting access-control-srv', err);
-      return {
-        operation_status: {
-          code: err.code,
-          message: err.message
-        }
-      };
+      return this.catchAsOperationStatus(err, 'Error occurred requesting access-control-srv:');
     }
   }
 
@@ -88,13 +97,7 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
       request.custom_arguments = acsResponse.custom_query_args?.flatMap(arg => arg.custom_arguments)[0];
       return await super.read(request, ctx);
     } catch (err: any) {
-      this.logger.error('Error occurred requesting access-control-srv:', err);
-      return {
-        operation_status: {
-          code: err.code,
-          message: err.message
-        }
-      };
+      return this.catchAsOperationStatus(err, 'Error occurred requesting access-control-srv:');
     }
   }
 
@@ -117,13 +120,7 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
       }
       return await super.update(request, ctx);
     } catch (err: any) {
-      this.logger.error('Error occurred requesting access-control-srv:', err);
-      return {
-        operation_status: {
-          code: err.code,
-          message: err.message
-        }
-      };
+      return this.catchAsOperationStatus(err, 'Error occurred requesting access-control-srv:');
     }
   }
 
@@ -145,13 +142,7 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
       }
       return await super.upsert(request, ctx);
     } catch (err: any) {
-      this.logger.error('Error occurred requesting access-control-srv:', err);
-      return {
-        operation_status: {
-          code: err.code,
-          message: err.message
-        }
-      };
+      return this.catchAsOperationStatus(err, 'Error occurred requesting access-control-srv:');
     }
   }
 
@@ -192,13 +183,7 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
       }
       return await super.delete(request as any, ctx);
     } catch (err: any) {
-      this.logger.error('Error occurred requesting access-control-srv:', err);
-      return {
-        operation_status: {
-          code: err?.code,
-          message: err?.message
-        }
-      };
+      return this.catchAsOperationStatus(err, 'Error occurred requesting access-control-srv:');
     }
   }
 
@@ -281,7 +266,7 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
         limit: ids.length
       });
 
-      const result_map = await super.read(filters, {}).then(
+      const result_map = await super.read(filters, undefined).then(
         resp => new Map(
           resp.items?.map(
             item => [item.payload?.id, item?.payload]

@@ -202,6 +202,7 @@ export class Worker {
 
   async start(
     cfg?: ServiceConfig,
+    logger?: Logger,
     resourcesServiceEventListener?: object
   ) {
     // Load config
@@ -244,8 +245,7 @@ export class Worker {
     cfg.set('events:kafka', kafkaCfg);
 
     const loggerCfg = cfg.get('logger');
-    const logger = createLogger(loggerCfg);
-    this.logger = logger;
+    this.logger = logger ??= createLogger(loggerCfg);
     const server = new Server(cfg.get('server'), logger);
     const db = await database.get(
       cfg.get('database:arango'),

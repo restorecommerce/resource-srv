@@ -17,13 +17,17 @@ export class ResourceCommandInterface extends CommandInterface {
     }
   }
 
-  makeResourcesRestoreSetup(db: GraphDatabaseProvider, resource: string): any {
+  override makeResourcesRestoreSetup(db: GraphDatabaseProvider, resource: string, collectionName?: string): any {
     const decodeBufferField = this.decodeBufferField;
     const edgeCfg = this.edgeCfg;
-    const collectionName = `${resource}s`;
+    collectionName ??= `${resource}s`;
     return {
-      [`${resource}Created`]: async function restoreCreated(message: any, context: any,
-        config: any, eventName: string): Promise<any> {
+      [`${resource}Created`]: async function restoreCreated(
+        message: any,
+        context: any,
+        config: any,
+        eventName: string
+      ): Promise<any> {
         decodeBufferField(message, resource);
         if (edgeCfg[collectionName]) {
           const result = await db.findByID(collectionName, message.id);
@@ -60,8 +64,12 @@ export class ResourceCommandInterface extends CommandInterface {
         }
         return {};
       },
-      [`${resource}Modified`]: async function restoreModified(message: any, context: any, config: any,
-        eventName: string): Promise<any> {
+      [`${resource}Modified`]: async function restoreModified(
+        message: any,
+        context: any,
+        config: any,
+        eventName: string
+      ): Promise<any> {
         decodeBufferField(message, resource);
         // Based on graphcfg update necessary edges
         if (edgeCfg[collectionName]) {
@@ -108,8 +116,12 @@ export class ResourceCommandInterface extends CommandInterface {
         await db.update(collectionName, message);
         return {};
       },
-      [`${resource}Deleted`]: async function restoreDeleted(message: any, context: any, config: any,
-        eventName: string): Promise<any> {
+      [`${resource}Deleted`]: async function restoreDeleted(
+        message: any,
+        context: any,
+        config: any,
+        eventName: string
+      ): Promise<any> {
         if (edgeCfg[collectionName]) {
           // Modify the Ids to include documentHandle
           await db.removeVertex(collectionName, `${collectionName}/${message.id}`);

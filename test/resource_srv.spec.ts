@@ -156,7 +156,7 @@ describe('resource-srv testing', () => {
     cfg.set('authorization:enabled', false);
     updateConfig(cfg);
     worker = new Worker();
-    await worker.start(cfg);
+    await worker.start(cfg, logger);
     // get the client object
     // List of serviceMappedValues
     const serviceMapping = await getClientResourceServices();

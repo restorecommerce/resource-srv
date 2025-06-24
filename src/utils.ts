@@ -220,12 +220,12 @@ export const getSubTreeOrgs = async (
 
     // find hrScopes id and then get the childer object
     const filteredSubOrgFields = subOrgs.map(
-      (org: any) => ({ id: org.id, role, children: [] })
+      (org: any) => ({ id: org.id, role, children: new Array<any>() })
     );
 
     if (filteredSubOrgFields.length === 0) {
       // set as root node
-      hrScope.children.push({ id: targetID, role, children: [] });
+      hrScope.children.push({ id: targetID, role, children: new Array<any>()  });
     }
     else {
       // nest filtered orgs as tree forest
