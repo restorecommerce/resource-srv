@@ -47,9 +47,15 @@
     "fieldOptions": {
       "maskFields": [
         "password",
+        "token",
         "request.password",
         "request.token",
-        "items.[0].password"
+        "items.[0].password",
+        "request.context.subject.value",
+        "request.context.security.value",
+        "request.context.resources.[0].value",
+        "items.[0].pass",
+        "items.[0].credentials"
       ],
       "omitFields": [
         "context",

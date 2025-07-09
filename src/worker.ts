@@ -299,8 +299,8 @@ export class Worker {
           resourceFieldConfig.redisClient = redisClient;
         }
         // bufferFields handler
-        if (bufferHandlerConfig && (collectionName in bufferHandlerConfig)) {
-          resourceFieldConfig.bufferFields = bufferHandlerConfig[collectionName];
+        if (bufferHandlerConfig && (resourceName in bufferHandlerConfig)) {
+          resourceFieldConfig.bufferFields = bufferHandlerConfig[resourceName];
         }
         // dateTimeStampFields handler
         if (cfg.get('fieldHandlers:timeStampFields')) {
