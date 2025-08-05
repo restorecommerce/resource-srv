@@ -228,7 +228,7 @@
           "from": "id",
           "to": "country_ids",
           "direction": "outbound",
-          "toVerticeName": "countries"
+          "toVerticeName": "countrys"
         }
       ]
     },
