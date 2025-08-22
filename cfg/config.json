@@ -206,7 +206,7 @@
           "toVerticeName": "templates"
         }
       ],
-      "customer": [
+      "customers": [
         {
           "edgeName": "customer_has_organization",
           "from": "id",
