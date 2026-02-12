@@ -156,9 +156,9 @@ const proto: any = ProtoUtils.getProtoFromPkgDefinition(
   pkgDef
 );
 
-const mockServer = new GrpcMockServer('localhost:50161');
+const mockServerACS = new GrpcMockServer('localhost:50161');
 
-const startGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
+const startACSGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
   // create mock implementation based on the method name and output
   const implementations = {
     isAllowed: (call: any, callback: any) => {
@@ -181,7 +181,7 @@ const startGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
     }
   };
   try {
-    mockServer.addService(PROTO_PATH, PKG_NAME, SERVICE_NAME, implementations, {
+    mockServerACS.addService(PROTO_PATH, PKG_NAME, SERVICE_NAME, implementations, {
       includeDirs: ['node_modules/@restorecommerce/protos'],
       keepCase: true,
       longs: String,
@@ -189,7 +189,7 @@ const startGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
       defaults: true,
       oneofs: true
     });
-    await mockServer.start();
+    await mockServerACS.start();
     logger.info('Mock ACS Server started on port 50161');
   } catch (err) {
     logger.error('Error starting mock ACS server', err);
@@ -229,8 +229,8 @@ const startIDSGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
   }
 };
 
-const stopGrpcMockServer = async () => {
-  await mockServer.stop();
+const stopACSGrpcMockServer = async () => {
+  await mockServerACS.stop();
   logger.info('Mock ACS Server closed successfully');
 };
 
@@ -328,7 +328,7 @@ describe('resource-srv testing with ACS enabled', () => {
 
   // stop the server
   after(async function stopServer() {
-    await stopGrpcMockServer();
+    await stopACSGrpcMockServer();
     await stopIDSGrpcMockServer();
     await worker.stop();
   });
@@ -336,7 +336,7 @@ describe('resource-srv testing with ACS enabled', () => {
   it('should create contact_point resource', async function createContactPoints() {
     // start mock acs-srv - needed for read operation since acs-client makes a req to acs-srv
     // to get applicable policies although acs-lookup is disabled
-    startGrpcMockServer([{ method: 'WhatIsAllowed', output: policySetRQ },
+    startACSGrpcMockServer([{ method: 'WhatIsAllowed', output: policySetRQ },
     { method: 'IsAllowed', output: { decision: 'PERMIT' } }]);
 
     // start mock ids-srv needed for findByToken response and return subject
