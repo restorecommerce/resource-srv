@@ -2,7 +2,7 @@
   "logger": {
     "console": {
       "handleExceptions": false,
-      "level": "silly",
+      "level": "crit",
       "colorize": true,
       "prettyPrint": true
     }
@@ -103,7 +103,7 @@
       "address": "localhost:50153"
     },
     "acs-srv": {
-      "address": "localhost:50161"
+      "address": "localhost:50152"
     },
     "graph-srv": {
       "address": "localhost:50153"

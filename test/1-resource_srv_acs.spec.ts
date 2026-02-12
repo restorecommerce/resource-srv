@@ -156,7 +156,7 @@ const proto: any = ProtoUtils.getProtoFromPkgDefinition(
   pkgDef
 );
 
-const mockServerACS = new GrpcMockServer('localhost:50161');
+const mockServerACS = new GrpcMockServer('localhost:50152');
 
 const startACSGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
   // create mock implementation based on the method name and output
@@ -190,7 +190,7 @@ const startACSGrpcMockServer = async (methodWithOutput: MethodWithOutput[]) => {
       oneofs: true
     });
     await mockServerACS.start();
-    logger.info('Mock ACS Server started on port 50161');
+    logger.info('Mock ACS Server started on port 50152');
   } catch (err) {
     logger.error('Error starting mock ACS server', err);
   }
