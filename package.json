@@ -25,7 +25,7 @@
     "@restorecommerce/resource-base-interface": "^1.9.14",
     "@restorecommerce/service-config": "^1.1.7",
     "lodash-es": "^4.17.23",
-    "redis": "^5.10.0"
+    "redis": "4.7.0"
   },
   "devDependencies": {
     "@alenon/grpc-mock-server": "^3.2.6",

@@ -309,6 +309,7 @@ describe('resource-srv testing with ACS enabled', () => {
 
   // start the server and get the clientService Obj based on resourceName
   before(async function startServer() {
+    this.timeout(120_000);
     // enable ACS check
     cfg.set('authorization:enabled', true);
     updateConfig(cfg);

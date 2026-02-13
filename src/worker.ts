@@ -281,7 +281,7 @@ export class Worker {
     const redisConfig = cfg.get('redis');
     redisConfig.database = cfg.get('redis:db-indexes:db-subject');
     const redisClientSubject: RedisClientType = createClient(redisConfig);
-    await redisClientSubject.on('error', (err) => logger.error('Redis Client Error', err));
+    redisClientSubject.on('error', (err) => logger.error('Redis Client Error', err));
     await redisClientSubject.connect();
     for (const resourceCfg of Object.values<any>(resources)) {
       const resourcesServiceConfigPrefix = resourceCfg.resourcesServiceConfigPrefix;
