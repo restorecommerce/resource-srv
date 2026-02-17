@@ -1,4 +1,4 @@
-import { Events, Topic, registerProtoMeta } from '@restorecommerce/kafka-client';
+import { Events, Listener, Topic, registerProtoMeta } from '@restorecommerce/kafka-client';
 import { GraphResourcesServiceBase, ResourcesAPIBase } from '@restorecommerce/resource-base-interface';
 import { initAuthZ, initializeCache } from '@restorecommerce/acs-client';
 import { ResourceCommandInterface } from './commandInterface.js';
@@ -203,7 +203,7 @@ export class Worker {
   async start(
     cfg?: ServiceConfig,
     logger?: Logger,
-    resourcesServiceEventListener?: object
+    resourcesServiceEventListener?: Listener
   ) {
     // Load config
     cfg ??= createServiceConfig(process.cwd());

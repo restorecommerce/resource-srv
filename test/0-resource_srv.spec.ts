@@ -134,7 +134,6 @@ async function getClientResourceServices() {
 }
 
 describe('resource-srv testing', () => {
-  let options;
   let organizationService;
   let contactPointsService;
   let commandService;
@@ -142,6 +141,7 @@ describe('resource-srv testing', () => {
   let events: Events;
   let commandTopic: Topic;
   let organizationTopic: Topic;
+  
   const baseValidation = function (result: any, itemsShouldExist: boolean = true) {
     should.exist(result);
     if (itemsShouldExist) {
