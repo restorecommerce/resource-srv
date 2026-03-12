@@ -493,7 +493,7 @@
           ]
         },
         "user": {
-          "topic": "io.restorecommerce.user",
+          "topic": "io.restorecommerce.user.resource",
           "events": [
             "hierarchicalScopesRequest"
           ]
