@@ -492,14 +492,14 @@
             "flushCacheCommand"
           ]
         },
-        "users.resourse": {
-          "topic": "io.restorecommerce.users.resourse",
+        "user": {
+          "topic": "io.restorecommerce.user",
           "events": [
             "hierarchicalScopesRequest"
           ]
         },
-        "user": {
-          "topic": "io.restorecommerce.user",
+        "auth": {
+          "topic": "io.restorecommerce.auth",
           "events": [
             "hierarchicalScopesRequest"
           ]
