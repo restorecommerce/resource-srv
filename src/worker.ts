@@ -317,20 +317,13 @@ export class Worker {
         }
         logger.info(`Setting up ${resourceName} resource service`);
 
-        let edgeCfg;
-        let graphName;
-        if (graphCfg && graphCfg.vertices) {
-          edgeCfg = graphCfg.vertices[collectionName];
-        }
-        if (graphCfg) {
-          graphName = graphCfg.graphName;
-        }
+        const edgeCfg = graphCfg?.vertices?.[collectionName];
         const resourceAPI = new ResourcesAPIBase(
           db,
           collectionName,
           resourceFieldConfig,
           edgeCfg,
-          graphName,
+          graphCfg?.graphName,
           logger,
           resourceName,
         );
@@ -373,7 +366,7 @@ export class Worker {
       implementation: cis
     } as BindConfig<CommandInterfaceServiceDefinition>);
 
-    const hrTopicName = kafkaCfg?.topics?.user?.topic;
+    const hrTopicName = kafkaCfg?.topics?.auth?.topic;
     const hrTopic = await events.topic(hrTopicName);
     this.idsClient = getUserServiceClient();
     this.graphClient = await getGraphServiceClient();
