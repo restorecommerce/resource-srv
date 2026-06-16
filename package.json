@@ -70,7 +70,8 @@
     "build:es": "node ./esbuild.mjs",
     "build:clean": "rimraf lib",
     "build": "npm-run-all lint build:clean build:es",
-    "prepare": "node -e \"try { require('husky').install() } catch (e) {}\""
+    "prepare": "node -e \"try { require('husky').install() } catch (e) {}\"",
+    "postinstall": "node ./esbuild.mjs"
   },
   "engines": {
     "node": ">= 24.10.0"
