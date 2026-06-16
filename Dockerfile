@@ -9,7 +9,7 @@ WORKDIR $APP_HOME
 COPY package.json package.json
 COPY package-lock.json package-lock.json
 
-RUN npm ci --ignore-scripts
+RUN npm ci
 
 COPY --chown=node:node . .
 
