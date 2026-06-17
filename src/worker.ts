@@ -133,7 +133,7 @@ const COMMANDEVENTS = [
 ];
 const HIERARCHICAL_SCOPE_REQUEST_EVENT = 'hierarchicalScopesRequest';
 
-const metas = [
+const BASE_METAS = [
   resourceMeta,
   commandMeta,
   addressMeta,
@@ -161,11 +161,7 @@ const metas = [
   settingMeta,
 ];
 
-registerProtoMeta(
-  ...metas
-);
-
-const ServiceDefinitions = [
+const BASE_SERVICE_DEFINITIONS = [
   command,
   address,
   contact_point_type,
@@ -199,6 +195,17 @@ export class Worker {
   cis?: CommandInterface;
   idsClient?: UserServiceClient;
   graphClient?: GraphServiceClient;
+  protected metas: any[] = [...BASE_METAS];
+  protected serviceDefinitions: any[] = [...BASE_SERVICE_DEFINITIONS];
+  private metasRegistered = false;
+
+  protected registerMetasOnce(): void {
+    if (this.metasRegistered) {
+      return;
+    }
+    registerProtoMeta(...this.metas);
+    this.metasRegistered = true;
+  }
 
   async start(
     cfg?: ServiceConfig,
@@ -246,6 +253,7 @@ export class Worker {
 
     const loggerCfg = cfg.get('logger');
     this.logger = logger ??= createLogger(loggerCfg);
+    this.registerMetasOnce();
     const server = new Server(cfg.get('server'), logger);
     const db = await database.get(
       cfg.get('database:arango'),
@@ -338,7 +346,7 @@ export class Worker {
           isEventsEnabled,
         ));
 
-        const resourceServiceDefinition = ServiceDefinitions.find(
+        const resourceServiceDefinition = this.serviceDefinitions.find(
           (obj: any) => obj.fullName.split('.')[2] === resourceName
         );
         const serviceName = `${resourcesServiceConfigPrefix}${resourceName}-srv`;
@@ -418,7 +426,7 @@ export class Worker {
 
     // Add reflection service
     const reflectionService = buildReflectionService(
-      metas.map(meta => ({descriptor: meta.fileDescriptor}))
+      this.metas.map(meta => ({descriptor: meta.fileDescriptor}))
     );
     await server.bind('reflection', {
       service: ServerReflectionService,
