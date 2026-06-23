@@ -184,6 +184,11 @@ const BASE_SERVICE_DEFINITIONS = [
   setting,
 ];
 
+export interface WorkerOptions {
+  metas?: any[];
+  serviceDefinitions?: any[];
+}
+
 export class Worker {
   readonly services = new Map<string, ResourceService>();
 
@@ -195,9 +200,14 @@ export class Worker {
   cis?: CommandInterface;
   idsClient?: UserServiceClient;
   graphClient?: GraphServiceClient;
-  protected metas: any[] = [...BASE_METAS];
-  protected serviceDefinitions: any[] = [...BASE_SERVICE_DEFINITIONS];
+  protected metas: any[];
+  protected serviceDefinitions: any[];
   private metasRegistered = false;
+
+  constructor(options?: WorkerOptions) {
+    this.metas = options?.metas ? [...options.metas] : [...BASE_METAS];
+    this.serviceDefinitions = options?.serviceDefinitions ? [...options.serviceDefinitions] : [...BASE_SERVICE_DEFINITIONS];
+  }
 
   protected registerMetasOnce(): void {
     if (this.metasRegistered) {
