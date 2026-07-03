@@ -85,16 +85,16 @@ export class ResourceService extends ServiceBase<ResourceListResponse, ResourceL
       if (acsResponse.decision != Response_Decision.PERMIT) {
         return { operation_status: acsResponse.operation_status };
       }
-      const acsFilters = getACSFilters(acsResponse, this.resourceName);
+      const acsFilters = getACSFilters(acsResponse, this.resourceName) ?? [];
       if (request.filters) {
         request.filters.push(...acsFilters);
       }
       else {
         request.filters = acsFilters;
       }
-
-      request.custom_queries = acsResponse.custom_query_args?.flatMap(arg => arg.custom_queries);
-      request.custom_arguments = acsResponse.custom_query_args?.flatMap(arg => arg.custom_arguments)[0];
+      const acsCustomArgs = acsResponse.custom_query_args ?? [];
+      request.custom_queries = acsCustomArgs.flatMap(arg => arg.custom_queries ?? []);
+      request.custom_arguments = acsCustomArgs.flatMap(arg => arg.custom_arguments ?? [])[0];
       return await super.read(request, ctx);
     } catch (err: any) {
       return this.catchAsOperationStatus(err, 'Error occurred requesting access-control-srv:');
