@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-/* eslint-disable no-unsafe-optional-chaining */
 import {
   AuthZAction,
   accessRequest,
@@ -11,6 +9,7 @@ import {
   ACSClientOptions,
   ACSClientContext,
   type ACSResource,
+  urns as AuthURN
 } from '@restorecommerce/acs-client';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import {
@@ -36,15 +35,15 @@ import {
   TraversalRequest
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph.js';
 
+export const cfg = createServiceConfig(process.cwd());
+export const logger = createLogger(cfg.get('logger'));
+
 // Create a ids client instance
 let idsClientInstance: UserClient;
-const cfg = createServiceConfig(process.cwd());
 export const getUserServiceClient = () => {
   if (!idsClientInstance) {
     // identity-srv client to resolve subject ID by token
     const grpcIDSConfig = cfg.get('client:user');
-    const loggerCfg = cfg.get('logger');
-    const logger = createLogger(loggerCfg);
     if (grpcIDSConfig) {
       idsClientInstance = createClient({
         ...grpcIDSConfig,
@@ -61,8 +60,6 @@ export const getGraphServiceClient = async () => {
   if (!graphClientInstance) {
     const cfg = createServiceConfig(process.cwd());
     const grpcGraphConfig = cfg.get('client:graph-srv');
-    const loggerCfg = cfg.get('logger');
-    const logger = createLogger(loggerCfg);
     if (grpcGraphConfig) {
       graphClientInstance = createClient({
         ...grpcGraphConfig,
@@ -244,15 +241,15 @@ export const createHRScope = async (
   logger: any,
 ): Promise<ResolvedSubject | undefined> => {
   const subject = user?.payload as ResolvedSubject;
-  const roleScopingEntityURN = cfg.get('authorization:urns:roleScopingEntity');
-  const roleScopingInstanceURN = cfg.get('authorization:urns:roleScopingInstance');
+  const roleScopingEntityURN = AuthURN.roleScopingEntity;
+  const roleScopingInstanceURN = AuthURN.roleScopingInstance;
   if (subject?.role_associations && !subject?.hierarchical_scopes?.length) {
     // create HR scopes iterating through the user's assigned role scoping instances
     const userRoleAssocs = subject.role_associations;
     const assignedUserScopes = new Set<{ userScope: string | undefined; role: string | undefined }>();
     let tokenData;
     // verify the validity of subject tokens
-    if (token && user?.payload?.tokens?.length! > 0) {
+    if (token && user?.payload?.tokens?.length > 0) {
       for (const tokenInfo of user?.payload?.tokens ?? []) {
         if (tokenInfo.token === token) {
           tokenData = tokenInfo;
@@ -272,19 +269,18 @@ export const createHRScope = async (
     ) ?? userRoleAssocs;
 
     for (const roleObj of reducedUserRoleAssocs) {
-      if (roleObj?.attributes?.length! > 0) {
-        for (const roleAttribute of roleObj?.attributes!) {
-          if (roleAttribute.id === roleScopingEntityURN) {
-            for (const roleScopInstObj of roleAttribute.attributes!) {
-              if (roleScopInstObj.id === roleScopingInstanceURN) {
-                const obj = { userScope: roleScopInstObj.value, role: roleObj.role };
-                assignedUserScopes.add(obj);
-              }
+      for (const roleAttribute of roleObj?.attributes ?? []) {
+        if (roleAttribute.id === roleScopingEntityURN) {
+          for (const roleScopInstObj of roleAttribute.attributes ?? []) {
+            if (roleScopInstObj.id === roleScopingInstanceURN) {
+              const obj = { userScope: roleScopInstObj.value, role: roleObj.role };
+              assignedUserScopes.add(obj);
             }
           }
         }
       }
     }
+
     const hrScopes: HierarchicalScope[] = [];
     const userScopesRoleArray = Array.from(assignedUserScopes);
     for (const obj of userScopesRoleArray) {

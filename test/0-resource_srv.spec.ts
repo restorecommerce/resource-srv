@@ -1,4 +1,4 @@
-import {} from 'mocha';
+import { it, describe, beforeAll, afterAll } from 'vitest';
 import should from 'should';
 import { createChannel, createClient } from '@restorecommerce/grpc-client';
 import { Events, Topic, registerProtoMeta } from '@restorecommerce/kafka-client';
@@ -151,8 +151,7 @@ describe('resource-srv testing', () => {
   };
 
   // start the server and get the clientService Obj based on resourceName
-  before(async function startServer() {
-    this.timeout(120_000);
+  beforeAll(async function startServer() {
     // disable ACS check
     cfg.set('authorization:enabled', false);
     updateConfig(cfg);
@@ -177,10 +176,10 @@ describe('resource-srv testing', () => {
     // create command service
     let commandMapValue = serviceMapping.microservice.mapClients.get('command');
     commandService = serviceMapping.microservice.service[commandMapValue];
-  });
+  }, 120_000);
 
   // stop the server
-  after(async function stopServer() {
+  afterAll(async function stopServer() {
     await worker.stop();
   });
 
@@ -360,8 +359,6 @@ describe('resource-srv testing', () => {
   // // test case to re-read the data from that offset and test insert, update
   // // and delete for organization
   // it('should re read messages for organization resource', async function reReeadContactPointMsgs() {
-  //   this.timeout(5000);
-
   //   const restoreListener = async function (msg: any,
   //     context: any, config: any, eventName: string): Promise<any> {
   //   };

@@ -1,15 +1,23 @@
-import * as _ from 'lodash-es';
+import { isNullish, omitBy, isDeepEqual } from 'remeda';
 import { RedisClientType } from 'redis';
 import {
   CommandInterface, Server, GraphDatabaseProvider
 } from '@restorecommerce/chassis-srv';
 import { Events } from '@restorecommerce/kafka-client';
+import { Logger } from '@restorecommerce/logger';
+import { ServiceConfig } from '@restorecommerce/service-config';
 
 export class ResourceCommandInterface extends CommandInterface {
   edgeCfg: any;
   // graphName: any;
-  constructor(server: Server, cfg: any, logger: any, events: Events, redisClient: RedisClientType<any, any>) {
-    super(server, cfg, logger, events, redisClient);
+  constructor(
+    server: Server,
+    cfg: ServiceConfig,
+    readonly logger: Logger,
+    events: Events,
+    redisClient: RedisClientType<any, any>
+  ) {
+    super(server, cfg, logger, events, redisClient as any);
     const graphCfg = cfg.get('graph');
     if (graphCfg && graphCfg.vertices) {
       this.edgeCfg = graphCfg.vertices;
@@ -48,7 +56,7 @@ export class ResourceCommandInterface extends CommandInterface {
                 [toVerticeName]);
             }
             if (from_id && to_id) {
-              if (_.isArray(to_id)) {
+              if (Array.isArray(to_id)) {
                 for (const toID of to_id) {
                   await db.createEdge(eachEdgeCfg.edgeName, undefined as any,
                     `${fromVerticeName}/${from_id}`, `${toVerticeName}/${toID}`);
@@ -77,16 +85,16 @@ export class ResourceCommandInterface extends CommandInterface {
           const dbDoc = foundDocs[0];
           for (const eachEdgeCfg of edgeCfg[collectionName]) {
             const toIDkey = eachEdgeCfg?.to;
-            let modified_to_idValues = message[toIDkey];
-            let db_to_idValues = dbDoc[toIDkey];
-            if (_.isArray(modified_to_idValues)) {
-              modified_to_idValues = _.sortBy(modified_to_idValues);
+            const modified_to_idValues: string | string[] = message[toIDkey];
+            const db_to_idValues: string | string[] = dbDoc[toIDkey];
+            if (Array.isArray(modified_to_idValues)) {
+              modified_to_idValues.sort();
             }
-            if (_.isArray(db_to_idValues)) {
-              db_to_idValues = _.sortBy(db_to_idValues);
+            if (Array.isArray(db_to_idValues)) {
+              db_to_idValues.sort();
             }
             // delete and recreate only if there is a difference in references
-            if (!_.isEqual(modified_to_idValues, db_to_idValues)) {
+            if (!isDeepEqual(modified_to_idValues, db_to_idValues)) {
               const fromIDkey = eachEdgeCfg?.from;
               const from_id = message[fromIDkey];
               const fromVerticeName = collectionName;
@@ -96,10 +104,11 @@ export class ResourceCommandInterface extends CommandInterface {
               const outgoingEdges: any = await db.getOutEdges(edgeCollectionName, `${collectionName}/${dbDoc.id}`);
               for (const outgoingEdge of outgoingEdges) {
                 const removedEdge = await db.removeEdge(edgeCollectionName, outgoingEdge._id);
+                this.logger?.silly('Edge deleted:', removedEdge);
               }
               // Create new edges
               if (from_id && modified_to_idValues) {
-                if (_.isArray(modified_to_idValues)) {
+                if (Array.isArray(modified_to_idValues)) {
                   for (const toID of modified_to_idValues) {
                     await db.createEdge(eachEdgeCfg?.edgeName, undefined as any,
                       `${fromVerticeName}/${from_id}`, `${toVerticeName}/${toID}`);
@@ -112,7 +121,7 @@ export class ResourceCommandInterface extends CommandInterface {
             }
           }
         }
-        message = _.omitBy(message, _.isNil);
+        message = omitBy(message, isNullish);
         await db.update(collectionName, message);
         return {};
       },

@@ -1,4 +1,4 @@
-import {} from 'mocha';
+import { it, describe, beforeAll, afterAll } from 'vitest';
 import should from 'should';
 import { createChannel, createClient } from '@restorecommerce/grpc-client';
 import { Events, registerProtoMeta } from '@restorecommerce/kafka-client';
@@ -308,8 +308,7 @@ describe('resource-srv testing with ACS enabled', () => {
   };
 
   // start the server and get the clientService Obj based on resourceName
-  before(async function startServer() {
-    this.timeout(120_000);
+  beforeAll(async function startServer() {
     // enable ACS check
     cfg.set('authorization:enabled', true);
     updateConfig(cfg);
@@ -325,10 +324,10 @@ describe('resource-srv testing with ACS enabled', () => {
     // create events for restoring
     events = new Events(cfg.get('events:kafka'), logger);
     await events.start();
-  });
+  }, 120_000);
 
   // stop the server
-  after(async function stopServer() {
+  afterAll(async function stopServer() {
     await stopACSGrpcMockServer();
     await stopIDSGrpcMockServer();
     await worker.stop();
