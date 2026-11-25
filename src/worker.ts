@@ -133,7 +133,7 @@ const COMMANDEVENTS = [
 ];
 const HIERARCHICAL_SCOPE_REQUEST_EVENT = 'hierarchicalScopesRequest';
 
-const BASE_METAS = [
+export const ServiceMetas = [
   resourceMeta,
   commandMeta,
   addressMeta,
@@ -160,8 +160,9 @@ const BASE_METAS = [
   hierarchicalScopesMeta,
   settingMeta,
 ];
+export type ServiceMetas = typeof ServiceMetas;
 
-const BASE_SERVICE_DEFINITIONS = [
+export const ServiceDefinitions = [
   command,
   address,
   contact_point_type,
@@ -183,15 +184,22 @@ const BASE_SERVICE_DEFINITIONS = [
   notification_channel,
   setting,
 ];
+export type ServiceDefinitions = typeof ServiceDefinitions;
 
-export interface WorkerOptions {
-  metas?: any[];
-  serviceDefinitions?: any[];
+export interface WorkerOptions<
+  M extends ServiceMetas,
+  S extends ServiceDefinitions,
+> {
+  metas?: ServiceMetas;
+  serviceDefinitions?: ServiceDefinitions;
 }
 
 export class Worker {
+  private static metasRegistered = false;
   readonly services = new Map<string, ResourceService>();
-
+  protected readonly metas: ServiceMetas;
+  protected readonly serviceDefinitions: ServiceDefinitions;
+  
   server?: Server;
   events?: Events;
   logger?: Logger;
@@ -200,21 +208,18 @@ export class Worker {
   cis?: CommandInterface;
   idsClient?: UserServiceClient;
   graphClient?: GraphServiceClient;
-  protected metas: any[];
-  protected serviceDefinitions: any[];
-  private metasRegistered = false;
 
-  constructor(options?: WorkerOptions) {
-    this.metas = options?.metas ? [...options.metas] : [...BASE_METAS];
-    this.serviceDefinitions = options?.serviceDefinitions ? [...options.serviceDefinitions] : [...BASE_SERVICE_DEFINITIONS];
+  constructor(options?: WorkerOptions<any, any>) {
+    this.metas = options?.metas ? [...options.metas] : ServiceMetas;
+    this.serviceDefinitions = options?.serviceDefinitions ? [...options.serviceDefinitions] : ServiceDefinitions;
   }
 
   protected registerMetasOnce(): void {
-    if (this.metasRegistered) {
+    if (Worker.metasRegistered) {
       return;
     }
     registerProtoMeta(...this.metas);
-    this.metasRegistered = true;
+    Worker.metasRegistered = true;
   }
 
   async start(
