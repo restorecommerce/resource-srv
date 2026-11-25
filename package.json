@@ -24,8 +24,8 @@
     "@restorecommerce/rc-grpc-clients": "^5.2.6",
     "@restorecommerce/resource-base-interface": "^1.10.11",
     "@restorecommerce/service-config": "^1.2.4",
-    "redis": "6.3.1",
-    "remeda": "2.61.0"
+    "redis": "6.4.0",
+    "remeda": "2.62.4"
   },
   "devDependencies": {
     "@alenon/grpc-mock-server": "^3.2.9",
